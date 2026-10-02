@@ -15,7 +15,9 @@ import {
   type FoundLink,
   type ScannedLink,
   type SecurityEvaluation,
+  Verdict,
 } from '@/lib/security';
+import { checkSender } from '@/lib/sender-checks';
 
 export default function MessageScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -32,9 +34,9 @@ export default function MessageScreen() {
 
   const handleLinksFound = async (found: FoundLink[]) => {
     if (!message) return;
-    const scanned = await scanLinks(found);
+    const [scanned, senderChecks] = await Promise.all([scanLinks(found), checkSender(message)]);
     setLinks(scanned);
-    setEvaluation(evaluateEmail(message, scanned));
+    setEvaluation(evaluateEmail(senderChecks, scanned));
   };
 
   const openLink = (url: string) => {
@@ -44,11 +46,14 @@ export default function MessageScreen() {
 
   const handleLinkPress = (url: string) => {
     const link = links?.find((l) => l.url === url);
-    if (!link || link.verdict === 'safe') return openLink(url);
+    if (!link || link.verdict === Verdict.Safe) return openLink(url);
 
     Alert.alert(
-      link.verdict === 'danger' ? 'This link looks unsafe' : 'Be careful with this link',
-      [link.host || url, ...link.reasons].join('\n\n'),
+      link.verdict === Verdict.Danger ? 'This link looks unsafe' : 'Be careful with this link',
+      [
+        link.host || url,
+        ...link.checks.filter((c) => c.verdict !== Verdict.Safe).map((c) => c.detail),
+      ].join('\n\n'),
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Open anyway', style: 'destructive', onPress: () => openLink(url) },

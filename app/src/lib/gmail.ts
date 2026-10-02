@@ -1,3 +1,4 @@
+import { base64ToBytes, utf8Decode } from './bytes';
 import { getAccessToken } from './google-auth';
 
 const BASE = 'https://gmail.googleapis.com/gmail/v1/users/me';
@@ -70,11 +71,15 @@ export async function listInbox(maxResults = 20): Promise<MessageSummary[]> {
 export type MessageDetail = {
   id: string;
   from: string;
+  /** Bare address from the From header, e.g. "noreply@github.com". */
+  fromAddress: string;
   to: string;
   subject: string;
   date: string;
   body: string;
   bodyType: 'html' | 'text';
+  /** Gmail's own SPF/DKIM/DMARC verdicts. Other servers' headers are dropped since senders can forge them. */
+  authenticationResults: string[];
 };
 
 export async function getMessage(id: string): Promise<MessageDetail> {
@@ -83,15 +88,30 @@ export async function getMessage(id: string): Promise<MessageDetail> {
   const text = html ? null : findPart(m.payload, 'text/plain');
   const part = html ?? text;
 
+  const from = getHeader(m.payload, 'From');
+
   return {
     id: m.id,
-    from: getHeader(m.payload, 'From'),
+    from,
+    fromAddress: (/<([^>]+)>/.exec(from)?.[1] ?? from).trim().toLowerCase(),
     to: getHeader(m.payload, 'To'),
     subject: getHeader(m.payload, 'Subject') || '(no subject)',
     date: getHeader(m.payload, 'Date'),
-    body: part?.body.data ? decodeBase64Url(part.body.data) : m.snippet,
+    // Non-UTF-8 charsets (e.g. ISO-8859-1) will render garbled.
+    body: part?.body.data ? utf8Decode(base64ToBytes(part.body.data)) : m.snippet,
     bodyType: html ? 'html' : 'text',
+    authenticationResults: m.payload.headers
+      .filter((h) => h.name.toLowerCase() === 'authentication-results')
+      .map((h) => h.value)
+      .filter((value) => /^\s*mx\.google\.com\s*;/i.test(value)),
   };
+}
+
+/** Whether the user has any other mail from or to `address` (spam and trash excluded). */
+export async function hasCorrespondenceWith(address: string, excludeMessageId: string): Promise<boolean> {
+  const query = encodeURIComponent(`{from:"${address}" to:"${address}"}`);
+  const { messages = [] } = await gmailFetch<{ messages?: { id: string }[] }>(`/messages?q=${query}&maxResults=2`);
+  return messages.some((m) => m.id !== excludeMessageId);
 }
 
 /** Depth-first search for the first inline (non-attachment) part of the given MIME type. */
@@ -102,42 +122,4 @@ function findPart(part: MessagePart, mimeType: string): MessagePart | null {
     if (found) return found;
   }
   return null;
-}
-
-const BASE64_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
-
-// Gmail bodies are base64url-encoded UTF-8. Decoded by hand since React Native
-// doesn't guarantee TextDecoder. Non-UTF-8 charsets (e.g. ISO-8859-1) will render garbled.
-function decodeBase64Url(data: string): string {
-  const bytes: number[] = [];
-  let buffer = 0;
-  let bits = 0;
-  for (const char of data) {
-    const value = BASE64_ALPHABET.indexOf(char === '+' ? '-' : char === '/' ? '_' : char);
-    if (value === -1) continue; // padding / whitespace
-    buffer = (buffer << 6) | value;
-    bits += 6;
-    if (bits >= 8) {
-      bits -= 8;
-      bytes.push((buffer >> bits) & 0xff);
-      buffer &= (1 << bits) - 1;
-    }
-  }
-
-  let out = '';
-  for (let i = 0; i < bytes.length; ) {
-    const b = bytes[i++];
-    let cp: number;
-    if (b < 0x80) cp = b;
-    else if (b >> 5 === 0x6) cp = ((b & 0x1f) << 6) | (bytes[i++] & 0x3f);
-    else if (b >> 4 === 0xe) cp = ((b & 0x0f) << 12) | ((bytes[i++] & 0x3f) << 6) | (bytes[i++] & 0x3f);
-    else
-      cp =
-        ((b & 0x07) << 18) |
-        ((bytes[i++] & 0x3f) << 12) |
-        ((bytes[i++] & 0x3f) << 6) |
-        (bytes[i++] & 0x3f);
-    out += String.fromCodePoint(cp);
-  }
-  return out;
 }

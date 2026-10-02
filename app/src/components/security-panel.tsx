@@ -7,11 +7,12 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
 import {
+  LinkCheckLabel,
   VerdictColor,
   VerdictGlyph,
   type ScannedLink,
   type SecurityEvaluation,
-  type Verdict,
+  Verdict,
 } from '@/lib/security';
 
 type Props = { evaluation: SecurityEvaluation; links: ScannedLink[] };
@@ -101,10 +102,16 @@ export function SecurityPanel({ evaluation, links }: Props) {
                       <ThemedText type="small" numberOfLines={1}>
                         {link.host || link.url}
                       </ThemedText>
-                      {link.reasons.map((reason) => (
-                        <ThemedText key={reason} type="small" themeColor="textSecondary">
-                          {reason}
-                        </ThemedText>
+                      {link.checks.map((check, i) => (
+                        <View key={i} style={styles.checkRow}>
+                          <VerdictDot verdict={check.verdict} size={12} />
+                          <ThemedText type="small" themeColor="textSecondary" style={styles.checkText}>
+                            <ThemedText type="smallBold" themeColor="textSecondary">
+                              {LinkCheckLabel[check.kind]}:
+                            </ThemedText>{' '}
+                            {check.detail}
+                          </ThemedText>
+                        </View>
                       ))}
                     </View>
                   </View>
@@ -162,6 +169,8 @@ const styles = StyleSheet.create({
   cardText: { flex: 1, gap: Spacing.half },
   sectionTitle: { marginTop: Spacing.two },
   linkRow: { flexDirection: 'row', gap: Spacing.two },
+  checkRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.one, marginTop: Spacing.half },
+  checkText: { flex: 1 },
   dot: { alignItems: 'center', justifyContent: 'center' },
   dotGlyph: { color: '#fff', fontWeight: 700, textAlign: 'center' },
 });

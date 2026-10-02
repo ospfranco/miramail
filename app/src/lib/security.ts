@@ -1,13 +1,14 @@
-import type { MessageDetail } from './gmail';
+import { runNetworkChecks } from './link-checks';
+import { LinkCheckKind, Verdict, worstVerdict, type LinkCheck } from './verdict';
 
-export type Verdict = 'safe' | 'warning' | 'danger';
+export { LinkCheckLabel, Verdict, VerdictColor, VerdictGlyph, type LinkCheck } from './verdict';
 
 export type FoundLink = { url: string; text: string };
 
 export type ScannedLink = FoundLink & {
   host: string;
   verdict: Verdict;
-  reasons: string[];
+  checks: LinkCheck[];
 };
 
 export type SecurityCheck = { label: string; detail: string; verdict: Verdict };
@@ -17,19 +18,6 @@ export type SecurityEvaluation = {
   summary: string;
   checks: SecurityCheck[];
 };
-
-export const VerdictGlyph: Record<Verdict, string> = { safe: '✓', warning: '!', danger: '✕' };
-export const VerdictColor: Record<Verdict, string> = {
-  safe: '#30A46C',
-  warning: '#E5A000',
-  danger: '#E5484D',
-};
-
-const SEVERITY: Record<Verdict, number> = { safe: 0, warning: 1, danger: 2 };
-
-function worst(verdicts: Verdict[]): Verdict {
-  return verdicts.reduce<Verdict>((a, b) => (SEVERITY[b] > SEVERITY[a] ? b : a), 'safe');
-}
 
 const URL_SHORTENERS = ['bit.ly', 'tinyurl.com', 't.co', 'goo.gl', 'ow.ly', 'is.gd', 'buff.ly', 'rebrand.ly', 'cutt.ly'];
 
@@ -56,40 +44,55 @@ function sameSite(a: string, b: string) {
   return x === y || x.endsWith(`.${y}`) || y.endsWith(`.${x}`);
 }
 
-// Local heuristics only, standing in for a real URL reputation service.
-function scanLink(link: FoundLink): ScannedLink {
+function isIpAddress(host: string) {
+  return /^\d{1,3}(\.\d{1,3}){3}$/.test(host) || host.startsWith('[');
+}
+
+/** Checks that only look at the URL and its visible text. */
+function localChecks(link: FoundLink, scheme: string, host: string, hasUserInfo: boolean): LinkCheck[] {
+  const checks: LinkCheck[] = [];
+  const add = (kind: LinkCheckKind, verdict: Verdict, detail: string) => checks.push({ kind, verdict, detail });
+
+  if (isIpAddress(host)) add(LinkCheckKind.LinkFormat, Verdict.Danger, 'Points to a raw IP address instead of a domain.');
+  if (hasUserInfo) add(LinkCheckKind.LinkFormat, Verdict.Danger, 'Hides the real destination behind an "@".');
+  const shownHost = hostInText(link.text);
+  if (shownHost && !sameSite(shownHost, host)) {
+    add(LinkCheckKind.DisplayText, Verdict.Danger, `Text shows ${shownHost} but the link goes to ${host}.`);
+  }
+  if (scheme === 'http') add(LinkCheckKind.Encryption, Verdict.Warning, 'Not encrypted (http).');
+  if (host.split('.').some((label) => label.startsWith('xn--'))) {
+    add(LinkCheckKind.LookalikeDomain, Verdict.Warning, 'Uses look-alike (punycode) characters in the domain.');
+  }
+  if (URL_SHORTENERS.includes(host)) {
+    add(LinkCheckKind.Shortener, Verdict.Warning, 'Shortened link hides the final destination.');
+  }
+  return checks;
+}
+
+async function scanLink(link: FoundLink): Promise<ScannedLink> {
+  const result = (host: string, checks: LinkCheck[]): ScannedLink => ({
+    ...link,
+    host,
+    checks,
+    verdict: worstVerdict(checks.map((c) => c.verdict)),
+  });
+
   const parsed = parseUrl(link.url);
   if (!parsed) {
-    return { ...link, host: '', verdict: 'warning', reasons: ['Link could not be parsed'] };
+    return result('', [{ kind: LinkCheckKind.LinkFormat, verdict: Verdict.Warning, detail: 'Link could not be parsed.' }]);
   }
   const { scheme, host, hasUserInfo } = parsed;
 
-  if (scheme === 'mailto' || scheme === 'tel') {
-    return { ...link, host, verdict: 'safe', reasons: [] };
-  }
+  if (scheme === 'mailto' || scheme === 'tel') return result(host, []);
   if (scheme !== 'http' && scheme !== 'https') {
-    return { ...link, host, verdict: 'danger', reasons: [`Uses a "${scheme}:" link, which can run code`] };
+    return result(host, [
+      { kind: LinkCheckKind.LinkFormat, verdict: Verdict.Danger, detail: `Uses a "${scheme}:" link, which can run code.` },
+    ]);
   }
 
-  const danger: string[] = [];
-  const warning: string[] = [];
-
-  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host) || host.startsWith('[')) {
-    danger.push('Points to a raw IP address instead of a domain');
-  }
-  if (hasUserInfo) danger.push('Hides the real destination behind an "@"');
-  const shownHost = hostInText(link.text);
-  if (shownHost && !sameSite(shownHost, host)) {
-    danger.push(`Text shows ${shownHost} but the link goes to ${host}`);
-  }
-  if (scheme === 'http') warning.push('Not encrypted (http)');
-  if (host.split('.').some((label) => label.startsWith('xn--'))) {
-    warning.push('Uses look-alike (punycode) characters in the domain');
-  }
-  if (URL_SHORTENERS.includes(host)) warning.push('Shortened link hides the final destination');
-
-  const verdict: Verdict = danger.length ? 'danger' : warning.length ? 'warning' : 'safe';
-  return { ...link, host, verdict, reasons: [...danger, ...warning] };
+  const checks = localChecks(link, scheme, host, hasUserInfo);
+  if (host && !isIpAddress(host)) checks.push(...(await runNetworkChecks(host, scheme === 'https')));
+  return result(host, checks);
 }
 
 export async function scanLinks(links: FoundLink[]): Promise<ScannedLink[]> {
@@ -98,43 +101,27 @@ export async function scanLinks(links: FoundLink[]): Promise<ScannedLink[]> {
     // Keep the entry with visible text, since that's what the mismatch check needs.
     if (!unique.has(link.url) || (!unique.get(link.url)!.text && link.text)) unique.set(link.url, link);
   }
-  return [...unique.values()].map(scanLink);
+  return Promise.all([...unique.values()].map(scanLink));
 }
 
-export function evaluateEmail(message: MessageDetail, links: ScannedLink[]): SecurityEvaluation {
-  const senderDomain = /@([^>\s]+)/.exec(message.from)?.[1]?.toLowerCase() ?? 'unknown';
-
-  // SAMPLE DATA: placeholder sender checks until real SPF/DKIM/DMARC verification is wired up.
-  const senderChecks: SecurityCheck[] = [
-    {
-      label: 'Sender domain not verified',
-      detail: `${senderDomain} could not be verified as the real sender.`,
-      verdict: 'warning',
-    },
-    {
-      label: 'First message from this sender',
-      detail: "You haven't received email from this address before.",
-      verdict: 'warning',
-    },
-  ];
-
-  const bad = links.filter((l) => l.verdict === 'danger').length;
-  const suspicious = links.filter((l) => l.verdict === 'warning').length;
+export function evaluateEmail(senderChecks: SecurityCheck[], links: ScannedLink[]): SecurityEvaluation {
+  const bad = links.filter((l) => l.verdict === Verdict.Danger).length;
+  const suspicious = links.filter((l) => l.verdict === Verdict.Warning).length;
   const linkCheck: SecurityCheck = {
     label: links.length === 0 ? 'No links' : `${links.length} link${links.length === 1 ? '' : 's'} scanned`,
     detail:
       bad || suspicious
         ? [bad && `${bad} unsafe`, suspicious && `${suspicious} suspicious`].filter(Boolean).join(', ')
         : 'No problems found in links.',
-    verdict: bad ? 'danger' : suspicious ? 'warning' : 'safe',
+    verdict: bad ? Verdict.Danger : suspicious ? Verdict.Warning : Verdict.Safe,
   };
 
   const checks = [...senderChecks, linkCheck];
-  const verdict = worst(checks.map((c) => c.verdict));
+  const verdict = worstVerdict(checks.map((c) => c.verdict));
   const summary = {
-    safe: 'No problems found',
-    warning: 'Be careful with this email',
-    danger: 'This email looks dangerous',
+    [Verdict.Safe]: 'No problems found',
+    [Verdict.Warning]: 'Be careful with this email',
+    [Verdict.Danger]: 'This email looks dangerous',
   }[verdict];
 
   return { verdict, summary, checks };
