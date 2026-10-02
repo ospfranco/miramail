@@ -2,6 +2,10 @@
 
 Known changes safemail needs that are deferred for now. Most depend on having a backend, which we don't have yet. Code that needs to change is marked with `TODO(backend)`.
 
+## As use I want to actively request the scanning
+
+We do not want to run all tests on every opened email
+
 ## Move link scanning to a backend
 
 **Where:** `runNetworkChecks` and `fetchCertificateHistory` in `app/src/lib/link-checks.ts`, and the native `tls-inspector` module in `app/modules/tls-inspector`.
