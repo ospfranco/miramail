@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="splash_background">#208AEF</color>
-    <color name="ic_launcher_background">#E6F4FE</color>
+    <!-- Splash: the app's own background with the word "safemail" on it. -->
+    <color name="splash_background">#FFFFFF</color>
+    <color name="splash_text">#000000</color>
+    <!-- Keep equal to BACKGROUND in scripts/generate-app-icon.py -->
+    <color name="ic_launcher_background">#208AEF</color>
 </resources>

@@ -4,7 +4,7 @@
         <item name="android:windowBackground">@android:color/white</item>
     </style>
 
-    <!-- Splash: the Expo app's blue background with its logo. -->
+    <!-- Splash: the word "safemail" on the app's background. -->
     <style name="Theme.Safemail.Starting" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/splash_background</item>
         <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>
