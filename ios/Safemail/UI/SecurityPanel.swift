@@ -1,0 +1,107 @@
+import SwiftUI
+
+/// A tab on the right edge that opens a slide-in panel with every check and per-link result.
+struct SecurityPanel: View {
+    let evaluation: SecurityEvaluation
+    let links: [ScannedLink]
+
+    @State private var open = false
+
+    var body: some View {
+        GeometryReader { geometry in
+            let panelWidth = min(geometry.size.width * 0.85, 360)
+            ZStack(alignment: .trailing) {
+                tab
+                    .frame(maxHeight: .infinity, alignment: .top)
+                    .padding(.top, geometry.size.height * 0.4)
+
+                Color.black.opacity(open ? 0.3 : 0)
+                    .ignoresSafeArea()
+                    .allowsHitTesting(open)
+                    .onTapGesture { open = false }
+
+                panel(bottomInset: geometry.safeAreaInsets.bottom)
+                    .frame(width: panelWidth)
+                    .offset(x: open ? 0 : panelWidth + 24) // + room for the shadow
+                    .accessibilityHidden(!open)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
+            .animation(.easeInOut(duration: 0.22), value: open)
+        }
+    }
+
+    private var tab: some View {
+        Button { open = true } label: {
+            VStack(spacing: Spacing.one) {
+                Text("🛡️").font(.system(size: 14))
+                Text(evaluation.verdict.glyph).font(.system(size: 14, weight: .bold)).foregroundStyle(.white)
+            }
+            .frame(width: 32)
+            .padding(.vertical, Spacing.three)
+            .background(
+                evaluation.verdict.color,
+                in: UnevenRoundedRectangle(topLeadingRadius: Spacing.three, bottomLeadingRadius: Spacing.three)
+            )
+            .shadow(color: .black.opacity(0.2), radius: 4, x: -1, y: 1)
+        }
+        .accessibilityLabel("Security: \(evaluation.summary)")
+        .accessibilityIdentifier("security-tab")
+    }
+
+    private func panel(bottomInset: CGFloat) -> some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: Spacing.three) {
+                HStack {
+                    Text("SECURITY").textStyle(.smallBold, color: Theme.textSecondary)
+                    Spacer()
+                    Button("Close") { open = false }
+                        .textStyle(.link, color: Theme.linkPrimary)
+                        .accessibilityIdentifier("security-close")
+                }
+
+                HStack(spacing: Spacing.two) {
+                    VerdictDot(verdict: evaluation.verdict, size: 28)
+                    Text(evaluation.summary).font(.system(size: 18, weight: .semibold)).foregroundStyle(Theme.text)
+                }
+
+                ForEach(evaluation.checks) { check in
+                    HStack(alignment: .top, spacing: Spacing.two) {
+                        VerdictDot(verdict: check.verdict)
+                        VStack(alignment: .leading, spacing: Spacing.half) {
+                            Text(check.label).textStyle(.smallBold)
+                            Text(check.detail).textStyle(.small, color: Theme.textSecondary)
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .padding(Spacing.three)
+                    .background(Theme.backgroundElement, in: RoundedRectangle(cornerRadius: Spacing.three))
+                }
+
+                if !links.isEmpty {
+                    Text("LINKS").textStyle(.smallBold, color: Theme.textSecondary).padding(.top, Spacing.two)
+                    ForEach(links) { link in
+                        HStack(alignment: .top, spacing: Spacing.two) {
+                            VerdictDot(verdict: link.verdict, size: 16)
+                            VStack(alignment: .leading, spacing: Spacing.half) {
+                                Text(link.host.isEmpty ? link.url : link.host).textStyle(.small).lineLimit(1)
+                                ForEach(Array(link.checks.enumerated()), id: \.offset) { _, check in
+                                    HStack(alignment: .top, spacing: Spacing.one) {
+                                        VerdictDot(verdict: check.verdict, size: 12)
+                                        (Text("\(check.kind.label):").fontWeight(.bold) + Text(" \(check.detail)"))
+                                            .textStyle(.small, color: Theme.textSecondary)
+                                    }
+                                    .padding(.top, Spacing.half)
+                                }
+                            }
+                            Spacer(minLength: 0)
+                        }
+                    }
+                }
+            }
+            .padding(Spacing.three)
+            .padding(.bottom, bottomInset + Spacing.four)
+        }
+        .background(Theme.background.ignoresSafeArea(edges: .vertical))
+        .shadow(color: .black.opacity(0.25), radius: 12)
+    }
+}

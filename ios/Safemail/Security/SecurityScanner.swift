@@ -1,0 +1,159 @@
+import Foundation
+
+struct FoundLink: Sendable, Equatable {
+    let url: String
+    let text: String
+}
+
+struct ScannedLink: Sendable, Equatable, Identifiable {
+    let url: String
+    let text: String
+    let host: String
+    let verdict: Verdict
+    let checks: [LinkCheck]
+
+    var id: String { url }
+}
+
+struct SecurityCheck: Sendable, Equatable, Identifiable {
+    let label: String
+    let detail: String
+    let verdict: Verdict
+
+    var id: String { label }
+}
+
+struct SecurityEvaluation: Sendable, Equatable {
+    let verdict: Verdict
+    let summary: String
+    let checks: [SecurityCheck]
+}
+
+struct ParsedUrl: Equatable {
+    let scheme: String
+    let host: String
+    let hasUserInfo: Bool
+}
+
+enum SecurityScanner {
+    private static let urlShorteners = ["bit.ly", "tinyurl.com", "t.co", "goo.gl", "ow.ly", "is.gd", "buff.ly", "rebrand.ly", "cutt.ly"]
+
+    /// Parses just the parts the checks need: scheme, host (without credentials or port) and whether credentials are present.
+    static func parseUrl(_ url: String) -> ParsedUrl? {
+        let trimmed = url.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard let match = trimmed.firstMatch(of: /^([A-Za-z][A-Za-z0-9+.\-]*):(?:\/\/([^\/?#]*))?/) else { return nil }
+        let authority = match.2.map(String.init) ?? ""
+        let at = authority.lastIndex(of: "@")
+        var host = at.map { String(authority[authority.index(after: $0)...]) } ?? authority
+        if let port = host.firstMatch(of: /:[0-9]+$/) { host.removeSubrange(port.range) }
+        return ParsedUrl(scheme: String(match.1).lowercased(), host: host.lowercased(), hasUserInfo: at != nil)
+    }
+
+    /// Pulls a hostname out of link text that looks like a URL or bare domain, e.g. "paypal.com/login".
+    static func hostInText(_ text: String) -> String? {
+        let pattern = /^\s*(?:https?:\/\/)?(?:www\.)?([a-z0-9\-]+(?:\.[a-z0-9\-]+)*\.[a-z]{2,})(?:[\/:?#]\S*)?\s*$/.ignoresCase()
+        return text.wholeMatch(of: pattern).map { String($0.1).lowercased() }
+    }
+
+    static func sameSite(_ a: String, _ b: String) -> Bool {
+        func strip(_ host: String) -> String { host.hasPrefix("www.") ? String(host.dropFirst(4)) : host }
+        let x = strip(a)
+        let y = strip(b)
+        return x == y || x.hasSuffix(".\(y)") || y.hasSuffix(".\(x)")
+    }
+
+    static func isIpAddress(_ host: String) -> Bool {
+        host.wholeMatch(of: /[0-9]{1,3}(\.[0-9]{1,3}){3}/) != nil || host.hasPrefix("[")
+    }
+
+    /// Checks that only look at the URL and its visible text.
+    static func localChecks(link: FoundLink, scheme: String, host: String, hasUserInfo: Bool) -> [LinkCheck] {
+        var checks: [LinkCheck] = []
+        func add(_ kind: LinkCheckKind, _ verdict: Verdict, _ detail: String) {
+            checks.append(LinkCheck(kind: kind, verdict: verdict, detail: detail))
+        }
+
+        if isIpAddress(host) { add(.linkFormat, .danger, "Points to a raw IP address instead of a domain.") }
+        if hasUserInfo { add(.linkFormat, .danger, "Hides the real destination behind an \"@\".") }
+        if let shownHost = hostInText(link.text), !sameSite(shownHost, host) {
+            add(.displayText, .danger, "Text shows \(shownHost) but the link goes to \(host).")
+        }
+        if scheme == "http" { add(.encryption, .warning, "Not encrypted (http).") }
+        if host.split(separator: ".").contains(where: { $0.hasPrefix("xn--") }) {
+            add(.lookalikeDomain, .warning, "Uses look-alike (punycode) characters in the domain.")
+        }
+        if urlShorteners.contains(host) { add(.shortener, .warning, "Shortened link hides the final destination.") }
+        return checks
+    }
+
+    private static func scanLink(_ link: FoundLink) async -> ScannedLink {
+        func result(_ host: String, _ checks: [LinkCheck]) -> ScannedLink {
+            ScannedLink(url: link.url, text: link.text, host: host, verdict: Verdict.worst(of: checks.map(\.verdict)), checks: checks)
+        }
+
+        guard let parsed = parseUrl(link.url) else {
+            return result("", [LinkCheck(kind: .linkFormat, verdict: .warning, detail: "Link could not be parsed.")])
+        }
+        let (scheme, host, hasUserInfo) = (parsed.scheme, parsed.host, parsed.hasUserInfo)
+
+        if scheme == "mailto" || scheme == "tel" { return result(host, []) }
+        if scheme != "http" && scheme != "https" {
+            return result(host, [LinkCheck(kind: .linkFormat, verdict: .danger, detail: "Uses a \"\(scheme):\" link, which can run code.")])
+        }
+
+        var checks = localChecks(link: link, scheme: scheme, host: host, hasUserInfo: hasUserInfo)
+        if !host.isEmpty && !isIpAddress(host) {
+            checks += await LinkChecks.runNetworkChecks(host: host, encrypted: scheme == "https")
+        }
+        return result(host, checks)
+    }
+
+    /// Links deduplicated by URL, in first-seen order.
+    static func uniqueLinks(_ links: [FoundLink]) -> [FoundLink] {
+        var unique: [FoundLink] = []
+        var indexByUrl: [String: Int] = [:]
+        for link in links {
+            if let index = indexByUrl[link.url] {
+                // Keep the entry with visible text, since that's what the mismatch check needs.
+                if unique[index].text.isEmpty && !link.text.isEmpty { unique[index] = link }
+            } else {
+                indexByUrl[link.url] = unique.count
+                unique.append(link)
+            }
+        }
+        return unique
+    }
+
+    static func scanLinks(_ links: [FoundLink]) async -> [ScannedLink] {
+        let unique = uniqueLinks(links)
+        return await withTaskGroup(of: (Int, ScannedLink).self) { group in
+            for (index, link) in unique.enumerated() {
+                group.addTask { (index, await scanLink(link)) }
+            }
+            var scanned: [(Int, ScannedLink)] = []
+            for await item in group { scanned.append(item) }
+            return scanned.sorted { $0.0 < $1.0 }.map(\.1)
+        }
+    }
+
+    static func evaluateEmail(senderChecks: [SecurityCheck], links: [ScannedLink]) -> SecurityEvaluation {
+        let bad = links.filter { $0.verdict == .danger }.count
+        let suspicious = links.filter { $0.verdict == .warning }.count
+        let linkCheck = SecurityCheck(
+            label: links.isEmpty ? "No links" : "\(links.count) link\(links.count == 1 ? "" : "s") scanned",
+            detail: bad > 0 || suspicious > 0
+                ? [bad > 0 ? "\(bad) unsafe" : nil, suspicious > 0 ? "\(suspicious) suspicious" : nil].compactMap { $0 }.joined(separator: ", ")
+                : "No problems found in links.",
+            verdict: bad > 0 ? .danger : suspicious > 0 ? .warning : .safe
+        )
+
+        let checks = senderChecks + [linkCheck]
+        let verdict = Verdict.worst(of: checks.map(\.verdict))
+        let summary = switch verdict {
+        case .safe: "No problems found"
+        case .warning: "Be careful with this email"
+        case .danger: "This email looks dangerous"
+        }
+        return SecurityEvaluation(verdict: verdict, summary: summary, checks: checks)
+    }
+}

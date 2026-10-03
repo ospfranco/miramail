@@ -8,7 +8,7 @@ We do not want to run all tests on every opened email
 
 ## Move link scanning to a backend
 
-**Where:** `runNetworkChecks` and `fetchCertificateHistory` in `app/src/lib/link-checks.ts`, and the native `tls-inspector` module in `app/modules/tls-inspector`.
+**Where:** `runNetworkChecks` and `fetchCertificateHistory` in `ios/Safemail/Security/LinkChecks.swift` and `android/app/src/main/kotlin/com/ospfranco/safemail/security/LinkChecks.kt`, and the `TlsInspector` in the same folders. (Ported from `app/src/lib/link-checks.ts` and `app/modules/tls-inspector`.) Change both apps together.
 
 When an email is opened, the app checks every linked host directly from the user's device:
 
@@ -29,7 +29,7 @@ This leaks information to third parties:
 
 ## Certificate Transparency lookups need an API key and caching
 
-**Where:** `fetchCertificateHistory` in `app/src/lib/link-checks.ts`.
+**Where:** `fetchCertificateHistory` in `LinkChecks.swift` (iOS) and `LinkChecks.kt` (Android).
 
 The domain-age check asks Cert Spotter for the oldest certificate issued to a domain or its subdomains. Without an API key the limits are strict and apply per IP address:
 
@@ -51,5 +51,5 @@ Two limits to keep in mind:
 
 - **Push notifications need a backend.** Gmail's `users.watch` delivers changes to Google Cloud Pub/Sub, which a server must forward to APNs/FCM. Until then the inbox only updates when the user refreshes.
 - **Google OAuth verification.** Gmail scopes are restricted. Releasing beyond 100 test users requires Google's OAuth verification and a yearly CASA security assessment. While the app is in Testing mode, refresh tokens expire after 7 days. Note: if the backend handles email content, the CASA assessment scope grows. Sending only hostnames keeps it smaller.
-- **Release signing.** Android builds are signed with the standard React Native debug key. Create a real signing key before any public release, and register its SHA-1 on the Android OAuth client.
+- **Release signing.** Android builds (debug and release) are signed with the standard React Native debug key, kept in `android/app/debug.keystore`. Create a real signing key before any public release, and register its SHA-1 on the Android OAuth client.
 - **Email charsets.** Bodies are decoded as UTF-8 only, so other charsets (e.g. ISO-8859-1) display garbled.
