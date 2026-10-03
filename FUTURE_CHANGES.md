@@ -8,7 +8,7 @@ We do not want to run all tests on every opened email
 
 ## Move link scanning to a backend
 
-**Where:** `runNetworkChecks` and `fetchCertificateHistory` in `ios/Safemail/Security/LinkChecks.swift` and `android/app/src/main/kotlin/com/ospfranco/safemail/security/LinkChecks.kt`, and the `TlsInspector` in the same folders. (Ported from `app/src/lib/link-checks.ts` and `app/modules/tls-inspector`.) Change both apps together.
+**Where:** `runNetworkChecks` and `fetchCertificateHistory` in `ios/Safemail/Security/LinkChecks.swift` and `android/app/src/main/kotlin/com/ospfranco/safemail/security/LinkChecks.kt`, and the `TlsInspector` in the same folders. Change both apps together.
 
 When an email is opened, the app checks every linked host directly from the user's device:
 
