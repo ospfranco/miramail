@@ -17,6 +17,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -32,6 +33,8 @@ class AppColors(
     val backgroundSelected: Color,
     val textSecondary: Color,
     val linkPrimary: Color = Color(0xFF3C87F7),
+    /** The blue of the app icon. */
+    val brand: Color = Color(0xFF208AEF),
 )
 
 private val LightColors = AppColors(
@@ -102,8 +105,9 @@ fun AppText(
     modifier: Modifier = Modifier,
     color: Color = Theme.colors.text,
     maxLines: Int = Int.MAX_VALUE,
+    textAlign: TextAlign? = null,
 ) {
-    Text(text = text, style = kind.style, color = color, maxLines = maxLines, overflow = TextOverflow.Ellipsis, modifier = modifier)
+    Text(text = text, style = kind.style, color = color, maxLines = maxLines, overflow = TextOverflow.Ellipsis, textAlign = textAlign, modifier = modifier)
 }
 
 @Composable

@@ -30,6 +30,14 @@ func base64ToBytes(_ data: String) -> [UInt8] {
     return bytes
 }
 
+/// URL-safe base64 without padding, the form the Gmail API wants for raw messages.
+func base64UrlEncode(_ bytes: [UInt8]) -> String {
+    Data(bytes).base64EncodedString()
+        .replacingOccurrences(of: "+", with: "-")
+        .replacingOccurrences(of: "/", with: "_")
+        .replacingOccurrences(of: "=", with: "")
+}
+
 func utf8Decode(_ bytes: [UInt8]) -> String {
     String(decoding: bytes, as: UTF8.self)
 }

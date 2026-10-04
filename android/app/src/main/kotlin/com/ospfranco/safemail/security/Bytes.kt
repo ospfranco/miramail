@@ -28,3 +28,6 @@ fun base64ToBytes(data: String): ByteArray {
 }
 
 fun utf8Decode(bytes: ByteArray): String = String(bytes, Charsets.UTF_8)
+
+/** URL-safe base64 without padding, the form the Gmail API wants for raw messages. */
+fun base64UrlEncode(bytes: ByteArray): String = java.util.Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)

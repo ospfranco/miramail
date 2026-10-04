@@ -280,6 +280,25 @@ object LinkChecks {
         }
     }
 
+    /** Shown instead of a domain-age result for a very well known domain (see [KnownDomains]). */
+    fun wellKnownDomainCheck(domain: String): LinkCheck =
+        LinkCheck(LinkCheckKind.DomainAge, Verdict.Safe, "$domain is a well-known domain, so its age isn't checked.")
+
+    /**
+     * The domain-age result for [domain]. For a very well known domain there is nothing to look up, so
+     * [fetchHistory] (the Certificate Transparency request) is never called.
+     */
+    suspend fun domainAgeResult(
+        domain: String,
+        encrypted: Boolean,
+        known: KnownDomains = KnownDomains.shared,
+        now: Instant = Instant.now(),
+        fetchHistory: suspend () -> CertificateHistory?,
+    ): LinkCheck {
+        if (known.contains(domain)) return wellKnownDomainCheck(domain)
+        return checkDomainAge(domain, fetchHistory(), encrypted, now)
+    }
+
     fun checkTls(host: String, apex: String, hostTls: TlsProbeResult, apexTls: TlsProbeResult?, now: Instant = Instant.now()): List<LinkCheck> {
         if (hostTls !is TlsProbeResult.Ok) {
             val error = (hostTls as TlsProbeResult.Failure).error
@@ -346,10 +365,10 @@ object LinkChecks {
         val apex = PublicSuffixList.shared.registrableDomain(host) ?: host
         val hostTls = async { if (encrypted) probeTls(host) else null }
         val apexTls = async { if (encrypted && apex != host) probeTls(apex) else null }
-        val history = async { fetchCertificateHistory(apex) }
+        val ageCheck = async { domainAgeResult(apex, encrypted) { fetchCertificateHistory(apex) } }
         val hostResult = hostTls.await()
         val apexResult = apexTls.await()
-        val historyResult = history.await()
+        val ageResult = ageCheck.await()
 
         val device = async { TlsInspector.resolve(host) }
         val publicDns = async { resolvePublicly(host) }
@@ -357,7 +376,7 @@ object LinkChecks {
 
         buildList {
             add(dns)
-            add(checkDomainAge(apex, historyResult, encrypted))
+            add(ageResult)
             if (hostResult != null) addAll(checkTls(host, apex, hostResult, apexResult))
         }
     }

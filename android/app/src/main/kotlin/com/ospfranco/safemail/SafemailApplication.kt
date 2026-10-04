@@ -7,6 +7,7 @@ import com.ospfranco.safemail.mail.ConsentLauncher
 import com.ospfranco.safemail.mail.GmailClient
 import com.ospfranco.safemail.mail.GoogleAuth
 import com.ospfranco.safemail.mail.Services
+import com.ospfranco.safemail.security.KnownDomains
 import com.ospfranco.safemail.security.PublicSuffixList
 import com.ospfranco.safemail.settings.AppSettings
 import com.ospfranco.safemail.settings.SharedPreferencesStore
@@ -33,5 +34,6 @@ class SafemailApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         PublicSuffixList.shared = PublicSuffixList.load(this)
+        KnownDomains.shared = KnownDomains.load(this)
     }
 }

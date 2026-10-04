@@ -18,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -31,22 +32,22 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun InboxScreen(session: SessionViewModel, onOpenMessage: (String) -> Unit, onOpenSettings: () -> Unit) {
+fun InboxScreen(session: SessionViewModel, onOpenMessage: (String) -> Unit, onOpenSettings: () -> Unit, onNewMessage: () -> Unit) {
     val colors = Theme.colors
     Box(
         modifier = Modifier.fillMaxSize().background(colors.background).windowInsetsPadding(WindowInsets.safeDrawing),
         contentAlignment = Alignment.TopCenter,
     ) {
         Column(modifier = Modifier.fillMaxSize().widthIn(max = Theme.maxContentWidth)) {
-            TopBar(session, onOpenSettings)
+            TopBar(session, onOpenSettings, onNewMessage)
             if (session.user == null) SignedOut(session) else SignedIn(session, onOpenMessage)
         }
     }
 }
 
-/** The account on the left (when signed in); sign out and the settings button on the right. */
+/** The account on the left (when signed in); a pencil for a new email (when signed in) and the settings button on the right. */
 @Composable
-private fun TopBar(session: SessionViewModel, onOpenSettings: () -> Unit) {
+private fun TopBar(session: SessionViewModel, onOpenSettings: () -> Unit, onNewMessage: () -> Unit) {
     val colors = Theme.colors
     Row(
         modifier = Modifier.fillMaxWidth().padding(horizontal = Spacing.three, vertical = Spacing.two),
@@ -56,12 +57,9 @@ private fun TopBar(session: SessionViewModel, onOpenSettings: () -> Unit) {
         val email = session.user?.email
         if (email != null) {
             AppText(email, TextKind.SmallBold, modifier = Modifier.weight(1f), maxLines = 1)
-            AppText(
-                "Sign out",
-                TextKind.Link,
-                color = colors.linkPrimary,
-                modifier = Modifier.clickable { session.signOut() }.padding(Spacing.one).testTag("sign-out"),
-            )
+            IconButton(onClick = onNewMessage, modifier = Modifier.testTag("new-message")) {
+                Icon(Icons.Filled.Edit, contentDescription = "New message", tint = colors.text)
+            }
         } else {
             Spacer(Modifier.weight(1f))
         }

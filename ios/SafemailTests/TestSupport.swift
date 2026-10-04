@@ -1,5 +1,9 @@
 import Foundation
+import Testing
 @testable import Safemail
+
+/// Every suite that uses the shared URL stub lives under this one, so they never run in parallel.
+@Suite(.serialized) enum StubbedNetworkTests {}
 
 private final class BundleToken {}
 
@@ -45,16 +49,44 @@ func makeMessage(
     )
 }
 
-/// A mail service with canned answers, for tests that must not touch the network.
-struct FakeMail: MailService {
-    var known = false
-    var failsHistory = false
-    var message: MessageDetail = makeMessage()
+/// A mail service with canned answers that records what it is asked to do, for tests that must not touch the network.
+final class FakeMail: MailService, @unchecked Sendable {
+    private let lock = NSLock()
+    private var recorded: [String] = []
+    private var sentMessages: [OutgoingMessage] = []
+    let known: Bool
+    let failsHistory: Bool
+    let failsActions: Bool
+    let message: MessageDetail
+
+    init(known: Bool = false, failsHistory: Bool = false, failsActions: Bool = false, message: MessageDetail = makeMessage()) {
+        self.known = known
+        self.failsHistory = failsHistory
+        self.failsActions = failsActions
+        self.message = message
+    }
+
+    /// What was asked of the service, in order, e.g. `["archive m1", "move m1 work"]`.
+    var calls: [String] { lock.withLock { recorded } }
+    var sent: [OutgoingMessage] { lock.withLock { sentMessages } }
+
+    private func record(_ call: String) throws {
+        lock.withLock { recorded.append(call) }
+        if failsActions { throw GmailError(status: 500, body: "boom") }
+    }
 
     func listInbox(maxResults: Int) async throws -> [MessageSummary] { [] }
     func getMessage(id: String) async throws -> MessageDetail { message }
     func hasCorrespondence(with address: String, excluding messageId: String) async throws -> Bool {
         if failsHistory { throw GmailError(status: 500, body: "boom") }
         return known
+    }
+    func trash(id: String) async throws { try record("trash \(id)") }
+    func archive(id: String) async throws { try record("archive \(id)") }
+    func move(id: String, to label: MailLabel) async throws { try record("move \(id) \(label.id)") }
+    func moveTargets() async throws -> [MailLabel] { [MailLabel(id: "work", name: "Work"), MailLabel(id: "SPAM", name: "Spam")] }
+    func send(_ message: OutgoingMessage) async throws {
+        try record("send")
+        lock.withLock { sentMessages.append(message) }
     }
 }

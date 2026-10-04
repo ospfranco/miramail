@@ -1,0 +1,127 @@
+package com.ospfranco.safemail.ui
+
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.ospfranco.safemail.R
+
+private val steps = listOf(
+    "Open an email" to "Safemail checks who really sent it and scans every link in it.",
+    "See the verdict" to "A green, yellow or red mark sits next to each link, and the shield on the edge opens the full report.",
+    "Tap with confidence" to "Risky links ask you to confirm before they open.",
+)
+
+/** Shown once, before the first sign-in: what safemail does, and that Google sign-in comes next. */
+@Composable
+fun IntroScreen(onContinue: () -> Unit) {
+    val colors = Theme.colors
+    Column(modifier = Modifier.fillMaxSize().background(colors.background).windowInsetsPadding(WindowInsets.safeDrawing)) {
+        Column(
+            modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Column(
+                modifier = Modifier.widthIn(max = Theme.maxContentWidth).padding(Spacing.three),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(Spacing.four),
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.two)) {
+                    Text("Welcome to safemail", color = colors.text, fontSize = 28.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
+                    AppText(
+                        "Safemail checks every email for phishing before you act on it.",
+                        TextKind.Regular,
+                        color = colors.textSecondary,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+
+                Image(
+                    painter = painterResource(R.drawable.intro_preview),
+                    contentDescription = "Preview: an email with a safety mark next to each link and a shield on the edge",
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier
+                        .heightIn(max = 220.dp)
+                        .clip(RoundedCornerShape(Spacing.three))
+                        .border(1.dp, colors.backgroundSelected, RoundedCornerShape(Spacing.three))
+                        .testTag("intro-preview"),
+                )
+
+                Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.three)) {
+                    steps.forEachIndexed { index, (title, text) ->
+                        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.three)) {
+                            Box(
+                                modifier = Modifier.size(28.dp).background(colors.brand, CircleShape).semantics { contentDescription = "" },
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Text("${index + 1}", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            }
+                            Column(verticalArrangement = Arrangement.spacedBy(Spacing.half)) {
+                                AppText(title, TextKind.SmallBold)
+                                AppText(text, TextKind.Small, color = colors.textSecondary)
+                            }
+                        }
+                    }
+                }
+
+                AppText(
+                    "On the next step you'll sign in with your Google account, so safemail can read your Gmail.",
+                    TextKind.Small,
+                    color = colors.textSecondary,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().testTag("intro-google-note"),
+                )
+            }
+        }
+
+        Box(
+            modifier = Modifier
+                .padding(horizontal = Spacing.three)
+                .padding(bottom = Spacing.two)
+                .align(Alignment.CenterHorizontally)
+                .widthIn(max = Theme.maxContentWidth)
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(Spacing.three))
+                .background(colors.brand)
+                .clickable(onClick = onContinue)
+                .padding(vertical = Spacing.three)
+                .testTag("intro-continue"),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("Continue", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+        }
+    }
+}

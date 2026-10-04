@@ -254,6 +254,24 @@ enum LinkChecks {
             : LinkCheck(kind: kind, verdict: .safe, detail: "\(domain) has had certificates for at least \(formatAge(age)).")
     }
 
+    /// Shown instead of a domain-age result for a very well known domain (see `KnownDomains`).
+    static func wellKnownDomainCheck(_ domain: String) -> LinkCheck {
+        LinkCheck(kind: .domainAge, verdict: .safe, detail: "\(domain) is a well-known domain, so its age isn't checked.")
+    }
+
+    /// The domain-age result for `domain`. For a very well known domain there is nothing to look up, so
+    /// `fetchHistory` (the Certificate Transparency request) is never called.
+    static func domainAgeResult(
+        domain: String,
+        encrypted: Bool,
+        known: KnownDomains = .shared,
+        now: Date = Date(),
+        fetchHistory: () async -> CertificateHistory?
+    ) async -> LinkCheck {
+        if known.contains(domain) { return wellKnownDomainCheck(domain) }
+        return checkDomainAge(domain: domain, history: await fetchHistory(), encrypted: encrypted, now: now)
+    }
+
     static func checkTls(host: String, apex: String, hostTls: TlsProbeResult, apexTls: TlsProbeResult?, now: Date = Date()) -> [LinkCheck] {
         guard case .ok(let trusted, let trustError, let leaf) = hostTls else {
             guard case .failure(let error) = hostTls else { return [] }
@@ -307,15 +325,15 @@ enum LinkChecks {
         let apex = PublicSuffixList.shared.registrableDomain(of: host) ?? host
         async let hostTls: TlsProbeResult? = encrypted ? probeTls(host) : nil
         async let apexTls: TlsProbeResult? = encrypted && apex != host ? probeTls(apex) : nil
-        async let history = fetchCertificateHistory(apex)
-        let (hostResult, apexResult, historyResult) = await (hostTls, apexTls, history)
+        async let ageCheck = domainAgeResult(domain: apex, encrypted: encrypted) { await fetchCertificateHistory(apex) }
+        let (hostResult, apexResult, ageResult) = await (hostTls, apexTls, ageCheck)
 
         async let device = TlsInspector.resolve(host: host)
         async let publicDns = resolvePublicly(host)
         let (deviceAddresses, publicAnswer) = await (device, publicDns)
         let dns = checkDns(host: host, deviceAddresses: deviceAddresses, publicDns: publicAnswer, tls: hostResult)
 
-        var checks = [dns, checkDomainAge(domain: apex, history: historyResult, encrypted: encrypted)]
+        var checks = [dns, ageResult]
         if let hostResult { checks += checkTls(host: host, apex: apex, hostTls: hostResult, apexTls: apexResult) }
         return checks
     }

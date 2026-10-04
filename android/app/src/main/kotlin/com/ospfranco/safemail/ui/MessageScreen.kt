@@ -7,6 +7,9 @@ import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -28,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,6 +39,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
+import com.ospfranco.safemail.mail.MailLabel
 import com.ospfranco.safemail.security.ScannedLink
 import com.ospfranco.safemail.security.Verdict
 import com.ospfranco.safemail.settings.AppSettings
@@ -55,11 +62,37 @@ private fun openLink(context: Context, url: String, onFailure: () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MessageScreen(model: MessageViewModel, settings: AppSettings, onBack: () -> Unit) {
+fun MessageScreen(model: MessageViewModel, settings: AppSettings, session: SessionViewModel, onBack: () -> Unit, onReply: () -> Unit) {
     val colors = Theme.colors
     val context = LocalContext.current
     var pendingLink by remember { mutableStateOf<ScannedLink?>(null) }
     var unopenableLink by remember { mutableStateOf<String?>(null) }
+    var moveTargets by remember { mutableStateOf<List<MailLabel>?>(null) }
+    val scope = rememberCoroutineScope()
+
+    /** Runs an action and, when it worked, leaves the email: it is no longer in the inbox. */
+    fun perform(action: MessageAction) {
+        scope.launch {
+            if (model.perform(action)) {
+                session.removeMessage(model.id, action.notice)
+                onBack()
+            } else {
+                session.showNotice(action.failureNotice)
+            }
+        }
+    }
+
+    fun chooseMoveTarget() {
+        scope.launch {
+            try {
+                moveTargets = model.loadMoveTargets()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                session.showNotice("Couldn't load your labels")
+            }
+        }
+    }
 
     fun open(url: String) = openLink(context, url) { unopenableLink = url }
 
@@ -103,10 +136,18 @@ fun MessageScreen(model: MessageViewModel, settings: AppSettings, onBack: () -> 
                         allowJavaScript = settings.allowEmailJavaScript,
                         modifier = Modifier.fillMaxWidth().weight(1f),
                     )
+                    ActionBar(
+                        isBusy = model.isBusy,
+                        onDelete = { perform(MessageAction.Trash) },
+                        onArchive = { perform(MessageAction.Archive) },
+                        onMove = ::chooseMoveTarget,
+                        onReply = onReply,
+                    )
                 }
                 val evaluation = model.evaluation
                 val links = model.links
-                if (evaluation != null && links != null) SecurityPanel(evaluation, links)
+                // The tab is there from the start, with a spinner until the scan is done.
+                SecurityPanel(evaluation, links.orEmpty())
             }
         }
     }
@@ -125,6 +166,31 @@ fun MessageScreen(model: MessageViewModel, settings: AppSettings, onBack: () -> 
                     open(link.url)
                 }) { Text("Open anyway", color = Verdict.Danger.color) }
             },
+        )
+    }
+
+    moveTargets?.let { targets ->
+        AlertDialog(
+            onDismissRequest = { moveTargets = null },
+            title = { Text("Move to") },
+            text = {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    for (label in targets) {
+                        Text(
+                            label.name,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    moveTargets = null
+                                    perform(MessageAction.Move(label))
+                                }
+                                .padding(vertical = Spacing.three),
+                        )
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = { TextButton(onClick = { moveTargets = null }) { Text("Cancel") } },
         )
     }
 

@@ -24,4 +24,12 @@ struct AppSettingsTests {
         settings.allowEmailJavaScript = false
         #expect(!AppSettings(defaults: defaults).allowEmailJavaScript)
     }
+
+    @Test func introIsShownUntilSeen() {
+        let defaults = makeDefaults()
+        let settings = AppSettings(defaults: defaults)
+        #expect(!settings.hasSeenIntro)
+        settings.hasSeenIntro = true
+        #expect(AppSettings(defaults: defaults).hasSeenIntro)
+    }
 }

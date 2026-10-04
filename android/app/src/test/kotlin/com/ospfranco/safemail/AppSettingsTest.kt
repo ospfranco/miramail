@@ -22,4 +22,13 @@ class AppSettingsTest {
         settings.updateAllowEmailJavaScript(false)
         assertFalse(AppSettings(store).allowEmailJavaScript)
     }
+
+    @Test
+    fun introIsShownUntilSeen() {
+        val store = MemorySettingsStore()
+        val settings = AppSettings(store)
+        assertFalse(settings.hasSeenIntro)
+        settings.updateHasSeenIntro(true)
+        assertTrue(AppSettings(store).hasSeenIntro)
+    }
 }

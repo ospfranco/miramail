@@ -1,6 +1,7 @@
 package com.ospfranco.safemail
 
 import com.ospfranco.safemail.security.base64ToBytes
+import com.ospfranco.safemail.security.base64UrlEncode
 import com.ospfranco.safemail.security.utf8Decode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -19,5 +20,15 @@ class BytesTest {
         assertEquals("<b>hi</b>?>>", utf8Decode(base64ToBytes("PGI+aGk8L2I+Pz4+")))
         assertEquals("Hello", utf8Decode(base64ToBytes("SGVs\nbG8=")))
         assertTrue(base64ToBytes("").isEmpty())
+    }
+
+    @Test
+    fun encodesUrlSafeBase64WithoutPadding() {
+        assertEquals("PGI-aGk8L2I-Pz4-", base64UrlEncode("<b>hi</b>?>>".toByteArray()))
+        assertEquals("-__-", base64UrlEncode(byteArrayOf(-5, -1, -2)))
+        assertEquals("SGVsbG8", base64UrlEncode("Hello".toByteArray()))
+        assertEquals("", base64UrlEncode(ByteArray(0)))
+        // Round trip through the decoder used for Gmail's own data.
+        assertEquals("✓ à la mode", utf8Decode(base64ToBytes(base64UrlEncode("✓ à la mode".toByteArray()))))
     }
 }

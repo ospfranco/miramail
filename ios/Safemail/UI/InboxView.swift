@@ -3,6 +3,7 @@ import SwiftUI
 enum Route: Hashable {
     case message(MessageSummary)
     case settings
+    case compose(OutgoingMessage)
 }
 
 struct InboxView: View {
@@ -20,23 +21,34 @@ struct InboxView: View {
             .background(Theme.background.ignoresSafeArea())
             .navigationDestination(for: Route.self) { route in
                 switch route {
-                case .message(let summary): MessageView(id: summary.id, services: session.services, settings: settings)
+                case .message(let summary): MessageView(id: summary.id, session: session, settings: settings)
                 case .settings: SettingsView(settings: settings, session: session)
+                case .compose(let draft): ComposeView(draft: draft, session: session)
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
         }
+        .overlay(alignment: .top) {
+            if let notice = session.notice {
+                NoticeBanner(text: notice).transition(.move(edge: .top).combined(with: .opacity))
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: session.notice)
     }
 
-    /// The account on the left (when signed in); sign out and the settings button on the right.
+    /// The account on the left (when signed in); a pencil for a new email (when signed in) and the settings button on the right.
     private var topBar: some View {
         HStack(spacing: Spacing.three) {
             if let email = session.user?.email {
-                Text(email).textStyle(.smallBold)
+                Text(email).textStyle(.smallBold).lineLimit(1)
                 Spacer()
-                Button("Sign out") { Task { await session.signOut() } }
-                    .textStyle(.link, color: Theme.linkPrimary)
-                    .accessibilityIdentifier("sign-out")
+                NavigationLink(value: Route.compose(OutgoingMessage(to: "", subject: "", body: ""))) {
+                    Image(systemName: "square.and.pencil")
+                        .font(.system(size: 18))
+                        .foregroundStyle(Theme.text)
+                }
+                .accessibilityLabel("New message")
+                .accessibilityIdentifier("new-message")
             } else {
                 Spacer()
             }

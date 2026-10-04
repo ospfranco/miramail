@@ -2,9 +2,11 @@ package com.ospfranco.safemail
 
 import com.ospfranco.safemail.mail.AuthService
 import com.ospfranco.safemail.mail.GmailException
+import com.ospfranco.safemail.mail.MailLabel
 import com.ospfranco.safemail.mail.MailService
 import com.ospfranco.safemail.mail.MessageDetail
 import com.ospfranco.safemail.mail.MessageSummary
+import com.ospfranco.safemail.mail.OutgoingMessage
 import com.ospfranco.safemail.mail.Services
 import com.ospfranco.safemail.mail.UserProfile
 import com.ospfranco.safemail.security.FoundLink
@@ -45,6 +47,11 @@ private class OneMessageInbox : MailService {
     override suspend fun listInbox(maxResults: Int) = listOf(MessageSummary("1", "t", "a@x.com", "s", "", false))
     override suspend fun getMessage(id: String): MessageDetail = makeMessage(id = id)
     override suspend fun hasCorrespondence(address: String, excludingMessageId: String) = false
+    override suspend fun trash(id: String) {}
+    override suspend fun archive(id: String) {}
+    override suspend fun move(id: String, label: MailLabel) {}
+    override suspend fun moveTargets() = emptyList<MailLabel>()
+    override suspend fun send(message: OutgoingMessage) {}
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)

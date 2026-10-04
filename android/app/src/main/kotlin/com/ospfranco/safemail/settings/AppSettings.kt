@@ -32,6 +32,7 @@ class MemorySettingsStore : SettingsStore {
 class AppSettings(private val store: SettingsStore) {
     private companion object {
         const val ALLOW_EMAIL_JAVASCRIPT = "allowEmailJavaScript"
+        const val HAS_SEEN_INTRO = "hasSeenIntro"
     }
 
     /**
@@ -40,6 +41,15 @@ class AppSettings(private val store: SettingsStore) {
      */
     var allowEmailJavaScript by mutableStateOf(store.getBoolean(ALLOW_EMAIL_JAVASCRIPT, false))
         private set
+
+    /** Whether the intro screen has been shown (or the user signed in without it), so it only appears once. */
+    var hasSeenIntro by mutableStateOf(store.getBoolean(HAS_SEEN_INTRO, false))
+        private set
+
+    fun updateHasSeenIntro(value: Boolean) {
+        hasSeenIntro = value
+        store.putBoolean(HAS_SEEN_INTRO, value)
+    }
 
     fun updateAllowEmailJavaScript(value: Boolean) {
         allowEmailJavaScript = value

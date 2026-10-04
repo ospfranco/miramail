@@ -38,7 +38,7 @@ The domain-age check asks Cert Spotter for the oldest certificate issued to a do
 | Exact domain | 100 requests/hour |
 | `include_subdomains=true` (what we use) | ~10 requests per few minutes, then HTTP 429 with `retry-after` |
 
-A newsletter with ten different linked domains can hit the limit. When that happens, the check shows "Couldn't look up certificate history" as a warning.
+Very well known domains (about 900 of them, with a focus on German, Austrian and Swiss names) are skipped, which spares many of those requests, but a newsletter with ten different lesser-known linked domains can still hit the limit. When that happens, the check shows "Couldn't look up certificate history" as a warning.
 
 **Change:** run the lookup on the backend with a Cert Spotter API key, and cache results per domain for hours or days, since a domain's first-certificate date rarely changes. The API key must never ship in the app.
 

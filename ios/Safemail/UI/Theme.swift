@@ -33,6 +33,10 @@ enum Theme {
     static let backgroundSelected = Color(light: "E0E1E6", dark: "2E3135")
     static let textSecondary = Color(light: "60646C", dark: "B0B4BA")
     static let linkPrimary = Color(hex: "3C87F7")
+    /// The security tab while an email is still being scanned.
+    static let scanning = Color(hex: "7A7F87")
+    /// The blue of the app icon.
+    static let brand = Color(hex: "208AEF")
 
     static let maxContentWidth: CGFloat = 800
 }

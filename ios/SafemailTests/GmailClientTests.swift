@@ -23,9 +23,8 @@ final class StubProtocol: URLProtocol, @unchecked Sendable {
     static func set(_ handler: @escaping Handler) { lock.withLock { self.handler = handler } }
 }
 
-/// Tests share the stub, so they run one at a time.
-@Suite(.serialized)
-struct GmailClientTests {
+extension StubbedNetworkTests {
+@Suite struct GmailClientTests {
     private func client(tokens: TokenLog = TokenLog()) -> GmailClient {
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [StubProtocol.self]
@@ -144,4 +143,5 @@ struct GmailClientTests {
         StubProtocol.set { _ in (200, #"{"messages":[{"id":"current"},{"id":"other"}]}"#) }
         #expect(try await client().hasCorrespondence(with: "a@x.com", excluding: "current"))
     }
+}
 }

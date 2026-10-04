@@ -21,9 +21,15 @@ final class GmailClient: MailService {
         self.accessToken = accessToken
     }
 
-    private func fetch<T: Decodable>(_ path: String, as type: T.Type = T.self) async throws -> T {
+    private func fetch<T: Decodable>(_ path: String, method: String = "GET", body: (any Encodable & Sendable)? = nil, as type: T.Type = T.self) async throws -> T {
+        let payload = try body.map { try JSONEncoder().encode($0) }
         func request(token: String) async throws -> (Data, HTTPURLResponse) {
             var request = URLRequest(url: URL(string: Self.base + path)!)
+            request.httpMethod = method
+            if let payload {
+                request.httpBody = payload
+                request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            }
             request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
             let (data, response) = try await session.data(for: request)
             return (data, response as! HTTPURLResponse)
@@ -38,6 +44,28 @@ final class GmailClient: MailService {
     }
 
     // MARK: - Wire format
+
+    /// Responses we only need to succeed.
+    private struct Ignored: Decodable {}
+
+    private struct ModifyBody: Encodable, Sendable {
+        var addLabelIds: [String]?
+        var removeLabelIds: [String]?
+    }
+
+    private struct SendBody: Encodable, Sendable {
+        let raw: String
+        var threadId: String?
+    }
+
+    private struct LabelList: Decodable {
+        struct Item: Decodable {
+            let id: String
+            let name: String
+            let type: String?
+        }
+        let labels: [Item]?
+    }
 
     private struct MessageList: Decodable {
         struct Item: Decodable { let id: String }
@@ -125,7 +153,11 @@ final class GmailClient: MailService {
             authenticationResults: (message.payload.headers ?? [])
                 .filter { $0.name.lowercased() == "authentication-results" }
                 .map(\.value)
-                .filter { $0.firstMatch(of: /^\s*mx\.google\.com\s*;/.ignoresCase()) != nil }
+                .filter { $0.firstMatch(of: /^\s*mx\.google\.com\s*;/.ignoresCase()) != nil },
+            threadId: message.threadId,
+            messageId: message.payload.header("Message-ID"),
+            references: message.payload.header("References"),
+            replyTo: message.payload.header("Reply-To")
         )
     }
 
@@ -133,6 +165,32 @@ final class GmailClient: MailService {
         let query = encodeURIComponent("{from:\"\(address)\" to:\"\(address)\"}")
         let list: MessageList = try await fetch("/messages?q=\(query)&maxResults=2")
         return (list.messages ?? []).contains { $0.id != messageId }
+    }
+
+    func trash(id: String) async throws {
+        let _: Ignored = try await fetch("/messages/\(id)/trash", method: "POST")
+    }
+
+    func archive(id: String) async throws {
+        let _: Ignored = try await fetch("/messages/\(id)/modify", method: "POST", body: ModifyBody(removeLabelIds: ["INBOX"]))
+    }
+
+    func move(id: String, to label: MailLabel) async throws {
+        let _: Ignored = try await fetch("/messages/\(id)/modify", method: "POST", body: ModifyBody(addLabelIds: [label.id], removeLabelIds: ["INBOX"]))
+    }
+
+    func moveTargets() async throws -> [MailLabel] {
+        let list: LabelList = try await fetch("/labels")
+        let own = (list.labels ?? [])
+            .filter { $0.type == "user" }
+            .map { MailLabel(id: $0.id, name: $0.name) }
+            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        return own + [MailLabel(id: "SPAM", name: "Spam")]
+    }
+
+    func send(_ message: OutgoingMessage) async throws {
+        let raw = base64UrlEncode(Array(Mime.raw(message).utf8))
+        let _: Ignored = try await fetch("/messages/send", method: "POST", body: SendBody(raw: raw, threadId: message.threadId))
     }
 
     /// Depth-first search for the first inline (non-attachment) part of the given MIME type.

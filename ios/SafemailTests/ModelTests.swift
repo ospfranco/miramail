@@ -86,4 +86,9 @@ private struct DemoInbox: MailService {
     }
     func getMessage(id: String) async throws -> MessageDetail { makeMessage(id: id) }
     func hasCorrespondence(with address: String, excluding messageId: String) async throws -> Bool { false }
+    func trash(id: String) async throws {}
+    func archive(id: String) async throws {}
+    func move(id: String, to label: MailLabel) async throws {}
+    func moveTargets() async throws -> [MailLabel] { [] }
+    func send(_ message: OutgoingMessage) async throws {}
 }

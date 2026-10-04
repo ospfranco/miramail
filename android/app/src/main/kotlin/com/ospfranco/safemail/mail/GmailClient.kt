@@ -1,6 +1,7 @@
 package com.ospfranco.safemail.mail
 
 import com.ospfranco.safemail.security.base64ToBytes
+import com.ospfranco.safemail.security.base64UrlEncode
 import com.ospfranco.safemail.security.utf8Decode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -9,8 +10,14 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.add
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
 import okhttp3.HttpUrl.Companion.toHttpUrl
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
+import okhttp3.RequestBody.Companion.toRequestBody
 import okhttp3.Request
 
 class GmailException(val status: Int, val body: String) : Exception("Gmail API $status: $body")
@@ -53,6 +60,12 @@ class GmailClient(
     }
 
     @Serializable
+    private class LabelItem(val id: String, val name: String, val type: String? = null)
+
+    @Serializable
+    private class LabelList(val labels: List<LabelItem>? = null)
+
+    @Serializable
     private class RawMessage(
         val id: String,
         val threadId: String,
@@ -63,14 +76,21 @@ class GmailClient(
 
     // endregion
 
-    private suspend fun fetchText(path: String, query: List<Pair<String, String>> = emptyList()): String {
+    private suspend fun fetchText(
+        path: String,
+        query: List<Pair<String, String>> = emptyList(),
+        method: String = "GET",
+        body: String? = null,
+    ): String {
         val url = baseUrl.toHttpUrl().newBuilder().apply {
             path.split('/').filter { it.isNotEmpty() }.forEach(::addPathSegment)
             query.forEach { (name, value) -> addQueryParameter(name, value) }
         }.build()
 
         suspend fun request(token: String): Pair<Int, String> = withContext(Dispatchers.IO) {
-            val request = Request.Builder().url(url).header("Authorization", "Bearer $token").build()
+            val request = Request.Builder().url(url).header("Authorization", "Bearer $token").apply {
+                if (method == "GET") get() else post((body ?: "").toRequestBody("application/json".toMediaType()))
+            }.build()
             client.newCall(request).execute().use { it.code to it.body.string() }
         }
 
@@ -130,12 +150,48 @@ class GmailClient(
                 .filter { it.name.equals("authentication-results", ignoreCase = true) }
                 .map { it.value }
                 .filter { Regex("""^\s*mx\.google\.com\s*;""", RegexOption.IGNORE_CASE).containsMatchIn(it) },
+            threadId = message.threadId,
+            messageId = message.payload.header("Message-ID"),
+            references = message.payload.header("References"),
+            replyTo = message.payload.header("Reply-To"),
         )
     }
 
     override suspend fun hasCorrespondence(address: String, excludingMessageId: String): Boolean {
         val list = fetch<MessageList>("messages", listOf("q" to "{from:\"$address\" to:\"$address\"}", "maxResults" to "2"))
         return list.messages.orEmpty().any { it.id != excludingMessageId }
+    }
+
+    override suspend fun trash(id: String) {
+        fetchText("messages/$id/trash", method = "POST")
+    }
+
+    override suspend fun archive(id: String) {
+        fetchText("messages/$id/modify", method = "POST", body = buildJsonObject { putJsonArray("removeLabelIds") { add("INBOX") } }.toString())
+    }
+
+    override suspend fun move(id: String, label: MailLabel) {
+        val body = buildJsonObject {
+            putJsonArray("addLabelIds") { add(label.id) }
+            putJsonArray("removeLabelIds") { add("INBOX") }
+        }
+        fetchText("messages/$id/modify", method = "POST", body = body.toString())
+    }
+
+    override suspend fun moveTargets(): List<MailLabel> {
+        val own = fetch<LabelList>("labels").labels.orEmpty()
+            .filter { it.type == "user" }
+            .map { MailLabel(it.id, it.name) }
+            .sortedBy { it.name.lowercase() }
+        return own + MailLabel("SPAM", "Spam")
+    }
+
+    override suspend fun send(message: OutgoingMessage) {
+        val body = buildJsonObject {
+            put("raw", base64UrlEncode(Mime.raw(message).toByteArray()))
+            message.threadId?.let { put("threadId", it) }
+        }
+        fetchText("messages/send", method = "POST", body = body.toString())
     }
 
     /** The signed-in account's own address. */

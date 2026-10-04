@@ -2,7 +2,14 @@ package com.ospfranco.safemail
 
 import android.content.Intent
 import android.graphics.Bitmap
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.performTextClearance
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.junit4.createEmptyComposeRule
@@ -44,9 +51,11 @@ class SafemailUiTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val device = UiDevice.getInstance(instrumentation)
 
-    private fun launch() {
+    private fun launch(signedOut: Boolean = false) {
         val context = instrumentation.targetContext
-        scenario = ActivityScenario.launch(Intent(context, MainActivity::class.java).putExtra(Demo.EXTRA, true))
+        scenario = ActivityScenario.launch(
+            Intent(context, MainActivity::class.java).putExtra(Demo.EXTRA, true).putExtra(Demo.EXTRA_SIGNED_OUT, signedOut),
+        )
     }
 
     @After
@@ -65,14 +74,20 @@ class SafemailUiTest {
     }
 
     @Test
-    fun inboxListsDemoMessagesAndSignsOut() {
+    fun inboxListsDemoMessagesWithAPencilAndSettingsButNoSignOut() {
         launch()
         waitForTag("message-demo-1", 10_000)
         compose.onNodeWithText("demo@example.com").assertIsDisplayed()
         compose.onNodeWithTag("message-demo-2").assertIsDisplayed()
+        compose.onNodeWithTag("new-message").assertIsDisplayed()
+        compose.onNodeWithTag("settings-button").assertIsDisplayed()
+        assert(compose.onAllNodesWithTag("sign-out").fetchSemanticsNodes().isEmpty()) { "signing out lives in the settings now" }
         screenshot("inbox")
 
-        compose.onNodeWithTag("sign-out").performClick()
+        // Signing out and back in, via the settings.
+        compose.onNodeWithTag("settings-button").performClick()
+        waitForTag("settings-sign-out", 5_000)
+        compose.onNodeWithTag("settings-sign-out").performClick()
         waitForTag("sign-in", 5_000)
         compose.onNodeWithTag("sign-in").performClick()
         waitForTag("message-demo-1", 5_000)
@@ -178,12 +193,211 @@ class SafemailUiTest {
         compose.onNodeWithTag("settings-sign-out").performClick()
         // Back on the inbox, now signed out.
         waitForTag("sign-in", 5_000)
-        assert(compose.onAllNodesWithTag("sign-out").fetchSemanticsNodes().isEmpty())
+        assert(compose.onAllNodesWithTag("new-message").fetchSemanticsNodes().isEmpty()) { "nothing can be sent while signed out" }
 
         // Signed out, the settings screen still opens but offers no sign out.
         compose.onNodeWithTag("settings-button").performClick()
         waitForTag("javascript-toggle", 5_000)
         assert(compose.onAllNodesWithTag("settings-sign-out").fetchSemanticsNodes().isEmpty())
         screenshot("settings-signed-out")
+    }
+
+    // Floating action bar and compose
+
+    private fun openMessage(id: String) {
+        waitForTag("message-$id", 10_000)
+        compose.onNodeWithTag("message-$id").performClick()
+        waitForTag("action-archive", 10_000)
+    }
+
+    private fun assertBackOnInbox(without: String, notice: String) {
+        waitForTag("notice", 5_000)
+        compose.onNodeWithTag("notice").assertTextEquals(notice)
+        waitForTag("new-message", 5_000)
+        assert(compose.onAllNodesWithTag("message-$without").fetchSemanticsNodes().isEmpty()) { "$without is still in the inbox" }
+    }
+
+    @Test
+    fun theEmailHasAFloatingBarWithFourButtons() {
+        launch()
+        openMessage("demo-2")
+        for (tag in listOf("action-delete", "action-archive", "action-move", "action-reply")) {
+            compose.onNodeWithTag(tag).assertIsDisplayed()
+        }
+        waitForTag("security-tab")
+        screenshot("message-scanned")
+    }
+
+    @Test
+    fun archiveTakesTheEmailOutOfTheInbox() {
+        launch()
+        openMessage("demo-1")
+        compose.onNodeWithTag("action-archive").performClick()
+        assertBackOnInbox(without = "demo-1", notice = "Archived")
+        compose.onNodeWithTag("message-demo-2").assertIsDisplayed()
+    }
+
+    @Test
+    fun deleteMovesTheEmailToTrash() {
+        launch()
+        openMessage("demo-2")
+        compose.onNodeWithTag("action-delete").performClick()
+        assertBackOnInbox(without = "demo-2", notice = "Moved to Trash")
+        compose.onNodeWithTag("message-demo-1").assertIsDisplayed()
+    }
+
+    @Test
+    fun moveOffersTheLabelsAndSpam() {
+        launch()
+        openMessage("demo-1")
+        compose.onNodeWithTag("action-move").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithText("Work").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("Receipts").assertIsDisplayed()
+        compose.onNodeWithText("Spam").assertIsDisplayed()
+        screenshot("move-chooser")
+        compose.onNodeWithText("Work").performClick()
+        assertBackOnInbox(without = "demo-1", notice = "Moved to Work")
+    }
+
+    @Test
+    fun cancellingMoveLeavesTheEmailWhereItIs() {
+        launch()
+        openMessage("demo-1")
+        compose.onNodeWithTag("action-move").performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithText("Work").fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithText("Cancel").performClick()
+        compose.onNodeWithTag("action-move").assertIsDisplayed()
+        assert(compose.onAllNodesWithTag("notice").fetchSemanticsNodes().isEmpty())
+    }
+
+    @Test
+    fun replyOpensAPrefilledComposeScreenAndSends() {
+        launch()
+        openMessage("demo-1")
+        compose.onNodeWithTag("action-reply").performClick()
+        waitForTag("compose-to", 5_000)
+        compose.onNodeWithText("Reply").assertIsDisplayed()
+        compose.onNodeWithTag("compose-to").assertTextContains("hello@example.com")
+        compose.onNodeWithTag("compose-subject").assertTextContains("Re: Welcome to Safemail")
+
+        compose.onNodeWithTag("compose-body").performTextInput("Thanks for the welcome!")
+        screenshot("compose")
+        compose.onNodeWithTag("compose-send").assertIsEnabled()
+        compose.onNodeWithTag("compose-send").performClick()
+
+        // Back on the email, with a confirmation.
+        waitForTag("action-reply", 5_000)
+        waitForTag("notice", 5_000)
+        compose.onNodeWithTag("notice").assertTextEquals("Message sent")
+    }
+
+    @Test
+    fun sendNeedsAValidRecipient() {
+        launch()
+        openMessage("demo-1")
+        compose.onNodeWithTag("action-reply").performClick()
+        waitForTag("compose-to", 5_000)
+        compose.onNodeWithTag("compose-send").assertIsEnabled()
+
+        compose.onNodeWithTag("compose-to").performTextClearance()
+        compose.onNodeWithTag("compose-send").assertIsNotEnabled()
+
+        compose.onNodeWithTag("compose-to").performTextInput("someone@example.org")
+        compose.onNodeWithTag("compose-send").assertIsEnabled()
+    }
+
+    // Intro
+
+    @Test
+    fun firstLaunchShowsTheIntroBeforeSignIn() {
+        launch(signedOut = true)
+        waitForTag("intro-continue", 10_000)
+        compose.onNodeWithText("Welcome to safemail").assertIsDisplayed()
+        compose.onNodeWithTag("intro-preview").assertIsDisplayed()
+        compose.onNodeWithText("Open an email").assertIsDisplayed()
+        compose.onNodeWithText("See the verdict").assertIsDisplayed()
+        compose.onNodeWithText("Tap with confidence").assertIsDisplayed()
+        compose.onNodeWithTag("intro-google-note").assertTextContains("sign in with your Google account", substring = true)
+        // Not signed in yet: no sign-in button until the user continues.
+        assert(compose.onAllNodesWithTag("sign-in").fetchSemanticsNodes().isEmpty())
+        screenshot("intro")
+
+        compose.onNodeWithTag("intro-continue").performClick()
+        waitForTag("sign-in", 5_000)
+        assert(compose.onAllNodesWithText("Welcome to safemail").fetchSemanticsNodes().isEmpty())
+
+        compose.onNodeWithTag("sign-in").performClick()
+        waitForTag("message-demo-1", 5_000)
+    }
+
+    @Test
+    fun signedInUsersNeverSeeTheIntro() {
+        launch()
+        waitForTag("message-demo-1", 10_000)
+        assert(compose.onAllNodesWithText("Welcome to safemail").fetchSemanticsNodes().isEmpty())
+        // ...even after signing out.
+        compose.onNodeWithTag("settings-button").performClick()
+        waitForTag("settings-sign-out", 5_000)
+        compose.onNodeWithTag("settings-sign-out").performClick()
+        waitForTag("sign-in", 5_000)
+        assert(compose.onAllNodesWithText("Welcome to safemail").fetchSemanticsNodes().isEmpty())
+    }
+
+    // The pencil: a new email
+
+    @Test
+    fun thePencilOpensAnEmptyComposeScreenAndSends() {
+        launch()
+        waitForTag("new-message", 10_000)
+        compose.onNodeWithTag("new-message").performClick()
+        waitForTag("compose-to", 5_000)
+        compose.onNodeWithText("New message").assertIsDisplayed()
+        compose.onNodeWithTag("compose-send").assertIsNotEnabled() // no recipient yet
+
+        compose.onNodeWithTag("compose-to").performTextInput("friend@example.org")
+        compose.onNodeWithTag("compose-subject").performTextInput("Lunch?")
+        compose.onNodeWithTag("compose-body").performTextInput("Are you free on Friday?")
+        screenshot("compose-new")
+        compose.onNodeWithTag("compose-send").assertIsEnabled()
+        compose.onNodeWithTag("compose-send").performClick()
+
+        // Back on the inbox, with a confirmation.
+        waitForTag("notice", 5_000)
+        compose.onNodeWithTag("notice").assertTextEquals("Message sent")
+        compose.onNodeWithTag("new-message").assertIsDisplayed()
+    }
+
+    @Test
+    fun signedOutThereIsNoPencil() {
+        launch(signedOut = true)
+        waitForTag("intro-continue", 10_000)
+        compose.onNodeWithTag("intro-continue").performClick()
+        waitForTag("sign-in", 5_000)
+        assert(compose.onAllNodesWithTag("new-message").fetchSemanticsNodes().isEmpty())
+        compose.onNodeWithTag("settings-button").assertIsDisplayed()
+    }
+
+    // The security tab while scanning
+
+    @Test
+    fun theTabShowsASpinnerWhileTheEmailIsScannedThenTheVerdict() {
+        launch()
+        openMessage("demo-1")
+
+        // Right away: a tab with a spinner that doesn't open anything yet.
+        waitForTag("security-scanning", 5_000)
+        compose.onNodeWithTag("security-scanning").assertContentDescriptionEquals("Security: scanning links")
+        compose.onNodeWithTag("security-scanning").assertIsNotEnabled()
+        compose.onNodeWithText("Scanning links…").assertIsDisplayed()
+        screenshot("security-scanning")
+        compose.onNodeWithTag("security-scanning").performClick()
+        assert(compose.onAllNodesWithTag("security-close").fetchSemanticsNodes().isEmpty()) { "the panel has nothing to show yet" }
+
+        // Then the same tab turns into the verdict, and opens.
+        waitForTag("security-tab")
+        assert(compose.onAllNodesWithTag("security-scanning").fetchSemanticsNodes().isEmpty())
+        compose.onNodeWithTag("security-tab").assertIsEnabled()
+        compose.onNodeWithTag("security-tab").performClick()
+        waitForTag("security-close", 5_000)
     }
 }

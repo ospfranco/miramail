@@ -1,8 +1,9 @@
 import SwiftUI
 
 /// A tab on the right edge that opens a slide-in panel with every check and per-link result.
+/// While the email is still being scanned (`evaluation` is nil) the tab shows a spinner and does nothing.
 struct SecurityPanel: View {
-    let evaluation: SecurityEvaluation
+    let evaluation: SecurityEvaluation?
     let links: [ScannedLink]
 
     @State private var open = false
@@ -20,10 +21,12 @@ struct SecurityPanel: View {
                     .allowsHitTesting(open)
                     .onTapGesture { open = false }
 
-                panel(bottomInset: geometry.safeAreaInsets.bottom)
-                    .frame(width: panelWidth)
-                    .offset(x: open ? 0 : panelWidth + 24) // + room for the shadow
-                    .accessibilityHidden(!open)
+                if let evaluation {
+                    panel(evaluation, bottomInset: geometry.safeAreaInsets.bottom)
+                        .frame(width: panelWidth)
+                        .offset(x: open ? 0 : panelWidth + 24) // + room for the shadow
+                        .accessibilityHidden(!open)
+                }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .trailing)
             .animation(.easeInOut(duration: 0.22), value: open)
@@ -31,24 +34,30 @@ struct SecurityPanel: View {
     }
 
     private var tab: some View {
-        Button { open = true } label: {
+        Button { if evaluation != nil { open = true } } label: {
             VStack(spacing: Spacing.one) {
                 Text("🛡️").font(.system(size: 14))
-                Text(evaluation.verdict.glyph).font(.system(size: 14, weight: .bold)).foregroundStyle(.white)
+                if let evaluation {
+                    Text(evaluation.verdict.glyph).font(.system(size: 14, weight: .bold)).foregroundStyle(.white)
+                } else {
+                    ProgressView().controlSize(.small).tint(.white).frame(height: 18)
+                }
             }
             .frame(width: 32)
             .padding(.vertical, Spacing.three)
             .background(
-                evaluation.verdict.color,
+                evaluation?.verdict.color ?? Theme.scanning,
                 in: UnevenRoundedRectangle(topLeadingRadius: Spacing.three, bottomLeadingRadius: Spacing.three)
             )
             .shadow(color: .black.opacity(0.2), radius: 4, x: -1, y: 1)
+            .animation(.easeInOut(duration: 0.2), value: evaluation)
         }
-        .accessibilityLabel("Security: \(evaluation.summary)")
-        .accessibilityIdentifier("security-tab")
+        .accessibilityLabel(evaluation.map { "Security: \($0.summary)" } ?? "Security: scanning links")
+        // Tests (and anything else that wants to know) can tell the two states apart.
+        .accessibilityIdentifier(evaluation == nil ? "security-scanning" : "security-tab")
     }
 
-    private func panel(bottomInset: CGFloat) -> some View {
+    private func panel(_ evaluation: SecurityEvaluation, bottomInset: CGFloat) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.three) {
                 HStack {

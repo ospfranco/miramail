@@ -14,16 +14,20 @@ private struct SafariView: UIViewControllerRepresentable {
 }
 
 struct MessageView: View {
+    let session: SessionModel
     let settings: AppSettings
     @State private var model: MessageModel
+    @State private var moveTargets: [MailLabel] = []
+    @State private var showMoveChooser = false
     @State private var pendingLink: ScannedLink?
     @State private var browser: BrowserDestination?
     @State private var unopenableLink: String?
-    @Environment(\.openURL) private var openURL
+    @Environment(\.dismiss) private var dismiss
 
-    init(id: String, services: Services, settings: AppSettings) {
+    init(id: String, session: SessionModel, settings: AppSettings) {
+        self.session = session
         self.settings = settings
-        _model = State(initialValue: MessageModel(id: id, services: services))
+        _model = State(initialValue: MessageModel(id: id, services: session.services))
     }
 
     var body: some View {
@@ -49,6 +53,12 @@ struct MessageView: View {
             Button("Open anyway", role: .destructive) { open(link.url) }
         } message: { link in
             Text(([link.host.isEmpty ? link.url : link.host] + link.checks.filter { $0.verdict != .safe }.map(\.detail)).joined(separator: "\n\n"))
+        }
+        .confirmationDialog("Move to", isPresented: $showMoveChooser, titleVisibility: .visible) {
+            ForEach(moveTargets) { label in
+                Button(label.name) { perform(.move(label)) }
+            }
+            Button("Cancel", role: .cancel) {}
         }
         .alert("Can't open this link", isPresented: Binding(get: { unopenableLink != nil }, set: { if !$0 { unopenableLink = nil } })) {
             Button("OK", role: .cancel) {}
@@ -82,9 +92,42 @@ struct MessageView: View {
                 allowJavaScript: settings.allowEmailJavaScript
             )
         }
+        .safeAreaInset(edge: .bottom) {
+            if let reply = model.reply {
+                ActionBar(
+                    isBusy: model.isBusy,
+                    reply: reply,
+                    onDelete: { perform(.trash) },
+                    onArchive: { perform(.archive) },
+                    onMove: chooseMoveTarget
+                )
+            }
+        }
         .overlay {
-            if let evaluation = model.evaluation, let links = model.links {
-                SecurityPanel(evaluation: evaluation, links: links)
+            // The tab is there from the start, with a spinner until the scan is done.
+            SecurityPanel(evaluation: model.evaluation, links: model.links ?? [])
+        }
+    }
+
+    /// Runs an action and, when it worked, leaves the email: it is no longer in the inbox.
+    private func perform(_ action: MessageAction) {
+        Task {
+            if await model.perform(action) {
+                session.removeMessage(model.id, notice: action.notice)
+                dismiss()
+            } else {
+                session.showNotice(action.failureNotice)
+            }
+        }
+    }
+
+    private func chooseMoveTarget() {
+        Task {
+            do {
+                moveTargets = try await model.loadMoveTargets()
+                showMoveChooser = true
+            } catch {
+                session.showNotice("Couldn't load your labels")
             }
         }
     }

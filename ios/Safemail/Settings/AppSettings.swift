@@ -7,6 +7,7 @@ import Observation
 final class AppSettings {
     private enum Key {
         static let allowEmailJavaScript = "allowEmailJavaScript"
+        static let hasSeenIntro = "hasSeenIntro"
     }
 
     private let defaults: UserDefaults
@@ -17,8 +18,14 @@ final class AppSettings {
         didSet { defaults.set(allowEmailJavaScript, forKey: Key.allowEmailJavaScript) }
     }
 
+    /// Whether the intro screen has been shown (or the user signed in without it), so it only appears once.
+    var hasSeenIntro: Bool {
+        didSet { defaults.set(hasSeenIntro, forKey: Key.hasSeenIntro) }
+    }
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         allowEmailJavaScript = defaults.bool(forKey: Key.allowEmailJavaScript)
+        hasSeenIntro = defaults.bool(forKey: Key.hasSeenIntro)
     }
 }
