@@ -1,0 +1,3 @@
+app_identifier("com.ospfranco.trustmail") # iOS bundle ID
+package_name("com.ospfranco.trustmail")   # Android application ID
+team_id("24CMR7378R")                    # Apple Developer team (also in ios/ExportOptions.plist)

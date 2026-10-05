@@ -20,5 +20,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "safemail"
+rootProject.name = "trustmail"
 include(":app")

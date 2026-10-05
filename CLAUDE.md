@@ -1,6 +1,6 @@
-# safemail
+# Trustmail
 
-Safemail is a mail client that checks every email for phishing before the user acts on it: sender authentication (SPF/DKIM/DMARC as reported by Gmail), and per-link checks (look-alike domains, mismatched link text, DNS tampering, TLS certificate, domain age).
+Trustmail is a mail client that checks every email for phishing before the user acts on it: sender authentication (SPF/DKIM/DMARC as reported by Gmail), and per-link checks (look-alike domains, mismatched link text, DNS tampering, TLS certificate, domain age).
 
 It ships as two **native** apps. Native iOS and Android only; there is no web target.
 
@@ -10,7 +10,7 @@ It ships as two **native** apps. Native iOS and Android only; there is no web ta
 | `android/` | Android app | Kotlin 2.4, Jetpack Compose, AGP 9.4, Gradle 9.8, minSdk 26 / target 37, Play Services Auth |
 | `scripts/` | Shared tooling | |
 
-Both apps use the bundle / package id `com.ospfranco.safemail`.
+Both apps use the bundle / package id `com.ospfranco.trustmail`.
 
 ## The rule: every change goes into both apps, and is tested on both
 
@@ -28,7 +28,7 @@ Don't report work as done after only building. Run the tests below.
 
 The logic is ported line for line, so a change in one file has a twin in the other app.
 
-| Concern | iOS (`ios/Safemail/`) | Android (`android/app/src/main/kotlin/com/ospfranco/safemail/`) |
+| Concern | iOS (`ios/Trustmail/`) | Android (`android/app/src/main/kotlin/com/ospfranco/trustmail/`) |
 |---|---|---|
 | Verdicts, check kinds, labels | `Security/Verdict.swift` | `security/Verdict.kt` |
 | Link checks (DNS, TLS, domain age, caches) | `Security/LinkChecks.swift` | `security/LinkChecks.kt` |
@@ -43,7 +43,7 @@ The logic is ported line for line, so a change in one file has a twin in the oth
 | Google sign-in | `Mail/GoogleAuth.swift` | `mail/GoogleAuth.kt` |
 | Mail/auth interfaces and models | `Mail/MailModels.swift` | `mail/MailModels.kt` |
 | Demo data (debug only) | `Mail/DemoMail.swift` | `mail/DemoMail.kt` |
-| Intro screen (shown once, before the first sign-in) | `UI/IntroView.swift`, `RootView` in `SafemailApp.swift`, asset `IntroPreview` | `ui/IntroScreen.kt`, gating in `MainActivity.kt`, `res/drawable-nodpi/intro_preview.png` |
+| Intro screen (shown once, before the first sign-in) | `UI/IntroView.swift`, `RootView` in `TrustmailApp.swift`, asset `IntroPreview` | `ui/IntroScreen.kt`, gating in `MainActivity.kt`, `res/drawable-nodpi/intro_preview.png` |
 | Floating action bar (delete / archive / move / reply) and notice banner | `UI/ActionBar.swift` | `ui/ActionBar.kt` |
 | Compose screen (from the inbox pencil, or the reply button) | `UI/ComposeView.swift` | `ui/ComposeScreen.kt` |
 | Building the outgoing email (RFC 822) | `Mail/Mime.swift` | `mail/Mime.kt` |
@@ -51,13 +51,13 @@ The logic is ported line for line, so a change in one file has a twin in the oth
 | Email web view (CSP, link scan script, badges) | `UI/EmailBody.swift` | `ui/EmailBody.kt` |
 | Security panel and its tab (grey with a spinner while the email is scanned, then the verdict) | `UI/SecurityPanel.swift` | `ui/SecurityPanel.kt` |
 | Settings (store + screen; the screen also has Sign out, shown only when signed in) | `Settings/AppSettings.swift`, `UI/SettingsView.swift` | `settings/AppSettings.kt`, `ui/SettingsScreen.kt` |
-| Splash screen (the word "safemail" on the app background, light/dark) | `LaunchScreen.storyboard` | `res/drawable/splash_icon.xml` (+ `splash_*` colors, `Theme.Safemail.Starting`) |
+| Splash screen (the word "Trustmail" on the app background, light/dark) | `LaunchScreen.storyboard` | `res/drawable/splash_icon.xml` (+ `splash_*` colors, `Theme.Trustmail.Starting`) |
 | App icon (a smiley on an envelope) | `Assets.xcassets/AppIcon.appiconset/icon-1024.png` | `res/drawable-nodpi/ic_launcher_{foreground,monochrome}.png`, `res/mipmap-anydpi-v26/ic_launcher.xml`, color `ic_launcher_background` |
 | Link scan when email JavaScript is off | `UI/LinkInspector.swift` (iOS only, see below) | not needed |
 | View models | `UI/Models.swift` | `ui/ViewModels.kt` |
 | Theme / text styles / spacing | `UI/Theme.swift` | `ui/Theme.kt` |
 
-Tests mirror each other too: `ios/SafemailTests/*Tests.swift` and `android/app/src/test/kotlin/com/ospfranco/safemail/*Test.kt` cover the same cases with the same expected strings. UI tests: `ios/SafemailUITests/` and `android/app/src/androidTest/`.
+Tests mirror each other too: `ios/TrustmailTests/*Tests.swift` and `android/app/src/test/kotlin/com/ospfranco/trustmail/*Test.kt` cover the same cases with the same expected strings. UI tests: `ios/TrustmailUITests/` and `android/app/src/androidTest/`.
 
 The Android splash is a vector converted from the glyph outlines of Roboto SemiBold (the font and weight of the sign-in title), centered in the 288dp box the system uses for splash icons. If the title style changes, regenerate it with `fontTools` from the Roboto file on an emulator (`/system/fonts/Roboto-Regular.ttf`), and update the iOS storyboard label to match.
 
@@ -79,7 +79,7 @@ Shown once, before anyone has signed in: a preview image, three steps, and a not
 
 The inbox has a settings button (gear, top right) opening a settings screen with this toggle. Both platforms behave the same:
 
-- **Off (default):** scripts inside an email never run. **On:** inline and https scripts in the email may run. Safemail's own scanning script runs either way. The change applies the next time an email is opened.
+- **Off (default):** scripts inside an email never run. **On:** inline and https scripts in the email may run. Trustmail's own scanning script runs either way. The change applies the next time an email is opened.
 - The CSP follows the setting on both platforms (`EmailHtml.csp(allowScripts:)`: `script-src 'unsafe-inline' https:` is added only when on).
 - **iOS** also sets `WKWebpagePreferences.allowsContentJavaScript` from the setting. **Android** can't switch page JavaScript off while still running our own scan script, so its WebView keeps JavaScript enabled and relies on the CSP.
 - **Every link is reported the same way in both modes**, including `javascript:` links. This needs extra work on iOS: with scripting off, WebKit deletes the `href` of `javascript:` links while parsing, so the visible web view cannot see them. `LinkInspector` therefore loads the email in a hidden web view (scripting on, CSP `default-src 'none'` so nothing runs or loads) and the scan uses its link list. The one visible difference left: on iOS with the setting off, a `javascript:` link has no badge and can't be tapped, while Android shows a badge and the unsafe-link warning.
@@ -88,11 +88,11 @@ The inbox has a settings button (gear, top right) opening a settings screen with
 
 ### Shared data (must stay identical)
 
-- **Public Suffix List**: `ios/Safemail/Resources/public_suffix_list.dat` and `android/app/src/main/assets/public_suffix_list.dat` are generated by `scripts/update-public-suffix-list.sh`. Never edit them by hand; re-run the script and commit both.
+- **Public Suffix List**: `ios/Trustmail/Resources/public_suffix_list.dat` and `android/app/src/main/assets/public_suffix_list.dat` are generated by `scripts/update-public-suffix-list.sh`. Never edit them by hand; re-run the script and commit both.
 - **Intro preview image**: `ios/.../IntroPreview.imageset/intro-preview.png` and `android/.../drawable-nodpi/intro_preview.png` are crops of the `message-scanned` UI-test screenshots (`ios-message-scanned.png`, `android-message-scanned.png`), made by `scripts/generate-intro-preview.py IOS.png ANDROID.png` (needs Pillow). Re-run it when the email screen changes.
-- **Well-known domains**: `scripts/known-domains.txt` is the source of truth (about 900 big names, with extra depth for Germany, Austria and Switzerland); `scripts/update-known-domains.py` validates it and writes `ios/Safemail/Resources/known_domains.txt` and `android/app/src/main/assets/known_domains.txt`. Never edit those two by hand. For a listed domain (or anything under it) the apps skip the domain-age check *and* its Certificate Transparency request, and show "<domain> is a well-known domain, so its age isn't checked." as a green check. Matching is exact on the registrable domain, so look-alikes never match. **Never list a domain where outsiders can host content or get a subdomain** (blogspot.com, github.io, herokuapp.com, amazonaws.com, sharepoint.com, ...) or a URL shortener; the script refuses them. Run `python3 scripts/update-known-domains.py --check-dns` after editing: an entry that no longer resolves may be retired and re-registrable by an attacker, so remove it.
+- **Well-known domains**: `scripts/known-domains.txt` is the source of truth (about 900 big names, with extra depth for Germany, Austria and Switzerland); `scripts/update-known-domains.py` validates it and writes `ios/Trustmail/Resources/known_domains.txt` and `android/app/src/main/assets/known_domains.txt`. Never edit those two by hand. For a listed domain (or anything under it) the apps skip the domain-age check *and* its Certificate Transparency request, and show "<domain> is a well-known domain, so its age isn't checked." as a green check. Matching is exact on the registrable domain, so look-alikes never match. **Never list a domain where outsiders can host content or get a subdomain** (blogspot.com, github.io, herokuapp.com, amazonaws.com, sharepoint.com, ...) or a URL shortener; the script refuses them. Run `python3 scripts/update-known-domains.py --check-dns` after editing: an entry that no longer resolves may be retired and re-registrable by an attacker, so remove it.
 - **App icon**: all icon images are generated from one design by `scripts/generate-app-icon.py` (needs Pillow). Change the design there and re-run it; never edit the PNGs by hand. Keep `BACKGROUND` in the script equal to the `ic_launcher_background` color.
-- **Test fixtures**: `domains.jsonl`, `leaf.der.b64`, `cn.der.b64` exist in both `ios/SafemailTests/Fixtures/` and `android/app/src/test/resources/`. Change both or neither. (`domains.jsonl` holds `tldts` reference answers from the original app; the certificates were generated with `openssl`.)
+- **Test fixtures**: `domains.jsonl`, `leaf.der.b64`, `cn.der.b64` exist in both `ios/TrustmailTests/Fixtures/` and `android/app/src/test/resources/`. Change both or neither. (`domains.jsonl` holds `tldts` reference answers from the original app; the certificates were generated with `openssl`.)
 - **Colors, copy, thresholds**: verdict colors, check strings and constants such as `NEW_DOMAIN_DAYS` are duplicated by design. Grep for the other platform's twin before changing one.
 
 ## Build and test
@@ -106,16 +106,16 @@ export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
 cd ios
 
 # Build
-xcodebuild -project Safemail.xcodeproj -scheme Safemail -destination 'platform=iOS Simulator,name=iPhone 17' build
+xcodebuild -project Trustmail.xcodeproj -scheme Trustmail -destination 'platform=iOS Simulator,name=iPhone 17' build
 
 # Unit tests (Swift Testing) + UI tests (XCUITest)
-xcodebuild -project Safemail.xcodeproj -scheme Safemail -destination 'platform=iOS Simulator,name=iPhone 17' test
+xcodebuild -project Trustmail.xcodeproj -scheme Trustmail -destination 'platform=iOS Simulator,name=iPhone 17' test
 
 # Unit tests only
-xcodebuild -project Safemail.xcodeproj -scheme Safemail -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:SafemailTests test
+xcodebuild -project Trustmail.xcodeproj -scheme Trustmail -destination 'platform=iOS Simulator,name=iPhone 17' -only-testing:TrustmailTests test
 ```
 
-The Xcode project uses folder-synchronised groups: add a Swift file under `ios/Safemail/` (or `SafemailTests/`) and it is picked up automatically. The project file is hand-maintained (no XcodeGen).
+The Xcode project uses folder-synchronised groups: add a Swift file under `ios/Trustmail/` (or `TrustmailTests/`) and it is picked up automatically. The project file is hand-maintained (no XcodeGen).
 
 ### Android
 
@@ -140,8 +140,8 @@ Versions live in `android/gradle/libs.versions.toml`.
 
 Debug builds can run against canned mail, which is what the UI tests use:
 
-- iOS: launch with the `-demo` argument (`xcrun simctl launch <device> com.ospfranco.safemail -demo`). Add `-demo-signed-out` to start signed out (to see the intro and the sign-in screen).
-- Android: `adb shell am start -n com.ospfranco.safemail/.MainActivity --ez demo true`. Add `--ez demo_signed_out true` to start signed out.
+- iOS: launch with the `-demo` argument (`xcrun simctl launch <device> com.ospfranco.trustmail -demo`). Add `-demo-signed-out` to start signed out (to see the intro and the sign-in screen).
+- Android: `adb shell am start -n com.ospfranco.trustmail/.MainActivity --ez demo true`. Add `--ez demo_signed_out true` to start signed out.
 
 The demo mailbox pauses 1.5 seconds in every scan (in the sender-history lookup), so the grey "scanning" tab stays up long enough for UI tests to see it (accessibility id / test tag `security-scanning`; once the scan is done it becomes `security-tab`). It also remembers what you do: archived, deleted or moved emails leave the inbox, and sent emails are kept. Notices stay up for 8 seconds in demo runs (2.5 otherwise) so UI tests can find them.
 
@@ -160,5 +160,8 @@ The demo inbox has a plain-text email from a known, verified sender and an HTML 
 
 ## Signing / release notes
 
-- **Android** debug and release builds are signed with the standard React Native debug keystore at `android/app/debug.keystore` (SHA-1 `5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25`), so the Android OAuth client already registered for `com.ospfranco.safemail` keeps working. Create a real release key and register its SHA-1 before any public release.
-- **iOS** uses automatic signing with no team set. Pick a development team in Xcode to run on a device. Google Sign-In uses the iOS client `760054649215-log9rqaj7h239g6lr9qsink2adnla6i2` and the reversed URL scheme in `ios/Info.plist`.
+How to publish to TestFlight and Google Play (accounts, Google OAuth, store forms, commands) is in **`RELEASING.md`**. Releases run through fastlane (`fastlane/Fastfile`): `bundle exec fastlane beta` tests, builds and uploads both apps, taking the next build numbers from TestFlight and Google Play (Android reads `-PversionCode`). Credentials live in the git-ignored `fastlane/.env` and `~/.trustmail`; never commit them, and never run an upload lane unless the user asks.
+
+- **Android build types.** `release` is the APK to sideload to friends: signed with the standard React Native debug keystore at `android/app/debug.keystore` (SHA-1 `5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25`) on purpose, because that is the SHA-1 registered with the Google OAuth client, so Google sign-in works. That key is public: never put that build on a store. `play` is the Google Play build (`./gradlew :app:bundlePlay`), signed with the private upload key from `android/keystore.properties` (git-ignored; key file in `~/.trustmail`, never committed). Google re-signs Play builds with its own key, so Google sign-in from Play needs *that* key's SHA-1 registered too (see `RELEASING.md`).
+- **iOS** uses automatic signing with the team set in the Xcode project. Google Sign-In uses an iOS OAuth client tied to the bundle ID plus its reversed URL scheme in `ios/Info.plist`. **TODO(rename):** the app was renamed to Trustmail (`com.ospfranco.trustmail`), but the client ID in `GoogleAuth.swift` and the scheme in `Info.plist` are still those of the OLD bundle ID; Google sign-in needs new OAuth clients first (see `RELEASING.md`, "Google sign-in after the rename").
+- Build numbers must increase with every store upload (`CURRENT_PROJECT_VERSION` on iOS, `versionCode` on Android).

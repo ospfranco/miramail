@@ -2,7 +2,7 @@
 """
 Validates scripts/known-domains.txt and copies it, cleaned up, into both apps:
 
-  ios/Safemail/Resources/known_domains.txt
+  ios/Trustmail/Resources/known_domains.txt
   android/app/src/main/assets/known_domains.txt
 
 These are the very well known domains (google.com, allianz.de, admin.ch, ...) for which the apps skip the
@@ -24,7 +24,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / "scripts/known-domains.txt"
 TARGETS = [
-    ROOT / "ios/Safemail/Resources/known_domains.txt",
+    ROOT / "ios/Trustmail/Resources/known_domains.txt",
     ROOT / "android/app/src/main/assets/known_domains.txt",
 ]
 

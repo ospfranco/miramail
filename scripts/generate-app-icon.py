@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 """
-Draws the Safemail app icon, a smiley face sitting on an envelope, for both apps from one design:
+Draws the Trustmail app icon, a smiley face sitting on an envelope, for both apps from one design:
 
-  ios/Safemail/Assets.xcassets/AppIcon.appiconset/icon-1024.png   full-bleed, opaque (iOS rounds the corners)
+  ios/Trustmail/Assets.xcassets/AppIcon.appiconset/icon-1024.png   full-bleed, opaque (iOS rounds the corners)
   android/app/src/main/res/drawable-nodpi/ic_launcher_foreground.png   the artwork inside the adaptive-icon safe zone
   android/app/src/main/res/drawable-nodpi/ic_launcher_monochrome.png   a one-color cut-out for themed icons
+  store/play-store-icon-512.png   the 512px icon Google Play asks for in the store listing
 
 The adaptive-icon background is the plain color `ic_launcher_background` in android/.../values/colors.xml
 (keep it equal to BACKGROUND below).
@@ -96,9 +97,14 @@ def main():
     ios = Image.new("RGBA", (1024 * SS, 1024 * SS), (*BACKGROUND, 255))
     ios.alpha_composite(artwork(1024))
     ios = finish(ios, 1024).convert("RGB")
-    ios_path = ROOT / "ios/Safemail/Assets.xcassets/AppIcon.appiconset/icon-1024.png"
+    ios_path = ROOT / "ios/Trustmail/Assets.xcassets/AppIcon.appiconset/icon-1024.png"
     ios_path.parent.mkdir(parents=True, exist_ok=True)
     ios.save(ios_path)
+
+    # Google Play listing icon: 512px, 32-bit PNG (Play applies its own corner mask)
+    store = ROOT / "store"
+    store.mkdir(exist_ok=True)
+    ios.resize((512, 512), Image.LANCZOS).convert("RGBA").save(store / "play-store-icon-512.png", optimize=True)
 
     # Android: transparent layers inside the safe zone
     res = ROOT / "android/app/src/main/res/drawable-nodpi"

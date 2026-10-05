@@ -1,18 +1,28 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
 }
 
+// The Play upload key: the key file lives outside the repo; where it is and its passwords are in the git-ignored
+// android/keystore.properties (see RELEASING.md).
+val keystoreProperties = Properties().apply {
+    val file = rootProject.file("keystore.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+
 android {
-    namespace = "com.ospfranco.safemail"
+    namespace = "com.ospfranco.trustmail"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.ospfranco.safemail"
+        applicationId = "com.ospfranco.trustmail"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
+        // fastlane passes the next Google Play version code with -PversionCode=N (see fastlane/Fastfile).
+        versionCode = (findProperty("versionCode") as String?)?.toInt() ?: 1
         versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -26,6 +36,14 @@ android {
             keyAlias = "androiddebugkey"
             keyPassword = "android"
         }
+        if (keystoreProperties.isNotEmpty()) {
+            create("upload") {
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
     }
 
     buildTypes {
@@ -33,9 +51,17 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
         release {
-            // TODO: create a real release key (and register its SHA-1 on the OAuth client).
+            // The APK to sideload to friends (`./gradlew :app:assembleRelease`). It is signed with the debug key on
+            // purpose: that key's SHA-1 is the one registered with Google, so Google sign-in works. Not for stores.
             signingConfig = signingConfigs.getByName("debug")
             isMinifyEnabled = false
+        }
+        // The Google Play build: `./gradlew :app:bundlePlay`. Same as release, but signed with the upload key.
+        // (Play re-signs what it distributes with its own key, so Google sign-in needs *that* key's SHA-1.)
+        create("play") {
+            initWith(getByName("release"))
+            matchingFallbacks += "release"
+            if (keystoreProperties.isNotEmpty()) signingConfig = signingConfigs.getByName("upload")
         }
     }
 

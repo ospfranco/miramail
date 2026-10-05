@@ -1,6 +1,6 @@
 # Future changes
 
-Known changes safemail needs that are deferred for now. Most depend on having a backend, which we don't have yet. Code that needs to change is marked with `TODO(backend)`.
+Known changes Trustmail needs that are deferred for now. Most depend on having a backend, which we don't have yet. Code that needs to change is marked with `TODO(backend)`.
 
 ## As use I want to actively request the scanning
 
@@ -8,7 +8,7 @@ We do not want to run all tests on every opened email
 
 ## Move link scanning to a backend
 
-**Where:** `runNetworkChecks` and `fetchCertificateHistory` in `ios/Safemail/Security/LinkChecks.swift` and `android/app/src/main/kotlin/com/ospfranco/safemail/security/LinkChecks.kt`, and the `TlsInspector` in the same folders. Change both apps together.
+**Where:** `runNetworkChecks` and `fetchCertificateHistory` in `ios/Trustmail/Security/LinkChecks.swift` and `android/app/src/main/kotlin/com/ospfranco/trustmail/security/LinkChecks.kt`, and the `TlsInspector` in the same folders. Change both apps together.
 
 When an email is opened, the app checks every linked host directly from the user's device:
 
@@ -51,5 +51,5 @@ Two limits to keep in mind:
 
 - **Push notifications need a backend.** Gmail's `users.watch` delivers changes to Google Cloud Pub/Sub, which a server must forward to APNs/FCM. Until then the inbox only updates when the user refreshes.
 - **Google OAuth verification.** Gmail scopes are restricted. Releasing beyond 100 test users requires Google's OAuth verification and a yearly CASA security assessment. While the app is in Testing mode, refresh tokens expire after 7 days. Note: if the backend handles email content, the CASA assessment scope grows. Sending only hostnames keeps it smaller.
-- **Release signing.** Android builds (debug and release) are signed with the standard React Native debug key, kept in `android/app/debug.keystore`. Create a real signing key before any public release, and register its SHA-1 on the Android OAuth client.
+- **Release signing.** Sideloaded Android builds use the public debug key (so the registered Google client works), which is only fine for a few friends. Google Play builds use a private upload key. See `RELEASING.md`. For a wider release, give the Android sideload build its own key too and register its SHA-1.
 - **Email charsets.** Bodies are decoded as UTF-8 only, so other charsets (e.g. ISO-8859-1) display garbled.

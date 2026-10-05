@@ -14,8 +14,19 @@ android/app/build/
 android/.kotlin/
 android/local.properties
 android/captures/
+# Play upload key: the key file lives outside the repo (~/.trustmail), its passwords here. Never commit either.
+android/keystore.properties
+*.jks
 *.hprof
 
 # IDE
 .idea/
 *.iml
+
+# fastlane
+fastlane/.env
+fastlane/report.xml
+vendor/bundle/
+.bundle/
+/build/
+*.p8

@@ -1,0 +1,200 @@
+# Release automation for trustmail. Full guide: RELEASING.md.
+#
+#   bundle exec fastlane beta                       # test both apps, then iOS -> TestFlight and Android -> Google Play
+#   bundle exec fastlane ios beta                   # iOS only
+#   bundle exec fastlane android beta track:alpha   # Android only, to closed testing
+#   bundle exec fastlane test                       # unit tests of both apps
+#   bundle exec fastlane ios build                  # make the .ipa, upload nothing
+#   bundle exec fastlane android build              # make the .aab, upload nothing
+#
+# Options:  skip_tests:true   allow_dirty:true   notes:"What's new"
+#   iOS:      groups:"Friends,Family"  wait:true  build_number:N
+#   Android:  track:internal|alpha|beta|production  status:completed|draft  version_code:N
+#
+# Build numbers need no editing: they come from TestFlight / Google Play (latest + 1) and are passed to the
+# build. The user-visible version is MARKETING_VERSION (iOS) / versionName (Android) in the project.
+
+require "shellwords"
+
+skip_docs
+
+# --- shared helpers -------------------------------------------------------------------------------------
+
+def repo_dir = File.expand_path("..", FastlaneCore::FastlaneFolder.path)
+def app_id = CredentialsManager::AppfileConfig.try_fetch_value(:app_identifier)
+def team = CredentialsManager::AppfileConfig.try_fetch_value(:team_id)
+def truthy?(value) = %w[1 true yes].include?(value.to_s.downcase)
+
+def need_env(*names)
+  missing = names.select { |name| ENV[name].to_s.strip.empty? }
+  return if missing.empty?
+  UI.user_error!("Missing #{missing.join(', ')}. Copy fastlane/.env.example to fastlane/.env and fill it in (see RELEASING.md).")
+end
+
+# Releases should come from committed code.
+def preflight(options)
+  ensure_git_status_clean unless truthy?(options[:allow_dirty])
+end
+
+# --- iOS ------------------------------------------------------------------------------------------------
+
+def ios_project = File.join(repo_dir, "ios", "Trustmail.xcodeproj")
+
+def asc_key
+  need_env("ASC_KEY_ID", "ASC_ISSUER_ID", "ASC_KEY_PATH")
+  app_store_connect_api_key(
+    key_id: ENV["ASC_KEY_ID"], issuer_id: ENV["ASC_ISSUER_ID"],
+    key_filepath: File.expand_path(ENV["ASC_KEY_PATH"]), duration: 1200, in_house: false
+  )
+end
+
+# Lets xcodebuild create the distribution certificate and profile with the API key instead of a signed-in account.
+def ios_signing_args
+  args = ["-allowProvisioningUpdates"]
+  if ENV["ASC_KEY_ID"].to_s != "" && ENV["ASC_ISSUER_ID"].to_s != "" && ENV["ASC_KEY_PATH"].to_s != ""
+    args += ["-authenticationKeyPath", Shellwords.escape(File.expand_path(ENV["ASC_KEY_PATH"])),
+             "-authenticationKeyID", ENV["ASC_KEY_ID"], "-authenticationKeyIssuerID", ENV["ASC_ISSUER_ID"]]
+  end
+  args.join(" ")
+end
+
+def ios_test
+  run_tests(
+    project: ios_project, scheme: "Trustmail", only_testing: ["TrustmailTests"],
+    devices: [ENV["IOS_SIMULATOR"] || "iPhone 17"], clean: false
+  )
+end
+
+def ios_build(build_number)
+  build_app(
+    project: ios_project, scheme: "Trustmail", configuration: "Release", clean: true,
+    export_method: "app-store",
+    output_directory: File.join(repo_dir, "build"), output_name: "Trustmail.ipa",
+    xcargs: "CURRENT_PROJECT_VERSION=#{build_number} #{ios_signing_args}",
+    export_xcargs: ios_signing_args,
+    export_options: { signingStyle: "automatic", teamID: team, manageAppVersionAndBuildNumber: false, uploadSymbols: true }
+  )
+end
+
+def ios_beta(options)
+  preflight(options)
+  key = asc_key
+  ios_test unless truthy?(options[:skip_tests])
+  build_number = (options[:build_number] || latest_testflight_build_number(api_key: key, app_identifier: app_id, initial_build_number: 0) + 1).to_i
+  UI.important("iOS build number #{build_number}")
+  ios_build(build_number)
+
+  groups = (options[:groups] || ENV["TESTFLIGHT_GROUPS"]).to_s.split(",").map(&:strip).reject(&:empty?)
+  upload_to_testflight(
+    api_key: key, ipa: lane_context[SharedValues::IPA_OUTPUT_PATH],
+    changelog: options[:notes] || "Build #{build_number}",
+    # Sending to external groups needs the build processed first, so wait then.
+    skip_waiting_for_build_processing: groups.empty? && !truthy?(options[:wait]),
+    distribute_external: !groups.empty?, groups: groups.empty? ? nil : groups
+  )
+  UI.success("Build #{build_number} is on its way to TestFlight.")
+end
+
+# --- Android --------------------------------------------------------------------------------------------
+
+def android_dir = File.join(repo_dir, "android")
+
+def play_key
+  need_env("PLAY_JSON_KEY")
+  File.expand_path(ENV["PLAY_JSON_KEY"])
+end
+
+def android_test
+  gradle(project_dir: android_dir, gradle_path: "./gradlew", task: "testDebugUnitTest")
+end
+
+# Google Play wants every version code to be higher than any used before, across all tracks.
+def next_version_code(options)
+  return options[:version_code].to_i if options[:version_code]
+  errors = []
+  codes = %w[internal alpha beta production].flat_map do |track|
+    google_play_track_version_codes(package_name: app_id, track: track, json_key: play_key)
+  rescue StandardError => e
+    errors << e.message
+    []
+  end
+  if errors.length == 4
+    UI.user_error!("Could not read version codes from Google Play (#{errors.first}). Check PLAY_JSON_KEY, and that the app " \
+                   "exists with a first release uploaded by hand in the Play Console (see RELEASING.md).")
+  end
+  (codes.max || 0) + 1
+end
+
+def android_build(version_code)
+  unless File.exist?(File.join(android_dir, "keystore.properties"))
+    UI.user_error!("android/keystore.properties (the Play upload key) is missing, so the bundle would not be signed. See RELEASING.md.")
+  end
+  gradle(project_dir: android_dir, gradle_path: "./gradlew", task: "bundle", build_type: "Play",
+         properties: { "versionCode" => version_code })
+  lane_context[SharedValues::GRADLE_AAB_OUTPUT_PATH]
+end
+
+def android_beta(options)
+  preflight(options)
+  play_key
+  android_test unless truthy?(options[:skip_tests])
+  version_code = next_version_code(options)
+  UI.important("Android version code #{version_code}")
+  aab = android_build(version_code)
+
+  upload_to_play_store(
+    package_name: app_id, json_key: play_key, aab: aab,
+    track: options[:track] || ENV["PLAY_TRACK"] || "internal",
+    release_status: options[:status] || ENV["PLAY_RELEASE_STATUS"] || "completed",
+    skip_upload_apk: true, skip_upload_metadata: true, skip_upload_changelogs: true,
+    skip_upload_images: true, skip_upload_screenshots: true
+  )
+  UI.success("Version code #{version_code} is uploaded to Google Play.")
+end
+
+# --- lanes ----------------------------------------------------------------------------------------------
+
+platform :ios do
+  desc "Run the iOS unit tests"
+  lane(:test) { |_options| ios_test }
+
+  desc "Make the .ipa (signed for the App Store) without uploading it"
+  lane(:build) { |options| ios_build((options[:build_number] || 1).to_i) }
+
+  desc "Test, build and upload to TestFlight"
+  lane(:beta) { |options| ios_beta(options) }
+end
+
+platform :android do
+  desc "Run the Android unit tests"
+  lane(:test) { |_options| android_test }
+
+  desc "Make the signed .aab without uploading it"
+  lane(:build) { |options| android_build((options[:version_code] || 1).to_i) }
+
+  desc "Test, build and upload to Google Play (internal testing unless track: says otherwise)"
+  lane(:beta) { |options| android_beta(options) }
+end
+
+desc "Run the unit tests of both apps"
+lane :test do
+  ios_test
+  android_test
+end
+
+desc "Release both apps: test, then iOS -> TestFlight and Android -> Google Play"
+lane :beta do |options|
+  preflight(options)
+  # Fail early on missing credentials, before spending time on builds.
+  need_env("ASC_KEY_ID", "ASC_ISSUER_ID", "ASC_KEY_PATH", "PLAY_JSON_KEY")
+  unless truthy?(options[:skip_tests])
+    ios_test
+    android_test
+  end
+  ios_beta(options.merge(skip_tests: true, allow_dirty: true))
+  android_beta(options.merge(skip_tests: true, allow_dirty: true))
+end
+
+error do |lane, exception|
+  UI.error("The #{lane} lane failed: #{exception.message}")
+end

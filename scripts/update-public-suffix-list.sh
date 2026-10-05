@@ -6,7 +6,7 @@ set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 targets=(
-  "$root/ios/Safemail/Resources/public_suffix_list.dat"
+  "$root/ios/Trustmail/Resources/public_suffix_list.dat"
   "$root/android/app/src/main/assets/public_suffix_list.dat"
 )
 

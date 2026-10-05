@@ -6,7 +6,7 @@ the shield tab, cropped from the UI-test screenshot of each platform (the "messa
   python3 scripts/generate-intro-preview.py IOS_SCREENSHOT.png ANDROID_SCREENSHOT.png
 
 Writes:
-  ios/Safemail/Assets.xcassets/IntroPreview.imageset/intro-preview.png
+  ios/Trustmail/Assets.xcassets/IntroPreview.imageset/intro-preview.png
   android/app/src/main/res/drawable-nodpi/intro_preview.png
 
 The screenshots come from the UI tests (they save `ios-message-scanned.png` / `android-message-scanned.png`).
@@ -42,7 +42,7 @@ def make(source: Path, spec: dict, out: Path):
 def main():
     if len(sys.argv) != 3:
         sys.exit(__doc__)
-    ios_dir = ROOT / "ios/Safemail/Assets.xcassets/IntroPreview.imageset"
+    ios_dir = ROOT / "ios/Trustmail/Assets.xcassets/IntroPreview.imageset"
     make(Path(sys.argv[1]), CROPS["ios"], ios_dir / "intro-preview.png")
     (ios_dir / "Contents.json").write_text(
         json.dumps(
