@@ -70,8 +70,9 @@ def ios_build(build_number)
     project: ios_project, scheme: "Trustmail", configuration: "Release", clean: true,
     export_method: "app-store",
     output_directory: File.join(repo_dir, "build"), output_name: "Trustmail.ipa",
+    # gym passes xcargs to the export step as well, so the signing flags must not be repeated in export_xcargs
+    # (xcodebuild rejects a repeated -authenticationKeyPath).
     xcargs: "CURRENT_PROJECT_VERSION=#{build_number} #{ios_signing_args}",
-    export_xcargs: ios_signing_args,
     export_options: { signingStyle: "automatic", teamID: team, manageAppVersionAndBuildNumber: false, uploadSymbols: true }
   )
 end

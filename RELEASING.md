@@ -83,7 +83,7 @@ Sign-in only works when the app's signing key is registered with the Google OAut
 2. **Create `fastlane/.env`** from `fastlane/.env.example` (it is git-ignored; never commit it) and fill in:
 
    **You, for iOS:** an **App Store Connect API key**. App Store Connect → Users and Access → Integrations → App Store
-   Connect API → Team Keys → **+**, role **App Manager**. Note the *Key ID* and *Issuer ID*, and download the `.p8`
+   Connect API → Team Keys → **+**, role **Admin** (App Manager is not enough: exporting fails with "Cloud signing permission error", because only Admin keys may create the cloud-managed distribution certificate). Note the *Key ID* and *Issuer ID*, and download the `.p8`
    file (Apple shows it only once). Save it outside the repo, e.g. `~/.trustmail/AuthKey_XXXX.p8`, and set
    `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_PATH`. With this key fastlane does not need Xcode to be signed in.
 
