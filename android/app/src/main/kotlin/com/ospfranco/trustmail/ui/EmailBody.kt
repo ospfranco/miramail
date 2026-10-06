@@ -19,6 +19,7 @@ import com.ospfranco.trustmail.security.Verdict
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -48,6 +49,9 @@ object EmailHtml {
             }
             ${Verdict.entries.joinToString("\n") { ".tm-${it.id} { background: #${it.hexColor}; }" }}
         """.trimIndent()
+
+    /** Elements that hold an email's footer. A link inside one is reported with `inFooter`. */
+    const val FOOTER_SELECTOR = """footer, [role="contentinfo"], [id*="footer" i], [class*="footer" i]"""
 
     /**
      * Collects links and posts them to the app; exposes `__trustmailApply` to draw badges.
@@ -79,7 +83,7 @@ object EmailHtml {
           post({
             type: 'links',
             links: anchors.map(function (a) {
-              return { url: a.getAttribute('href').trim(), text: (a.textContent || '').trim() };
+              return { url: a.getAttribute('href').trim(), text: (a.textContent || '').trim(), inFooter: !!a.closest('$FOOTER_SELECTOR') };
             }),
           });
         })();
@@ -135,7 +139,11 @@ object EmailHtml {
             "links" -> Message.Links(
                 (obj["links"]?.jsonArray ?: JsonArray(emptyList())).map {
                     val item = it.jsonObject
-                    FoundLink(item["url"]!!.jsonPrimitive.content, item["text"]?.jsonPrimitive?.content ?: "")
+                    FoundLink(
+                        item["url"]!!.jsonPrimitive.content,
+                        item["text"]?.jsonPrimitive?.content ?: "",
+                        item["inFooter"]?.jsonPrimitive?.booleanOrNull ?: false,
+                    )
                 },
             )
             "click" -> Message.Click(obj["url"]!!.jsonPrimitive.content)

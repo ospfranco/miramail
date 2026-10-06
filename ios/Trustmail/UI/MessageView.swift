@@ -87,7 +87,7 @@ struct MessageView: View {
                 body: message.body,
                 bodyType: message.bodyType,
                 scannedLinks: model.links,
-                onLinksFound: { found in Task { await model.linksFound(found) } },
+                onLinksFound: { found in Task { await model.linksFound(found, ignoreFooterLinks: settings.ignoreFooterLinks) } },
                 onLinkPress: handleLinkPress,
                 allowJavaScript: settings.allowEmailJavaScript
             )

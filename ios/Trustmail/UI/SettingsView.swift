@@ -18,6 +18,16 @@ struct SettingsView: View {
                         .textStyle(.small, color: Theme.textSecondary)
                 }
 
+                card {
+                    Toggle(isOn: $settings.ignoreFooterLinks) {
+                        Text("Ignore footer links").textStyle(.regular)
+                    }
+                    .accessibilityIdentifier("footer-links-toggle")
+
+                    Text("Suspicious links in an email's footer (unsubscribe, privacy policy, social media) don't count toward the email's verdict. They still get a badge and a warning when you tap them, and an unsafe footer link still counts. Applies the next time you open an email.")
+                        .textStyle(.small, color: Theme.textSecondary)
+                }
+
                 if let email = session.user?.email {
                     card {
                         Text(email).textStyle(.small, color: Theme.textSecondary)

@@ -4,7 +4,8 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 
-data class FoundLink(val url: String, val text: String)
+/** [inFooter]: inside the email's footer (see `EmailHtml.FOOTER_SELECTOR`). */
+data class FoundLink(val url: String, val text: String, val inFooter: Boolean = false)
 
 data class ScannedLink(
     val url: String,
@@ -12,6 +13,7 @@ data class ScannedLink(
     val host: String,
     val verdict: Verdict,
     val checks: List<LinkCheck>,
+    val inFooter: Boolean = false,
 )
 
 data class SecurityCheck(val label: String, val detail: String, val verdict: Verdict)
@@ -73,7 +75,7 @@ object SecurityScanner {
 
     private suspend fun scanLink(link: FoundLink): ScannedLink {
         fun result(host: String, checks: List<LinkCheck>) =
-            ScannedLink(link.url, link.text, host, Verdict.worst(checks.map { it.verdict }), checks)
+            ScannedLink(link.url, link.text, host, Verdict.worst(checks.map { it.verdict }), checks, link.inFooter)
 
         val parsed = parseUrl(link.url)
             ?: return result("", listOf(LinkCheck(LinkCheckKind.LinkFormat, Verdict.Warning, "Link could not be parsed.")))
@@ -89,13 +91,18 @@ object SecurityScanner {
         return result(host, checks)
     }
 
-    /** Links deduplicated by URL, in first-seen order. */
+    /** Links deduplicated by URL, in first-seen order. A link counts as a footer link only if every copy of it is in the footer. */
     fun uniqueLinks(links: List<FoundLink>): List<FoundLink> {
         val unique = LinkedHashMap<String, FoundLink>()
         for (link in links) {
             val existing = unique[link.url]
+            if (existing == null) {
+                unique[link.url] = link
+                continue
+            }
             // Keep the entry with visible text, since that's what the mismatch check needs.
-            if (existing == null || (existing.text.isEmpty() && link.text.isNotEmpty())) unique[link.url] = link
+            val kept = if (existing.text.isEmpty() && link.text.isNotEmpty()) link else existing
+            unique[link.url] = kept.copy(inFooter = existing.inFooter && link.inFooter)
         }
         return unique.values.toList()
     }
@@ -104,9 +111,11 @@ object SecurityScanner {
         uniqueLinks(links).map { async { scanLink(it) } }.awaitAll()
     }
 
-    fun evaluateEmail(senderChecks: List<SecurityCheck>, links: List<ScannedLink>): SecurityEvaluation {
+    /** With [ignoreFooterLinks], suspicious footer links don't count; unsafe ones always do. */
+    fun evaluateEmail(senderChecks: List<SecurityCheck>, links: List<ScannedLink>, ignoreFooterLinks: Boolean = false): SecurityEvaluation {
         val bad = links.count { it.verdict == Verdict.Danger }
-        val suspicious = links.count { it.verdict == Verdict.Warning }
+        val ignored = if (ignoreFooterLinks) links.count { it.inFooter && it.verdict == Verdict.Warning } else 0
+        val suspicious = links.count { it.verdict == Verdict.Warning } - ignored
         val linkCheck = SecurityCheck(
             label = if (links.isEmpty()) "No links" else "${links.size} link${if (links.size == 1) "" else "s"} scanned",
             detail = if (bad > 0 || suspicious > 0) {
@@ -120,7 +129,17 @@ object SecurityScanner {
             verdict = if (bad > 0) Verdict.Danger else if (suspicious > 0) Verdict.Warning else Verdict.Safe,
         )
 
-        val checks = senderChecks + linkCheck
+        val checks = senderChecks + linkCheck + listOfNotNull(
+            if (ignored > 0) {
+                SecurityCheck(
+                    label = "$ignored footer link${if (ignored == 1) "" else "s"} ignored",
+                    detail = "Suspicious links in the footer don't count. You can change this in Settings.",
+                    verdict = Verdict.Safe,
+                )
+            } else {
+                null
+            },
+        )
         val verdict = Verdict.worst(checks.map { it.verdict })
         val summary = when (verdict) {
             Verdict.Safe -> "No problems found"

@@ -131,7 +131,7 @@ fun MessageScreen(model: MessageViewModel, settings: AppSettings, session: Sessi
                         body = message.body,
                         bodyType = message.bodyType,
                         scannedLinks = model.links,
-                        onLinksFound = model::onLinksFound,
+                        onLinksFound = { model.onLinksFound(it, settings.ignoreFooterLinks) },
                         onLinkPress = ::handleLinkPress,
                         allowJavaScript = settings.allowEmailJavaScript,
                         modifier = Modifier.fillMaxWidth().weight(1f),

@@ -103,14 +103,14 @@ final class MessageModel {
         }
     }
 
-    func linksFound(_ found: [FoundLink]) async {
+    func linksFound(_ found: [FoundLink], ignoreFooterLinks: Bool = false) async {
         guard let message, !isScanning else { return }
         isScanning = true
         async let scanned = SecurityScanner.scanLinks(found)
         async let senderChecks = SenderChecks.checkSender(message, mail: services.mail)
         let (scannedLinks, sender) = await (scanned, senderChecks)
         links = scannedLinks
-        evaluation = SecurityScanner.evaluateEmail(senderChecks: sender, links: scannedLinks)
+        evaluation = SecurityScanner.evaluateEmail(senderChecks: sender, links: scannedLinks, ignoreFooterLinks: ignoreFooterLinks)
     }
 }
 

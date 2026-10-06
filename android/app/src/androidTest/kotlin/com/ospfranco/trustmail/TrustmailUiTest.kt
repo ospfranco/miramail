@@ -161,6 +161,8 @@ class TrustmailUiTest {
         openSettings()
         compose.onNodeWithTag("javascript-toggle").assertIsOff()
         compose.onNodeWithText("Allow JavaScript in emails").assertIsDisplayed()
+        compose.onNodeWithTag("footer-links-toggle").assertIsOff()
+        compose.onNodeWithText("Ignore footer links").assertIsDisplayed()
         compose.onNodeWithTag("settings-sign-out").assertIsDisplayed()
         screenshot("settings")
     }

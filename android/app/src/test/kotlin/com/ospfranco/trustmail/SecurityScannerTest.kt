@@ -94,6 +94,19 @@ class SecurityScannerTest {
     }
 
     @Test
+    fun aLinkIsInTheFooterOnlyIfEveryCopyIs() {
+        val unique = SecurityScanner.uniqueLinks(
+            listOf(
+                FoundLink("https://a.com", "", inFooter = true),
+                FoundLink("https://b.com", "B", inFooter = true),
+                FoundLink("https://a.com", "A", inFooter = false),
+                FoundLink("https://b.com", "", inFooter = true),
+            ),
+        )
+        assertEquals(listOf(FoundLink("https://a.com", "A", inFooter = false), FoundLink("https://b.com", "B", inFooter = true)), unique)
+    }
+
+    @Test
     fun scansLinksThatNeedNoNetwork() = runTest {
         val scanned = SecurityScanner.scanLinks(
             listOf(
@@ -136,5 +149,46 @@ class SecurityScannerTest {
         val warn = SecurityScanner.evaluateEmail(warnSender, listOf(scanned(Verdict.Safe)))
         assertEquals(Verdict.Warning, warn.verdict)
         assertEquals("Be careful with this email", warn.summary)
+    }
+
+    private fun footer(verdict: Verdict) = ScannedLink("https://x.com/footer/${verdict.id}", "", "x.com", verdict, emptyList(), inFooter = true)
+
+    @Test
+    fun ignoresSuspiciousFooterLinksOnlyWhenAsked() {
+        val safeSender = listOf(SecurityCheck("Sender verified", "", Verdict.Safe))
+        val links = listOf(scanned(Verdict.Safe), footer(Verdict.Warning))
+
+        val counted = SecurityScanner.evaluateEmail(safeSender, links)
+        assertEquals(Verdict.Warning, counted.verdict)
+        assertEquals(SecurityCheck("2 links scanned", "1 suspicious", Verdict.Warning), counted.checks.last())
+
+        val ignored = SecurityScanner.evaluateEmail(safeSender, links, ignoreFooterLinks = true)
+        assertEquals(Verdict.Safe, ignored.verdict)
+        assertEquals("No problems found", ignored.summary)
+        assertEquals(
+            listOf(
+                SecurityCheck("2 links scanned", "No problems found in links.", Verdict.Safe),
+                SecurityCheck("1 footer link ignored", "Suspicious links in the footer don't count. You can change this in Settings.", Verdict.Safe),
+            ),
+            ignored.checks.takeLast(2),
+        )
+
+        // An unsafe footer link always counts.
+        val unsafe = SecurityScanner.evaluateEmail(
+            safeSender,
+            listOf(footer(Verdict.Warning), footer(Verdict.Danger), scanned(Verdict.Warning)),
+            ignoreFooterLinks = true,
+        )
+        assertEquals(Verdict.Danger, unsafe.verdict)
+        assertEquals(
+            listOf(
+                SecurityCheck("3 links scanned", "1 unsafe, 1 suspicious", Verdict.Danger),
+                SecurityCheck("1 footer link ignored", "Suspicious links in the footer don't count. You can change this in Settings.", Verdict.Safe),
+            ),
+            unsafe.checks.takeLast(2),
+        )
+
+        val none = SecurityScanner.evaluateEmail(safeSender, listOf(scanned(Verdict.Safe), footer(Verdict.Safe)), ignoreFooterLinks = true)
+        assertEquals("2 links scanned", none.checks.last().label)
     }
 }

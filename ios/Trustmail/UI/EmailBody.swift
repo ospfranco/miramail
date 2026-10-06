@@ -23,6 +23,9 @@ enum EmailHtml {
         """
     }
 
+    /// Elements that hold an email's footer. A link inside one is reported with `inFooter`.
+    static let footerSelector = #"footer, [role="contentinfo"], [id*="footer" i], [class*="footer" i]"#
+
     /// Collects links and posts them to the app; exposes `__trustmailApply` to draw badges.
     static let injectedScript = """
     (function () {
@@ -49,7 +52,7 @@ enum EmailHtml {
       post({
         type: 'links',
         links: anchors.map(function (a) {
-          return { url: a.getAttribute('href').trim(), text: (a.textContent || '').trim() };
+          return { url: a.getAttribute('href').trim(), text: (a.textContent || '').trim(), inFooter: !!a.closest('\(footerSelector)') };
         }),
       });
     })();
@@ -174,7 +177,7 @@ struct EmailBodyView: UIViewRepresentable {
             case "links":
                 let links = (body["links"] as? [[String: Any]] ?? []).compactMap { item -> FoundLink? in
                     guard let url = item["url"] as? String else { return nil }
-                    return FoundLink(url: url, text: item["text"] as? String ?? "")
+                    return FoundLink(url: url, text: item["text"] as? String ?? "", inFooter: item["inFooter"] as? Bool ?? false)
                 }
                 if allowJavaScript {
                     onLinksFound(links)

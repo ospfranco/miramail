@@ -24,6 +24,22 @@ class AppSettingsTest {
     }
 
     @Test
+    fun footerLinksCountByDefault() {
+        assertFalse(AppSettings(MemorySettingsStore()).ignoreFooterLinks)
+    }
+
+    @Test
+    fun footerLinksChoiceIsPersisted() {
+        val store = MemorySettingsStore()
+        val settings = AppSettings(store)
+        settings.updateIgnoreFooterLinks(true)
+        assertTrue(settings.ignoreFooterLinks)
+        assertTrue(AppSettings(store).ignoreFooterLinks)
+        settings.updateIgnoreFooterLinks(false)
+        assertFalse(AppSettings(store).ignoreFooterLinks)
+    }
+
+    @Test
     fun introIsShownUntilSeen() {
         val store = MemorySettingsStore()
         val settings = AppSettings(store)

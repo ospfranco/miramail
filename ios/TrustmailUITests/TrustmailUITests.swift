@@ -97,6 +97,8 @@ final class TrustmailUITests: XCTestCase {
         openSettings()
         XCTAssertEqual(app.switches["javascript-toggle"].value as? String, "0")
         XCTAssertTrue(app.staticTexts["Allow JavaScript in emails"].exists)
+        XCTAssertEqual(app.switches["footer-links-toggle"].value as? String, "0")
+        XCTAssertTrue(app.staticTexts["Ignore footer links"].exists)
         XCTAssertTrue(app.buttons["settings-sign-out"].exists)
         screenshot("settings")
     }

@@ -64,6 +64,16 @@ struct SecurityScannerTests {
         #expect(unique == [FoundLink(url: "https://a.com", text: "A"), FoundLink(url: "https://b.com", text: "B")])
     }
 
+    @Test func aLinkIsInTheFooterOnlyIfEveryCopyIs() {
+        let unique = SecurityScanner.uniqueLinks([
+            FoundLink(url: "https://a.com", text: "", inFooter: true),
+            FoundLink(url: "https://b.com", text: "B", inFooter: true),
+            FoundLink(url: "https://a.com", text: "A", inFooter: false),
+            FoundLink(url: "https://b.com", text: "", inFooter: true),
+        ])
+        #expect(unique == [FoundLink(url: "https://a.com", text: "A", inFooter: false), FoundLink(url: "https://b.com", text: "B", inFooter: true)])
+    }
+
     @Test func scansLinksThatNeedNoNetwork() async {
         let scanned = await SecurityScanner.scanLinks([
             FoundLink(url: "mailto:a@b.com", text: "mail"),
@@ -103,5 +113,37 @@ struct SecurityScannerTests {
         let warn = SecurityScanner.evaluateEmail(senderChecks: warnSender, links: [scanned(.safe)])
         #expect(warn.verdict == .warning)
         #expect(warn.summary == "Be careful with this email")
+    }
+
+    private func footer(_ verdict: Verdict) -> ScannedLink {
+        ScannedLink(url: "https://x.com/footer/\(verdict.rawValue)", text: "", host: "x.com", verdict: verdict, checks: [], inFooter: true)
+    }
+
+    @Test func ignoresSuspiciousFooterLinksOnlyWhenAsked() {
+        let safeSender = [SecurityCheck(label: "Sender verified", detail: "", verdict: .safe)]
+        let links = [scanned(.safe), footer(.warning)]
+
+        let counted = SecurityScanner.evaluateEmail(senderChecks: safeSender, links: links)
+        #expect(counted.verdict == .warning)
+        #expect(counted.checks.last == SecurityCheck(label: "2 links scanned", detail: "1 suspicious", verdict: .warning))
+
+        let ignored = SecurityScanner.evaluateEmail(senderChecks: safeSender, links: links, ignoreFooterLinks: true)
+        #expect(ignored.verdict == .safe)
+        #expect(ignored.summary == "No problems found")
+        #expect(ignored.checks.suffix(2) == [
+            SecurityCheck(label: "2 links scanned", detail: "No problems found in links.", verdict: .safe),
+            SecurityCheck(label: "1 footer link ignored", detail: "Suspicious links in the footer don't count. You can change this in Settings.", verdict: .safe),
+        ])
+
+        // An unsafe footer link always counts.
+        let unsafe = SecurityScanner.evaluateEmail(senderChecks: safeSender, links: [footer(.warning), footer(.danger), scanned(.warning)], ignoreFooterLinks: true)
+        #expect(unsafe.verdict == .danger)
+        #expect(unsafe.checks.suffix(2) == [
+            SecurityCheck(label: "3 links scanned", detail: "1 unsafe, 1 suspicious", verdict: .danger),
+            SecurityCheck(label: "1 footer link ignored", detail: "Suspicious links in the footer don't count. You can change this in Settings.", verdict: .safe),
+        ])
+
+        let none = SecurityScanner.evaluateEmail(senderChecks: safeSender, links: [scanned(.safe), footer(.safe)], ignoreFooterLinks: true)
+        #expect(none.checks.last?.label == "2 links scanned")
     }
 }

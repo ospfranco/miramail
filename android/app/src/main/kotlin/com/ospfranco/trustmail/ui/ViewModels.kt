@@ -169,11 +169,11 @@ class MessageViewModel(val id: String, private val services: Services) : ViewMod
         }
     }
 
-    fun onLinksFound(found: List<FoundLink>) {
-        viewModelScope.launch { scan(found) }
+    fun onLinksFound(found: List<FoundLink>, ignoreFooterLinks: Boolean = false) {
+        viewModelScope.launch { scan(found, ignoreFooterLinks) }
     }
 
-    suspend fun scan(found: List<FoundLink>) {
+    suspend fun scan(found: List<FoundLink>, ignoreFooterLinks: Boolean = false) {
         val current = message ?: return
         if (isScanning) return
         isScanning = true
@@ -183,7 +183,7 @@ class MessageViewModel(val id: String, private val services: Services) : ViewMod
             scanned.await() to sender.await()
         }
         links = scanned
-        evaluation = SecurityScanner.evaluateEmail(sender, scanned)
+        evaluation = SecurityScanner.evaluateEmail(sender, scanned, ignoreFooterLinks)
     }
 }
 

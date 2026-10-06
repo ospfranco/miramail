@@ -89,6 +89,27 @@ class EmailWebViewTest {
         FoundLink("javascript:alert(1)", "Unsubscribe"),
     )
 
+    private val footerHtml = """
+        <p><a href="https://a.com/body">Body</a></p>
+        <footer><a href="https://a.com/1">1</a></footer>
+        <div role="contentinfo"><a href="https://a.com/2">2</a></div>
+        <table id="mailFooter"><tr><td><a href="https://a.com/3">3</a></td></tr></table>
+        <div class="email-FOOTER-links"><span><a href="https://a.com/4">4</a></span></div>
+    """.trimIndent()
+
+    private val expectedFooterLinks = listOf(
+        FoundLink("https://a.com/body", "Body", inFooter = false),
+        FoundLink("https://a.com/1", "1", inFooter = true),
+        FoundLink("https://a.com/2", "2", inFooter = true),
+        FoundLink("https://a.com/3", "3", inFooter = true),
+        FoundLink("https://a.com/4", "4", inFooter = true),
+    )
+
+    @Test
+    fun footerLinksAreMarked() {
+        assertEquals(expectedFooterLinks, load(footerHtml, allowJavaScript = false).second.links)
+    }
+
     @Test
     fun scriptsInTheEmailAreBlockedByDefault() {
         val (webView, _) = load(html, allowJavaScript = false)

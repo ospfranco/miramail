@@ -3,6 +3,8 @@ import Foundation
 struct FoundLink: Sendable, Equatable {
     let url: String
     let text: String
+    /// Inside the email's footer (see `EmailHtml.footerSelector`).
+    var inFooter = false
 }
 
 struct ScannedLink: Sendable, Equatable, Identifiable {
@@ -11,6 +13,7 @@ struct ScannedLink: Sendable, Equatable, Identifiable {
     let host: String
     let verdict: Verdict
     let checks: [LinkCheck]
+    var inFooter = false
 
     var id: String { url }
 }
@@ -88,7 +91,7 @@ enum SecurityScanner {
 
     private static func scanLink(_ link: FoundLink) async -> ScannedLink {
         func result(_ host: String, _ checks: [LinkCheck]) -> ScannedLink {
-            ScannedLink(url: link.url, text: link.text, host: host, verdict: Verdict.worst(of: checks.map(\.verdict)), checks: checks)
+            ScannedLink(url: link.url, text: link.text, host: host, verdict: Verdict.worst(of: checks.map(\.verdict)), checks: checks, inFooter: link.inFooter)
         }
 
         guard let parsed = parseUrl(link.url) else {
@@ -108,14 +111,16 @@ enum SecurityScanner {
         return result(host, checks)
     }
 
-    /// Links deduplicated by URL, in first-seen order.
+    /// Links deduplicated by URL, in first-seen order. A link counts as a footer link only if every copy of it is in the footer.
     static func uniqueLinks(_ links: [FoundLink]) -> [FoundLink] {
         var unique: [FoundLink] = []
         var indexByUrl: [String: Int] = [:]
         for link in links {
             if let index = indexByUrl[link.url] {
+                let inFooter = unique[index].inFooter && link.inFooter
                 // Keep the entry with visible text, since that's what the mismatch check needs.
                 if unique[index].text.isEmpty && !link.text.isEmpty { unique[index] = link }
+                unique[index].inFooter = inFooter
             } else {
                 indexByUrl[link.url] = unique.count
                 unique.append(link)
@@ -136,9 +141,11 @@ enum SecurityScanner {
         }
     }
 
-    static func evaluateEmail(senderChecks: [SecurityCheck], links: [ScannedLink]) -> SecurityEvaluation {
+    /// With `ignoreFooterLinks`, suspicious footer links don't count; unsafe ones always do.
+    static func evaluateEmail(senderChecks: [SecurityCheck], links: [ScannedLink], ignoreFooterLinks: Bool = false) -> SecurityEvaluation {
         let bad = links.filter { $0.verdict == .danger }.count
-        let suspicious = links.filter { $0.verdict == .warning }.count
+        let ignored = ignoreFooterLinks ? links.filter { $0.inFooter && $0.verdict == .warning }.count : 0
+        let suspicious = links.filter { $0.verdict == .warning }.count - ignored
         let linkCheck = SecurityCheck(
             label: links.isEmpty ? "No links" : "\(links.count) link\(links.count == 1 ? "" : "s") scanned",
             detail: bad > 0 || suspicious > 0
@@ -147,7 +154,14 @@ enum SecurityScanner {
             verdict: bad > 0 ? .danger : suspicious > 0 ? .warning : .safe
         )
 
-        let checks = senderChecks + [linkCheck]
+        var checks = senderChecks + [linkCheck]
+        if ignored > 0 {
+            checks.append(SecurityCheck(
+                label: "\(ignored) footer link\(ignored == 1 ? "" : "s") ignored",
+                detail: "Suspicious links in the footer don't count. You can change this in Settings.",
+                verdict: .safe
+            ))
+        }
         let verdict = Verdict.worst(of: checks.map(\.verdict))
         let summary = switch verdict {
         case .safe: "No problems found"

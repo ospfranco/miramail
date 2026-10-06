@@ -17,7 +17,7 @@ final class LinkInspector: NSObject, WKNavigationDelegate {
     /// Same selection as the script injected into the visible web view.
     static let collectScript = """
     JSON.stringify(Array.prototype.slice.call(document.querySelectorAll('a[href]')).map(function (a) {
-      return { url: a.getAttribute('href').trim(), text: (a.textContent || '').trim() };
+      return { url: a.getAttribute('href').trim(), text: (a.textContent || '').trim(), inFooter: !!a.closest('\(EmailHtml.footerSelector)') };
     }))
     """
 
@@ -50,8 +50,10 @@ final class LinkInspector: NSObject, WKNavigationDelegate {
         webView.evaluateJavaScript(Self.collectScript, in: nil, in: EmailBodyView.world) { [weak self] result in
             var links: [FoundLink] = []
             if case .success(let value) = result, let json = value as? String,
-               let items = try? JSONSerialization.jsonObject(with: Data(json.utf8)) as? [[String: String]] {
-                links = items.map { FoundLink(url: $0["url"] ?? "", text: $0["text"] ?? "") }
+               let items = try? JSONSerialization.jsonObject(with: Data(json.utf8)) as? [[String: Any]] {
+                links = items.map {
+                    FoundLink(url: $0["url"] as? String ?? "", text: $0["text"] as? String ?? "", inFooter: $0["inFooter"] as? Bool ?? false)
+                }
             }
             Task { @MainActor in self?.finish(links) }
         }

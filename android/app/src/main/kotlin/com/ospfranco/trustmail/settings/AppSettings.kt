@@ -33,6 +33,7 @@ class AppSettings(private val store: SettingsStore) {
     private companion object {
         const val ALLOW_EMAIL_JAVASCRIPT = "allowEmailJavaScript"
         const val HAS_SEEN_INTRO = "hasSeenIntro"
+        const val IGNORE_FOOTER_LINKS = "ignoreFooterLinks"
     }
 
     /**
@@ -40,6 +41,14 @@ class AppSettings(private val store: SettingsStore) {
      * sees after the links were scanned. Trustmail's own scanning script runs either way.
      */
     var allowEmailJavaScript by mutableStateOf(store.getBoolean(ALLOW_EMAIL_JAVASCRIPT, false))
+        private set
+
+    /**
+     * Whether suspicious links in an email's footer (unsubscribe, privacy policy, social media) are left
+     * out of the email's verdict. Off by default. Footer links are still scanned and badged, and an unsafe
+     * one still counts, so wrapping a phishing link in a footer can't hide it.
+     */
+    var ignoreFooterLinks by mutableStateOf(store.getBoolean(IGNORE_FOOTER_LINKS, false))
         private set
 
     /** Whether the intro screen has been shown (or the user signed in without it), so it only appears once. */
@@ -54,5 +63,10 @@ class AppSettings(private val store: SettingsStore) {
     fun updateAllowEmailJavaScript(value: Boolean) {
         allowEmailJavaScript = value
         store.putBoolean(ALLOW_EMAIL_JAVASCRIPT, value)
+    }
+
+    fun updateIgnoreFooterLinks(value: Boolean) {
+        ignoreFooterLinks = value
+        store.putBoolean(IGNORE_FOOTER_LINKS, value)
     }
 }

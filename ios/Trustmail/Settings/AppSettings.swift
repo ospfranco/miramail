@@ -8,6 +8,7 @@ final class AppSettings {
     private enum Key {
         static let allowEmailJavaScript = "allowEmailJavaScript"
         static let hasSeenIntro = "hasSeenIntro"
+        static let ignoreFooterLinks = "ignoreFooterLinks"
     }
 
     private let defaults: UserDefaults
@@ -16,6 +17,13 @@ final class AppSettings {
     /// sees after the links were scanned. Trustmail's own scanning script runs either way.
     var allowEmailJavaScript: Bool {
         didSet { defaults.set(allowEmailJavaScript, forKey: Key.allowEmailJavaScript) }
+    }
+
+    /// Whether suspicious links in an email's footer (unsubscribe, privacy policy, social media) are left
+    /// out of the email's verdict. Off by default. Footer links are still scanned and badged, and an unsafe
+    /// one still counts, so wrapping a phishing link in a footer can't hide it.
+    var ignoreFooterLinks: Bool {
+        didSet { defaults.set(ignoreFooterLinks, forKey: Key.ignoreFooterLinks) }
     }
 
     /// Whether the intro screen has been shown (or the user signed in without it), so it only appears once.
@@ -27,5 +35,6 @@ final class AppSettings {
         self.defaults = defaults
         allowEmailJavaScript = defaults.bool(forKey: Key.allowEmailJavaScript)
         hasSeenIntro = defaults.bool(forKey: Key.hasSeenIntro)
+        ignoreFooterLinks = defaults.bool(forKey: Key.ignoreFooterLinks)
     }
 }

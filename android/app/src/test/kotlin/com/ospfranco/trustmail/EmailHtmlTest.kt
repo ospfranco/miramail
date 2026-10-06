@@ -69,8 +69,8 @@ class EmailHtmlTest {
     @Test
     fun parsesMessagesFromThePage() {
         assertEquals(
-            EmailHtml.Message.Links(listOf(FoundLink("https://a.com", "A"), FoundLink("mailto:x@y.z", ""))),
-            EmailHtml.parseMessage("""{"token":"t0k","type":"links","links":[{"url":"https://a.com","text":"A"},{"url":"mailto:x@y.z","text":""}]}""", "t0k"),
+            EmailHtml.Message.Links(listOf(FoundLink("https://a.com", "A"), FoundLink("mailto:x@y.z", "", inFooter = true))),
+            EmailHtml.parseMessage("""{"token":"t0k","type":"links","links":[{"url":"https://a.com","text":"A"},{"url":"mailto:x@y.z","text":"","inFooter":true}]}""", "t0k"),
         )
         assertEquals(EmailHtml.Message.Click("https://a.com"), EmailHtml.parseMessage("""{"token":"t0k","type":"click","url":"https://a.com"}""", "t0k"))
         assertNull(EmailHtml.parseMessage("""{"token":"t0k","type":"other"}""", "t0k"))

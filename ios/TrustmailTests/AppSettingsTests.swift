@@ -25,6 +25,19 @@ struct AppSettingsTests {
         #expect(!AppSettings(defaults: defaults).allowEmailJavaScript)
     }
 
+    @Test func footerLinksCountByDefault() {
+        #expect(AppSettings(defaults: makeDefaults()).ignoreFooterLinks == false)
+    }
+
+    @Test func footerLinksChoiceIsPersisted() {
+        let defaults = makeDefaults()
+        let settings = AppSettings(defaults: defaults)
+        settings.ignoreFooterLinks = true
+        #expect(AppSettings(defaults: defaults).ignoreFooterLinks)
+        settings.ignoreFooterLinks = false
+        #expect(!AppSettings(defaults: defaults).ignoreFooterLinks)
+    }
+
     @Test func introIsShownUntilSeen() {
         let defaults = makeDefaults()
         let settings = AppSettings(defaults: defaults)

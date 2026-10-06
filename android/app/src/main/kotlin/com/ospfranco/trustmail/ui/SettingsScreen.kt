@@ -73,6 +73,26 @@ fun SettingsScreen(settings: AppSettings, session: SessionViewModel, onBack: () 
                 )
             }
 
+            Card {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    AppText("Ignore footer links", TextKind.Regular, modifier = Modifier.weight(1f))
+                    Switch(
+                        checked = settings.ignoreFooterLinks,
+                        onCheckedChange = settings::updateIgnoreFooterLinks,
+                        modifier = Modifier.testTag("footer-links-toggle"),
+                    )
+                }
+                AppText(
+                    "Suspicious links in an email's footer (unsubscribe, privacy policy, social media) don't count toward the email's verdict. They still get a badge and a warning when you tap them, and an unsafe footer link still counts. Applies the next time you open an email.",
+                    TextKind.Small,
+                    color = colors.textSecondary,
+                )
+            }
+
             session.user?.email?.let { email ->
                 Card {
                     AppText(email, TextKind.Small, color = colors.textSecondary)
