@@ -20,6 +20,7 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -97,6 +98,14 @@ class TrustmailUiTest {
     fun phishingEmailIsFlaggedAndRiskyLinksAskForConfirmation() {
         launch()
         waitForTag("message-demo-2", 10_000)
+        // In the inbox: the forged sender's domain is marked, and so is a sender you've never written with.
+        fun inRow(id: String, tag: String) = hasTestTag(tag) and hasAnyAncestor(hasTestTag("message-$id"))
+        compose.waitUntil(10_000) { compose.onAllNodes(inRow("demo-2", "first-message"), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(inRow("demo-2", "sender-warning"), useUnmergedTree = true).assertExists()
+        compose.onNode(inRow("demo-1", "sender-warning"), useUnmergedTree = true).assertDoesNotExist()
+        compose.onNode(inRow("demo-1", "first-message"), useUnmergedTree = true).assertDoesNotExist()
+        screenshot("inbox-warnings")
+
         compose.onNodeWithTag("message-demo-2").performClick()
 
         // The panel tab only appears once every link and the sender have been checked.
@@ -105,6 +114,8 @@ class TrustmailUiTest {
             SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf("Security: This email looks dangerous")),
         )
         screenshot("message-scanned")
+        // The header marks the sender's domain like an unsafe link.
+        compose.onNodeWithTag("sender-warning").assertExists()
 
         // The email's own <script> must not have run.
         assertNotNull(device.wait(Until.findObject(By.text("Scripts in this email are blocked.")), 10_000))
@@ -149,6 +160,7 @@ class TrustmailUiTest {
         compose.waitUntil(5_000) { compose.onAllNodesWithTag("security-close").fetchSemanticsNodes().isNotEmpty() }
         compose.onNodeWithText("Sender verified").assertIsDisplayed()
         compose.onNodeWithText("Known sender").assertIsDisplayed()
+        compose.onNodeWithTag("sender-warning").assertDoesNotExist()
         screenshot("plain-text-panel")
     }
 

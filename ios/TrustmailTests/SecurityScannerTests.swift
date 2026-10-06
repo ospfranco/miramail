@@ -145,6 +145,18 @@ struct SecurityScannerTests {
         let warn = SecurityScanner.evaluateEmail(senderChecks: warnSender, links: [scanned(.safe)])
         #expect(warn.verdict == .warning)
         #expect(warn.summary == "Be careful with this email")
+        #expect(!warn.senderFailed)
+        #expect(!mixed.senderFailed, "unsafe links alone don't mark the sender")
+    }
+
+    @Test func marksTheSenderOnlyWhenASenderCheckFails() {
+        let failed = [
+            SecurityCheck(label: "Sender verification failed", detail: "", verdict: .danger),
+            SecurityCheck(label: "Known sender", detail: "", verdict: .safe),
+        ]
+        #expect(SecurityScanner.evaluateEmail(senderChecks: failed, links: []).senderFailed)
+        let unverified = [SecurityCheck(label: "Sender not verified", detail: "", verdict: .warning)]
+        #expect(!SecurityScanner.evaluateEmail(senderChecks: unverified, links: []).senderFailed)
     }
 
     private func footer(_ verdict: Verdict) -> ScannedLink {

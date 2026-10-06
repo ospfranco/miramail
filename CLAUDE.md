@@ -72,6 +72,13 @@ The floating bar at the bottom of an email has four buttons. They behave the sam
 - **Reply** opens the compose screen: To is the `Reply-To` address (else the sender), Subject gets one "Re: ", and the message is sent in the same thread (`threadId`, `In-Reply-To` and `References`). The body starts empty (the original is not quoted). Send needs a valid recipient list (`address` or `Name <address>`, separated by commas or semicolons) and goes out through `messages.send` as plain UTF-8 text. On success the compose screen closes and a "Message sent" notice shows.
 - `Mime.raw` strips line breaks from headers (so text can't inject headers) and encodes non-ASCII headers as RFC 2047. Its expected output is pinned by tests that must stay identical on both platforms.
 
+### Sender markers (inbox and email header)
+
+The sender is marked like a link in the body:
+
+- **Failed sender checks** (a sender check is `danger`, e.g. DMARC failed): the sender's address with its domain in red and the red ✕ marker after it (`FailedSenderLine`, accessibility id / test tag `sender-warning`). In the email header this follows the scan (`SecurityEvaluation.senderFailed`). In the inbox it is known right away: `listInbox` also asks Gmail for `Authentication-Results` (`metadataHeaders`), kept to Gmail's own like `getMessage` does, and `MessageSummary.senderFailed` runs the same `checkSenderDomain`. "Sender not verified" is a warning and is not marked.
+- **First message from this sender** (inbox only): after the inbox loads, the session looks up every email's sender history in the background (`loadSenderHistory`, the same `hasCorrespondence` call as the security panel, one per email) and rows in `firstMessages` get a yellow marker and "First message from this sender" (`FirstMessageLine`, `first-message`). A lookup that fails marks nothing.
+
 ### The intro screen
 
 Shown once, before anyone has signed in: a preview image, three steps, and a note that Google sign-in comes next. It is skipped for anyone already signed in, and never shown again after "Continue" (`hasSeenIntro` in the settings). The preview image is a crop of the UI-test screenshot of the demo phishing email, made by `scripts/generate-intro-preview.py` (see Shared data).

@@ -57,7 +57,10 @@ enum Demo {
 
         func listInbox(maxResults: Int) async throws -> [MessageSummary] {
             all.enumerated().filter { !gone.contains($0.element.id) }.map { index, m in
-                MessageSummary(id: m.id, threadId: m.id, from: m.from, subject: m.subject, snippet: String(m.body.prefix(80)), unread: index == 1)
+                MessageSummary(
+                    id: m.id, threadId: m.id, from: m.from, subject: m.subject, snippet: String(m.body.prefix(80)), unread: index == 1,
+                    authenticationResults: m.authenticationResults
+                )
             }
         }
 

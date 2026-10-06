@@ -30,6 +30,8 @@ struct SecurityEvaluation: Sendable, Equatable {
     let verdict: Verdict
     let summary: String
     let checks: [SecurityCheck]
+    /// A sender check failed (the email may be forged), so the header marks the sender's domain like an unsafe link.
+    var senderFailed = false
 }
 
 struct ParsedUrl: Equatable {
@@ -183,6 +185,6 @@ enum SecurityScanner {
         case .warning: "Be careful with this email"
         case .danger: "This email looks dangerous"
         }
-        return SecurityEvaluation(verdict: verdict, summary: summary, checks: checks)
+        return SecurityEvaluation(verdict: verdict, summary: summary, checks: checks, senderFailed: senderChecks.contains { $0.verdict == .danger })
     }
 }

@@ -8,11 +8,12 @@ import androidx.lifecycle.viewModelScope
 import com.ospfranco.trustmail.mail.MailLabel
 import com.ospfranco.trustmail.mail.MessageDetail
 import com.ospfranco.trustmail.mail.MessageSummary
+import com.ospfranco.trustmail.mail.Mime
 import com.ospfranco.trustmail.mail.OutgoingMessage
 import com.ospfranco.trustmail.mail.Services
 import com.ospfranco.trustmail.mail.UserProfile
+import com.ospfranco.trustmail.mail.bareAddress
 import com.ospfranco.trustmail.mail.makeReply
-import com.ospfranco.trustmail.mail.Mime
 import com.ospfranco.trustmail.security.FoundLink
 import com.ospfranco.trustmail.security.ScannedLink
 import com.ospfranco.trustmail.security.SecurityEvaluation
@@ -21,6 +22,8 @@ import com.ospfranco.trustmail.security.SenderChecks
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -54,6 +57,10 @@ class SessionViewModel(
         private set
     var messages by mutableStateOf<List<MessageSummary>>(emptyList())
         private set
+    /** Ids of inbox emails from someone you've never exchanged email with, found in the background after the inbox loads. */
+    var firstMessages by mutableStateOf<Set<String>>(emptySet())
+        private set
+    private var historyJob: Job? = null
     var isLoading by mutableStateOf(true)
         private set
     var error by mutableStateOf<String?>(null)
@@ -84,12 +91,36 @@ class SessionViewModel(
         error = null
         try {
             messages = services.mail.listInbox(20)
+            historyJob?.cancel()
+            historyJob = viewModelScope.launch { loadSenderHistory() }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             error = e.display()
         }
         isLoading = false
+    }
+
+    /**
+     * Finds the inbox emails whose sender is new to you: the same lookup as the security panel's sender history,
+     * one per email. A lookup that fails marks nothing.
+     */
+    suspend fun loadSenderHistory() {
+        val first = coroutineScope {
+            messages.map { message ->
+                async {
+                    val known = try {
+                        services.mail.hasCorrespondence(bareAddress(message.from), message.id)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        null
+                    }
+                    message.id.takeIf { known == false }
+                }
+            }.awaitAll().filterNotNull().toSet()
+        }
+        firstMessages = first
     }
 
     fun signIn() {
@@ -111,6 +142,8 @@ class SessionViewModel(
             services.auth.signOut()
             user = null
             messages = emptyList()
+            historyJob?.cancel()
+            firstMessages = emptySet()
         }
     }
 }

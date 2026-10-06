@@ -54,8 +54,12 @@ enum SenderChecks {
     }
 
     static func checkSenderDomain(_ message: MessageDetail) -> SecurityCheck {
-        let fromDomain = domainOf(message.fromAddress) ?? "unknown"
-        let results = message.authenticationResults.flatMap(parseAuthenticationResults)
+        checkSenderDomain(fromAddress: message.fromAddress, authenticationResults: message.authenticationResults)
+    }
+
+    static func checkSenderDomain(fromAddress: String, authenticationResults: [String]) -> SecurityCheck {
+        let fromDomain = domainOf(fromAddress) ?? "unknown"
+        let results = authenticationResults.flatMap(parseAuthenticationResults)
 
         if results.isEmpty {
             return SecurityCheck(
@@ -122,5 +126,12 @@ enum SenderChecks {
 
     static func checkSender(_ message: MessageDetail, mail: MailService) async -> [SecurityCheck] {
         [checkSenderDomain(message), await checkSenderHistory(message, mail: mail)]
+    }
+}
+
+extension MessageSummary {
+    /// The sender failed Gmail's checks (the email may be forged), so the inbox marks it like an unsafe link.
+    var senderFailed: Bool {
+        SenderChecks.checkSenderDomain(fromAddress: bareAddress(from), authenticationResults: authenticationResults).verdict == .danger
     }
 }

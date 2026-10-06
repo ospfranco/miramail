@@ -6,6 +6,15 @@ struct SenderChecksTests {
         SenderChecks.checkSenderDomain(makeMessage(address: address, auth: results))
     }
 
+    @Test func inboxSummaryKnowsWhenTheSenderFailed() {
+        func summary(_ auth: [String]) -> MessageSummary {
+            MessageSummary(id: "1", threadId: "t", from: "PayPal <support@paypa1.example.net>", subject: "s", snippet: "", unread: false, authenticationResults: auth)
+        }
+        #expect(summary(["mx.google.com; dmarc=fail header.from=paypa1.example.net"]).senderFailed)
+        #expect(!summary(["mx.google.com; dmarc=pass header.from=paypa1.example.net"]).senderFailed)
+        #expect(!summary([]).senderFailed, "unverified is a warning, not a failure")
+    }
+
     @Test func parsesAuthenticationResults() {
         let parsed = SenderChecks.parseAuthenticationResults(
             "mx.google.com; dkim=pass (test (nested) comment) header.i=@github.com header.s=pf2023; spf=pass smtp.mailfrom=bounce@github.com; dmarc=pass (p=REJECT) header.from=github.com"

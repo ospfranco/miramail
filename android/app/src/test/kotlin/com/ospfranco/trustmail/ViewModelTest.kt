@@ -54,6 +54,24 @@ private class OneMessageInbox : MailService {
     override suspend fun send(message: OutgoingMessage) {}
 }
 
+/** An inbox with a known sender, a new one, and one whose history lookup fails. */
+private class HistoryInbox : MailService {
+    override suspend fun listInbox(maxResults: Int) =
+        listOf("1" to "Known <known@x.com>", "2" to "New <new@x.com>", "3" to "broken@x.com").map { (id, from) ->
+            MessageSummary(id, id, from, "s", "", false)
+        }
+    override suspend fun getMessage(id: String): MessageDetail = makeMessage(id = id)
+    override suspend fun hasCorrespondence(address: String, excludingMessageId: String): Boolean {
+        if (address == "broken@x.com") throw GmailException(500, "boom")
+        return address == "known@x.com"
+    }
+    override suspend fun trash(id: String) {}
+    override suspend fun archive(id: String) {}
+    override suspend fun move(id: String, label: MailLabel) {}
+    override suspend fun moveTargets() = emptyList<MailLabel>()
+    override suspend fun send(message: OutgoingMessage) {}
+}
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class ViewModelTest {
     @get:Rule val psl = PublicSuffixRule()
@@ -83,6 +101,17 @@ class ViewModelTest {
         assertEquals(UserProfile("me@x.com"), model.user)
         assertEquals(listOf("1"), model.messages.map { it.id })
         assertFalse(model.isLoading)
+    }
+
+    @Test
+    fun inboxMarksEmailsFromNewSenders() = runTest {
+        val model = session(FakeAuth(restored = UserProfile("me@x.com")), HistoryInbox())
+        advanceUntilIdle()
+        // Only the sender you've never written with; a lookup that fails marks nothing.
+        assertEquals(setOf("2"), model.firstMessages)
+        model.signOut()
+        advanceUntilIdle()
+        assertTrue(model.firstMessages.isEmpty())
     }
 
     @Test

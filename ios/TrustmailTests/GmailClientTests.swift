@@ -46,8 +46,10 @@ extension StubbedNetworkTests {
     }
 
     @Test func listsInboxInOrderWithMetadata() async throws {
+        let urls = TokenLog()
         StubProtocol.set { request in
             let url = request.url!.absoluteString
+            urls.record(url.contains("metadataHeaders=Authentication-Results"))
             if url.contains("/messages?labelIds=INBOX&maxResults=20") {
                 return (200, #"{"messages":[{"id":"a"},{"id":"b"}]}"#)
             }
@@ -56,13 +58,20 @@ extension StubbedNetworkTests {
             let id = url.contains("/messages/a?") ? "a" : "b"
             let labels = id == "a" ? #","labelIds":["INBOX","UNREAD"]"# : ""
             let subject = id == "a" ? "" : #"{"name":"subject","value":"Hello"},"#
-            return (200, #"{"id":"\#(id)","threadId":"t\#(id)","snippet":"snip \#(id)"\#(labels),"payload":{"headers":[\#(subject){"name":"From","value":"Ann <ann@x.com>"}]}}"#)
+            // Only Gmail's own Authentication-Results count; a sender can add their own.
+            let auth = id == "a" ? #"{"name":"Authentication-Results","value":"mx.google.com; dmarc=fail"},{"name":"Authentication-Results","value":"evil.example; dmarc=pass"},"# : ""
+            return (200, #"{"id":"\#(id)","threadId":"t\#(id)","snippet":"snip \#(id)"\#(labels),"payload":{"headers":[\#(subject)\#(auth){"name":"From","value":"Ann <ann@x.com>"}]}}"#)
         }
         let messages = try await client().listInbox(maxResults: 20)
         #expect(messages == [
-            MessageSummary(id: "a", threadId: "ta", from: "Ann <ann@x.com>", subject: "(no subject)", snippet: "snip a", unread: true),
+            MessageSummary(
+                id: "a", threadId: "ta", from: "Ann <ann@x.com>", subject: "(no subject)", snippet: "snip a", unread: true,
+                authenticationResults: ["mx.google.com; dmarc=fail"]
+            ),
             MessageSummary(id: "b", threadId: "tb", from: "Ann <ann@x.com>", subject: "Hello", snippet: "snip b", unread: false),
         ])
+        // The list request, then one per message asking for the auth results too.
+        #expect(urls.all == [false, true, true])
     }
 
     @Test func emptyInbox() async throws {

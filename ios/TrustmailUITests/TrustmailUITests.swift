@@ -43,6 +43,16 @@ final class TrustmailUITests: XCTestCase {
     }
 
     func testPhishingEmailIsFlaggedAndRiskyLinksAskForConfirmation() {
+        // In the inbox: the forged sender's domain is marked, and so is a sender you've never written with.
+        func row(_ id: String, mentioning text: String) -> XCUIElement {
+            app.buttons.matching(identifier: "message-\(id)").element(matching: NSPredicate(format: "label CONTAINS %@", text))
+        }
+        XCTAssertTrue(row("demo-2", mentioning: "sender verification failed").waitForExistence(timeout: 10))
+        XCTAssertTrue(row("demo-2", mentioning: "First message from this sender").waitForExistence(timeout: 10))
+        XCTAssertFalse(row("demo-1", mentioning: "sender verification failed").exists)
+        XCTAssertFalse(row("demo-1", mentioning: "First message from this sender").exists)
+        screenshot("inbox-warnings")
+
         app.buttons["message-demo-2"].tap()
         XCTAssertTrue(app.staticTexts["Action required: verify your account"].waitForExistence(timeout: 10))
 
@@ -50,6 +60,8 @@ final class TrustmailUITests: XCTestCase {
         let tab = app.buttons["security-tab"]
         XCTAssertTrue(tab.waitForExistence(timeout: 60), "scan never finished")
         XCTAssertEqual(tab.label, "Security: This email looks dangerous")
+        // The header marks the sender's domain like an unsafe link.
+        XCTAssertTrue(app.descendants(matching: .any)["sender-warning"].exists)
         screenshot("message-scanned")
 
         // The email's own <script> must not have run.
@@ -86,6 +98,7 @@ final class TrustmailUITests: XCTestCase {
         tab.tap()
         XCTAssertTrue(app.staticTexts["Sender verified"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Known sender"].exists)
+        XCTAssertFalse(app.descendants(matching: .any)["sender-warning"].exists)
         screenshot("plain-text-panel")
     }
 

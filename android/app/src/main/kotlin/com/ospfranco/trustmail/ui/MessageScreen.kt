@@ -36,6 +36,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -134,7 +142,11 @@ fun MessageScreen(model: MessageViewModel, settings: AppSettings, session: Sessi
                             Avatar(message.from)
                             Column {
                                 Text(senderName(message.from), color = colors.text, style = MaterialTheme.typography.titleMedium, maxLines = 1)
-                                AppText(message.from, TextKind.Small, color = colors.textSecondary, maxLines = 1)
+                                if (model.evaluation?.senderFailed == true) {
+                                    FailedSenderLine(message.fromAddress)
+                                } else {
+                                    AppText(message.from, TextKind.Small, color = colors.textSecondary, maxLines = 1)
+                                }
                                 Text(message.date, color = colors.textSecondary, style = MaterialTheme.typography.bodySmall, maxLines = 1)
                             }
                         }

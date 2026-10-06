@@ -78,7 +78,11 @@ struct MessageView: View {
                     AvatarView(from: message.from)
                     VStack(alignment: .leading, spacing: Spacing.half) {
                         Text(senderName(message.from)).font(.headline).foregroundStyle(Theme.text).lineLimit(1)
-                        Text(message.from).textStyle(.small, color: Theme.textSecondary).lineLimit(1)
+                        if model.evaluation?.senderFailed == true {
+                            FailedSenderLine(address: message.fromAddress)
+                        } else {
+                            Text(message.from).textStyle(.small, color: Theme.textSecondary).lineLimit(1)
+                        }
                         Text(message.date).font(.caption).foregroundStyle(Theme.textSecondary).lineLimit(1)
                     }
                 }

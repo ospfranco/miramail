@@ -34,6 +34,16 @@ struct ModelTests {
         #expect(!session.isLoading)
     }
 
+    @Test func inboxMarksEmailsFromNewSenders() async {
+        let session = SessionModel(services: Services(auth: FakeAuth(restored: UserProfile(email: "me@x.com")), mail: HistoryInbox()))
+        await session.start()
+        await session.loadSenderHistory()
+        // Only the sender you've never written with; a lookup that fails marks nothing.
+        #expect(session.firstMessages == ["2"])
+        await session.signOut()
+        #expect(session.firstMessages.isEmpty)
+    }
+
     @Test func restoreFailureIsShown() async {
         let session = SessionModel(services: Services(auth: FakeAuth(restoreFails: true), mail: FakeMail()))
         await session.start()
@@ -86,6 +96,25 @@ private struct DemoInbox: MailService {
     }
     func getMessage(id: String) async throws -> MessageDetail { makeMessage(id: id) }
     func hasCorrespondence(with address: String, excluding messageId: String) async throws -> Bool { false }
+    func trash(id: String) async throws {}
+    func archive(id: String) async throws {}
+    func move(id: String, to label: MailLabel) async throws {}
+    func moveTargets() async throws -> [MailLabel] { [] }
+    func send(_ message: OutgoingMessage) async throws {}
+}
+
+/// An inbox with a known sender, a new one, and one whose history lookup fails.
+private struct HistoryInbox: MailService {
+    func listInbox(maxResults: Int) async throws -> [MessageSummary] {
+        [("1", "Known <known@x.com>"), ("2", "New <new@x.com>"), ("3", "broken@x.com")].map {
+            MessageSummary(id: $0.0, threadId: $0.0, from: $0.1, subject: "s", snippet: "", unread: false)
+        }
+    }
+    func getMessage(id: String) async throws -> MessageDetail { makeMessage(id: id) }
+    func hasCorrespondence(with address: String, excluding messageId: String) async throws -> Bool {
+        if address == "broken@x.com" { throw GmailError(status: 500, body: "boom") }
+        return address == "known@x.com"
+    }
     func trash(id: String) async throws {}
     func archive(id: String) async throws {}
     func move(id: String, to label: MailLabel) async throws {}

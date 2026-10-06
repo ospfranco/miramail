@@ -90,6 +90,14 @@ final class GmailClient: MailService {
         func header(_ name: String) -> String {
             headers?.first { $0.name.caseInsensitiveCompare(name) == .orderedSame }?.value ?? ""
         }
+
+        /// Gmail's own Authentication-Results. Other servers' headers are dropped since senders can forge them.
+        var googleAuthenticationResults: [String] {
+            (headers ?? [])
+                .filter { $0.name.lowercased() == "authentication-results" }
+                .map(\.value)
+                .filter { $0.firstMatch(of: /^\s*mx\.google\.com\s*;/.ignoresCase()) != nil }
+        }
     }
 
     private struct RawMessage: Decodable {
@@ -109,7 +117,7 @@ final class GmailClient: MailService {
         let full = try await withThrowingTaskGroup(of: (Int, RawMessage).self) { group in
             for (index, id) in ids.enumerated() {
                 group.addTask {
-                    (index, try await self.fetch("/messages/\(id)?format=metadata&metadataHeaders=From&metadataHeaders=Subject"))
+                    (index, try await self.fetch("/messages/\(id)?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Authentication-Results"))
                 }
             }
             var results: [(Int, RawMessage)] = []
@@ -125,7 +133,8 @@ final class GmailClient: MailService {
                 from: message.payload.header("From"),
                 subject: subject.isEmpty ? "(no subject)" : subject,
                 snippet: message.snippet ?? "",
-                unread: message.labelIds?.contains("UNREAD") ?? false
+                unread: message.labelIds?.contains("UNREAD") ?? false,
+                authenticationResults: message.payload.googleAuthenticationResults
             )
         }
     }
@@ -150,10 +159,7 @@ final class GmailClient: MailService {
             // Non-UTF-8 charsets (e.g. ISO-8859-1) will render garbled.
             body: part?.body?.data.map { utf8Decode(base64ToBytes($0)) } ?? message.snippet ?? "",
             bodyType: html != nil ? .html : .text,
-            authenticationResults: (message.payload.headers ?? [])
-                .filter { $0.name.lowercased() == "authentication-results" }
-                .map(\.value)
-                .filter { $0.firstMatch(of: /^\s*mx\.google\.com\s*;/.ignoresCase()) != nil },
+            authenticationResults: message.payload.googleAuthenticationResults,
             threadId: message.threadId,
             messageId: message.payload.header("Message-ID"),
             references: message.payload.header("References"),

@@ -18,7 +18,8 @@ data class ScannedLink(
 
 data class SecurityCheck(val label: String, val detail: String, val verdict: Verdict)
 
-data class SecurityEvaluation(val verdict: Verdict, val summary: String, val checks: List<SecurityCheck>)
+/** [senderFailed]: a sender check failed (the email may be forged), so the header marks the sender's domain like an unsafe link. */
+data class SecurityEvaluation(val verdict: Verdict, val summary: String, val checks: List<SecurityCheck>, val senderFailed: Boolean = false)
 
 data class ParsedUrl(val scheme: String, val host: String, val hasUserInfo: Boolean)
 
@@ -164,6 +165,6 @@ object SecurityScanner {
             Verdict.Warning -> "Be careful with this email"
             Verdict.Danger -> "This email looks dangerous"
         }
-        return SecurityEvaluation(verdict, summary, checks)
+        return SecurityEvaluation(verdict, summary, checks, senderFailed = senderChecks.any { it.verdict == Verdict.Danger })
     }
 }

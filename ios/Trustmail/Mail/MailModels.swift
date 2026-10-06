@@ -7,6 +7,8 @@ struct MessageSummary: Sendable, Equatable, Hashable, Identifiable {
     let subject: String
     let snippet: String
     let unread: Bool
+    /// Gmail's own SPF/DKIM/DMARC verdicts, so the inbox can mark a sender that failed them.
+    var authenticationResults: [String] = []
 }
 
 enum BodyType: Sendable {

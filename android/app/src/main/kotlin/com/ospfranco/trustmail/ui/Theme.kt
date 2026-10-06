@@ -16,6 +16,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -28,6 +35,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTag
 import androidx.compose.foundation.layout.size
 import com.ospfranco.trustmail.mail.SenderAvatar
 import com.ospfranco.trustmail.security.Verdict
@@ -186,5 +194,46 @@ fun VerdictDot(verdict: Verdict, size: Dp = 18.dp, modifier: Modifier = Modifier
             lineHeight = size.value.sp,
             fontWeight = FontWeight.Bold,
         )
+    }
+}
+
+/** The sender's address when a sender check failed: the domain in red with the unsafe marker after it, like an unsafe link. */
+@Composable
+fun FailedSenderLine(address: String) {
+    val at = address.lastIndexOf('@') + 1
+    Row(
+        // One element for accessibility; the tag is set inside, since clearing the semantics would drop it.
+        modifier = Modifier.clearAndSetSemantics {
+            contentDescription = "$address, sender verification failed"
+            testTag = "sender-warning"
+        },
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.one),
+    ) {
+        Text(
+            text = buildAnnotatedString {
+                append(address.substring(0, at))
+                withStyle(SpanStyle(color = Verdict.Danger.color, fontWeight = FontWeight.SemiBold)) { append(address.substring(at)) }
+            },
+            style = TextKind.Small.style,
+            color = Theme.colors.textSecondary,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f, fill = false),
+        )
+        VerdictDot(Verdict.Danger, 14.dp)
+    }
+}
+
+/** A yellow marker for an email from someone you've never exchanged email with. */
+@Composable
+fun FirstMessageLine() {
+    Row(
+        modifier = Modifier.testTag("first-message"),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.one),
+    ) {
+        VerdictDot(Verdict.Warning, 14.dp)
+        AppText("First message from this sender", TextKind.Small, color = Theme.colors.textSecondary, maxLines = 1)
     }
 }

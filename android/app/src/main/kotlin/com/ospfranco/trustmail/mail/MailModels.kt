@@ -26,6 +26,8 @@ data class MessageSummary(
     val subject: String,
     val snippet: String,
     val unread: Boolean,
+    /** Gmail's own SPF/DKIM/DMARC verdicts, so the inbox can mark a sender that failed them. */
+    val authenticationResults: List<String> = emptyList(),
 )
 
 enum class BodyType { Html, Text }

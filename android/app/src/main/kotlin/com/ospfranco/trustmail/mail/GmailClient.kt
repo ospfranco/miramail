@@ -57,6 +57,13 @@ class GmailClient(
         val parts: List<MessagePart>? = null,
     ) {
         fun header(name: String): String = headers?.firstOrNull { it.name.equals(name, ignoreCase = true) }?.value ?: ""
+
+        /** Gmail's own Authentication-Results. Other servers' headers are dropped since senders can forge them. */
+        val googleAuthenticationResults: List<String>
+            get() = headers.orEmpty()
+                .filter { it.name.equals("authentication-results", ignoreCase = true) }
+                .map { it.value }
+                .filter { Regex("""^\s*mx\.google\.com\s*;""", RegexOption.IGNORE_CASE).containsMatchIn(it) }
     }
 
     @Serializable
@@ -110,7 +117,12 @@ class GmailClient(
                 async {
                     fetch<RawMessage>(
                         "messages/${ref.id}",
-                        listOf("format" to "metadata", "metadataHeaders" to "From", "metadataHeaders" to "Subject"),
+                        listOf(
+                            "format" to "metadata",
+                            "metadataHeaders" to "From",
+                            "metadataHeaders" to "Subject",
+                            "metadataHeaders" to "Authentication-Results",
+                        ),
                     )
                 }
             }.awaitAll()
@@ -123,6 +135,7 @@ class GmailClient(
                 subject = message.payload.header("Subject").ifEmpty { "(no subject)" },
                 snippet = message.snippet.orEmpty(),
                 unread = message.labelIds?.contains("UNREAD") ?: false,
+                authenticationResults = message.payload.googleAuthenticationResults,
             )
         }
     }
@@ -146,10 +159,7 @@ class GmailClient(
             // Non-UTF-8 charsets (e.g. ISO-8859-1) will render garbled.
             body = part?.body?.data?.let { utf8Decode(base64ToBytes(it)) } ?: message.snippet.orEmpty(),
             bodyType = if (html != null) BodyType.Html else BodyType.Text,
-            authenticationResults = message.payload.headers.orEmpty()
-                .filter { it.name.equals("authentication-results", ignoreCase = true) }
-                .map { it.value }
-                .filter { Regex("""^\s*mx\.google\.com\s*;""", RegexOption.IGNORE_CASE).containsMatchIn(it) },
+            authenticationResults = message.payload.googleAuthenticationResults,
             threadId = message.threadId,
             messageId = message.payload.header("Message-ID"),
             references = message.payload.header("References"),

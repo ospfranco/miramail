@@ -127,3 +127,35 @@ struct VerdictDot: View {
             .accessibilityHidden(true)
     }
 }
+
+/// The sender's address when a sender check failed: the domain in red with the unsafe marker after it, like an unsafe link.
+struct FailedSenderLine: View {
+    let address: String
+
+    var body: some View {
+        let at = address.lastIndex(of: "@").map { address.index(after: $0) } ?? address.startIndex
+        HStack(spacing: Spacing.one) {
+            (Text(address[..<at]) + Text(address[at...]).foregroundStyle(Verdict.danger.color).fontWeight(.semibold))
+                .textStyle(.small, color: Theme.textSecondary)
+                .lineLimit(1)
+                // Keep the domain in view when the address is too long.
+                .truncationMode(.head)
+            VerdictDot(verdict: .danger, size: 14)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(address), sender verification failed")
+        .accessibilityIdentifier("sender-warning")
+    }
+}
+
+/// A yellow marker for an email from someone you've never exchanged email with.
+struct FirstMessageLine: View {
+    var body: some View {
+        HStack(spacing: Spacing.one) {
+            VerdictDot(verdict: .warning, size: 14)
+            Text("First message from this sender").textStyle(.small, color: Theme.textSecondary).lineLimit(1)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("first-message")
+    }
+}

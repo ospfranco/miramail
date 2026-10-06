@@ -12,6 +12,9 @@ final class SessionModel {
     let services: Services
     private(set) var user: UserProfile?
     private(set) var messages: [MessageSummary] = []
+    /// Ids of inbox emails from someone you've never exchanged email with, found in the background after the inbox loads.
+    private(set) var firstMessages: Set<String> = []
+    private var historyTask: Task<Void, Never>?
     private(set) var isLoading = true
     private(set) var error: String?
     /// A short message shown over whatever screen is open ("Archived", "Message sent", ...).
@@ -54,10 +57,30 @@ final class SessionModel {
         error = nil
         do {
             messages = try await services.mail.listInbox(maxResults: 20)
+            historyTask?.cancel()
+            historyTask = Task { await loadSenderHistory() }
         } catch {
             self.error = error.localizedDescription
         }
         isLoading = false
+    }
+
+    /// Finds the inbox emails whose sender is new to you: the same lookup as the security panel's sender history,
+    /// one per email. A lookup that fails marks nothing.
+    func loadSenderHistory() async {
+        let mail = services.mail
+        let first = await withTaskGroup(of: String?.self) { group in
+            for message in messages {
+                group.addTask {
+                    let known = try? await mail.hasCorrespondence(with: bareAddress(message.from), excluding: message.id)
+                    return known == false ? message.id : nil
+                }
+            }
+            var ids: Set<String> = []
+            for await id in group { if let id { ids.insert(id) } }
+            return ids
+        }
+        if !Task.isCancelled { firstMessages = first }
     }
 
     func signIn() async {
@@ -74,6 +97,8 @@ final class SessionModel {
         await services.auth.signOut()
         user = nil
         messages = []
+        historyTask?.cancel()
+        firstMessages = []
     }
 }
 

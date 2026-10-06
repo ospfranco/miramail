@@ -2,6 +2,8 @@ package com.ospfranco.trustmail.security
 
 import com.ospfranco.trustmail.mail.MailService
 import com.ospfranco.trustmail.mail.MessageDetail
+import com.ospfranco.trustmail.mail.MessageSummary
+import com.ospfranco.trustmail.mail.bareAddress
 
 /** Result values from RFC 8601 Authentication-Results. */
 private enum class AuthResult(val value: String) { Pass("pass"), Fail("fail") }
@@ -47,9 +49,11 @@ object SenderChecks {
     /** DMARC "relaxed" alignment: same organizational domain (e.g. mail.github.com aligns with github.com). */
     private fun aligned(a: String?, b: String) = a != null && organizationalDomain(a) == organizationalDomain(b)
 
-    fun checkSenderDomain(message: MessageDetail): SecurityCheck {
-        val fromDomain = domainOf(message.fromAddress) ?: "unknown"
-        val results = message.authenticationResults.flatMap(::parseAuthenticationResults)
+    fun checkSenderDomain(message: MessageDetail): SecurityCheck = checkSenderDomain(message.fromAddress, message.authenticationResults)
+
+    fun checkSenderDomain(fromAddress: String, authenticationResults: List<String>): SecurityCheck {
+        val fromDomain = domainOf(fromAddress) ?: "unknown"
+        val results = authenticationResults.flatMap(::parseAuthenticationResults)
 
         if (results.isEmpty()) {
             return SecurityCheck(
@@ -124,3 +128,7 @@ object SenderChecks {
     suspend fun checkSender(message: MessageDetail, mail: MailService): List<SecurityCheck> =
         listOf(checkSenderDomain(message), checkSenderHistory(message, mail))
 }
+
+/** The sender failed Gmail's checks (the email may be forged), so the inbox marks it like an unsafe link. */
+val MessageSummary.senderFailed: Boolean
+    get() = SenderChecks.checkSenderDomain(bareAddress(from), authenticationResults).verdict == Verdict.Danger

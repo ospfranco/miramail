@@ -57,7 +57,7 @@ object Demo {
 
         override suspend fun listInbox(maxResults: Int) = synchronized(gone) {
             all.withIndex().filter { it.value.id !in gone }.map { (index, m) ->
-                MessageSummary(m.id, m.id, m.from, m.subject, m.body.take(80), unread = index == 1)
+                MessageSummary(m.id, m.id, m.from, m.subject, m.body.take(80), unread = index == 1, authenticationResults = m.authenticationResults)
             }
         }
 

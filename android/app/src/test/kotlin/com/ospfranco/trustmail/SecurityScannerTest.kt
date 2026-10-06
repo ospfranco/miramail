@@ -185,6 +185,19 @@ class SecurityScannerTest {
         val warn = SecurityScanner.evaluateEmail(warnSender, listOf(scanned(Verdict.Safe)))
         assertEquals(Verdict.Warning, warn.verdict)
         assertEquals("Be careful with this email", warn.summary)
+        assertFalse(warn.senderFailed)
+        assertFalse("unsafe links alone don't mark the sender", mixed.senderFailed)
+    }
+
+    @Test
+    fun marksTheSenderOnlyWhenASenderCheckFails() {
+        val failed = listOf(
+            SecurityCheck("Sender verification failed", "", Verdict.Danger),
+            SecurityCheck("Known sender", "", Verdict.Safe),
+        )
+        assertTrue(SecurityScanner.evaluateEmail(failed, emptyList()).senderFailed)
+        val unverified = listOf(SecurityCheck("Sender not verified", "", Verdict.Warning))
+        assertFalse(SecurityScanner.evaluateEmail(unverified, emptyList()).senderFailed)
     }
 
     private fun footer(verdict: Verdict) = ScannedLink("https://x.com/footer/${verdict.id}", "", "x.com", verdict, emptyList(), inFooter = true)

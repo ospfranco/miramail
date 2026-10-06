@@ -43,7 +43,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ospfranco.trustmail.mail.MessageSummary
+import com.ospfranco.trustmail.mail.bareAddress
 import com.ospfranco.trustmail.mail.senderName
+import com.ospfranco.trustmail.security.senderFailed
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -125,7 +127,7 @@ private fun SignedIn(session: SessionViewModel, onOpenMessage: (String) -> Unit)
             // Room at the bottom so the last email can scroll clear of the new message button.
             LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 96.dp)) {
                 items(session.messages, key = { it.id }) { message ->
-                    MessageRow(message, onClick = { onOpenMessage(message.id) })
+                    MessageRow(message, isFirstMessage = message.id in session.firstMessages, onClick = { onOpenMessage(message.id) })
                     HorizontalDivider(modifier = Modifier.padding(start = 72.dp), color = Theme.colors.backgroundSelected)
                 }
             }
@@ -133,9 +135,13 @@ private fun SignedIn(session: SessionViewModel, onOpenMessage: (String) -> Unit)
     }
 }
 
-/** One email in the inbox, laid out like Gmail: avatar, sender, subject and a two-line preview; unread ones in bold. */
+/**
+ * One email in the inbox, laid out like Gmail: avatar, sender, subject and a two-line preview; unread ones in bold.
+ * Under the sender: the domain in red when the sender failed Gmail's checks, and a yellow marker when they are new to you
+ * ([isFirstMessage]).
+ */
 @Composable
-private fun MessageRow(message: MessageSummary, onClick: () -> Unit) {
+private fun MessageRow(message: MessageSummary, isFirstMessage: Boolean, onClick: () -> Unit) {
     val weight = if (message.unread) FontWeight.Bold else FontWeight.Normal
     ListItem(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick).testTag("message-${message.id}"),
@@ -148,6 +154,8 @@ private fun MessageRow(message: MessageSummary, onClick: () -> Unit) {
         },
         supportingContent = {
             Column {
+                if (message.senderFailed) FailedSenderLine(bareAddress(message.from))
+                if (isFirstMessage) FirstMessageLine()
                 Text(message.subject, fontWeight = weight, color = Theme.colors.text, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(message.snippet, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }

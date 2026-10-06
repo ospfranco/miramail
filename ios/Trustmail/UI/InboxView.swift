@@ -92,7 +92,7 @@ struct InboxView: View {
             }
             ForEach(session.messages) { message in
                 NavigationLink(value: Route.message(message)) {
-                    MessageRow(message: message)
+                    MessageRow(message: message, isFirstMessage: session.firstMessages.contains(message.id))
                 }
                 .accessibilityIdentifier("message-\(message.id)")
             }
@@ -103,8 +103,11 @@ struct InboxView: View {
 }
 
 /// One email in the inbox, laid out like Mail: unread dot, avatar, sender, subject and a two-line preview.
+/// Under the sender: the domain in red when the sender failed Gmail's checks, and a yellow marker when they are new to you.
 private struct MessageRow: View {
     let message: MessageSummary
+    /// You've never exchanged email with the sender.
+    let isFirstMessage: Bool
 
     var body: some View {
         HStack(alignment: .top, spacing: Spacing.three) {
@@ -120,6 +123,12 @@ private struct MessageRow: View {
                     .font(.headline.weight(message.unread ? .semibold : .regular))
                     .foregroundStyle(Theme.text)
                     .lineLimit(1)
+                if message.senderFailed {
+                    FailedSenderLine(address: bareAddress(message.from))
+                }
+                if isFirstMessage {
+                    FirstMessageLine()
+                }
                 Text(message.subject)
                     .font(.subheadline.weight(message.unread ? .semibold : .regular))
                     .foregroundStyle(Theme.text)

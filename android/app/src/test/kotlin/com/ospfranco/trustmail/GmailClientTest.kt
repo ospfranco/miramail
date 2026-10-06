@@ -58,16 +58,22 @@ class GmailClientTest {
                     val id = if ("/messages/a?" in path) "a" else "b"
                     val labels = if (id == "a") ""","labelIds":["INBOX","UNREAD"]""" else ""
                     val subject = if (id == "a") "" else """{"name":"subject","value":"Hello"},"""
+                    // Only Gmail's own Authentication-Results count; a sender can add their own.
+                    val auth = if (id == "a") {
+                        """{"name":"Authentication-Results","value":"mx.google.com; dmarc=fail"},{"name":"Authentication-Results","value":"evil.example; dmarc=pass"},"""
+                    } else {
+                        ""
+                    }
                     // The first message answers slower, to prove results keep inbox order.
                     MockResponse()
-                        .setBody("""{"id":"$id","threadId":"t$id","snippet":"snip $id"$labels,"payload":{"headers":[$subject{"name":"From","value":"Ann <ann@x.com>"}]}}""")
+                        .setBody("""{"id":"$id","threadId":"t$id","snippet":"snip $id"$labels,"payload":{"headers":[$subject$auth{"name":"From","value":"Ann <ann@x.com>"}]}}""")
                         .apply { if (id == "a") setBodyDelay(200, TimeUnit.MILLISECONDS) }
                 }
             }
         }
         assertEquals(
             listOf(
-                MessageSummary("a", "ta", "Ann <ann@x.com>", "(no subject)", "snip a", true),
+                MessageSummary("a", "ta", "Ann <ann@x.com>", "(no subject)", "snip a", true, listOf("mx.google.com; dmarc=fail")),
                 MessageSummary("b", "tb", "Ann <ann@x.com>", "Hello", "snip b", false),
             ),
             client().listInbox(20),
@@ -92,7 +98,7 @@ class GmailClientTest {
         assertTrue(seen.all { it.getHeader("Authorization") == "Bearer old-token" })
         val detail = seen.first { "/messages/a" in it.path.orEmpty() }.requestUrl!!
         assertEquals("metadata", detail.queryParameter("format"))
-        assertEquals(listOf("From", "Subject"), detail.queryParameterValues("metadataHeaders"))
+        assertEquals(listOf("From", "Subject", "Authentication-Results"), detail.queryParameterValues("metadataHeaders"))
     }
 
     @Test

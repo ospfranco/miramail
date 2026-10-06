@@ -1,10 +1,13 @@
 package com.ospfranco.trustmail
 
+import com.ospfranco.trustmail.mail.MessageSummary
 import com.ospfranco.trustmail.security.SecurityCheck
 import com.ospfranco.trustmail.security.SenderChecks
 import com.ospfranco.trustmail.security.Verdict
+import com.ospfranco.trustmail.security.senderFailed
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -14,6 +17,15 @@ class SenderChecksTest {
 
     private fun check(vararg results: String, address: String = "noreply@github.com") =
         SenderChecks.checkSenderDomain(makeMessage(address = address, auth = results.toList()))
+
+    @Test
+    fun inboxSummaryKnowsWhenTheSenderFailed() {
+        fun summary(auth: List<String>) =
+            MessageSummary("1", "t", "PayPal <support@paypa1.example.net>", "s", "", false, authenticationResults = auth)
+        assertTrue(summary(listOf("mx.google.com; dmarc=fail header.from=paypa1.example.net")).senderFailed)
+        assertFalse(summary(listOf("mx.google.com; dmarc=pass header.from=paypa1.example.net")).senderFailed)
+        assertFalse("unverified is a warning, not a failure", summary(emptyList()).senderFailed)
+    }
 
     @Test
     fun parsesAuthenticationResults() {
