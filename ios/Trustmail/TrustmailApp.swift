@@ -18,9 +18,12 @@ struct TrustmailApp: App {
     private static func makeSession() -> SessionModel {
         #if DEBUG
         // Demo runs are driven by UI tests, which can be slow to look; keep notices up long enough to be seen.
-        if Demo.isEnabled { return SessionModel(services: makeServices(), noticeDuration: .seconds(8)) }
+        if Demo.isEnabled {
+            let snapshots = MemoryInboxSnapshotStore(Demo.isOffline ? Demo.savedInbox : nil)
+            return SessionModel(services: makeServices(), snapshots: snapshots, noticeDuration: .seconds(8))
+        }
         #endif
-        return SessionModel(services: makeServices())
+        return SessionModel(services: makeServices(), snapshots: FileInboxSnapshotStore())
     }
 
     @MainActor

@@ -1,6 +1,6 @@
 import Foundation
 
-struct MessageSummary: Sendable, Equatable, Hashable, Identifiable {
+struct MessageSummary: Sendable, Equatable, Hashable, Identifiable, Codable {
     let id: String
     let threadId: String
     let from: String

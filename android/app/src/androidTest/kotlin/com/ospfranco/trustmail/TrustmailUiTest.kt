@@ -52,11 +52,33 @@ class TrustmailUiTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val device = UiDevice.getInstance(instrumentation)
 
-    private fun launch(signedOut: Boolean = false) {
+    private fun launch(signedOut: Boolean = false, offline: Boolean = false) {
         val context = instrumentation.targetContext
         scenario = ActivityScenario.launch(
-            Intent(context, MainActivity::class.java).putExtra(Demo.EXTRA, true).putExtra(Demo.EXTRA_SIGNED_OUT, signedOut),
+            Intent(context, MainActivity::class.java)
+                .putExtra(Demo.EXTRA, true)
+                .putExtra(Demo.EXTRA_SIGNED_OUT, signedOut)
+                .putExtra(Demo.EXTRA_OFFLINE, offline),
         )
+    }
+
+    // Saved inbox
+
+    @Test
+    fun offlineLaunchShowsTheSavedInbox() {
+        launch(offline = true)
+        waitForTag("saved-inbox", 10_000)
+        compose.onNodeWithTag("message-demo-1").assertExists()
+        // The saved copy keeps its markers.
+        compose.onNode(hasTestTag("first-message") and hasAnyAncestor(hasTestTag("message-demo-2")), useUnmergedTree = true).assertExists()
+        screenshot("inbox-saved")
+    }
+
+    @Test
+    fun onlineLaunchShowsNoSavedInboxNote() {
+        launch()
+        waitForTag("message-demo-1", 10_000)
+        compose.onNodeWithTag("saved-inbox").assertDoesNotExist()
     }
 
     @After

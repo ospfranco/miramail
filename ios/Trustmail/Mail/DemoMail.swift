@@ -50,18 +50,31 @@ enum Demo {
 
     private static let all = [welcome, phishing]
 
+    /// `-demo-offline` starts with a saved inbox and Gmail out of reach, to see the inbox snapshot.
+    static var isOffline: Bool { ProcessInfo.processInfo.arguments.contains("-demo-offline") }
+
+    private static func summaries(excluding gone: Set<String> = []) -> [MessageSummary] {
+        all.enumerated().filter { !gone.contains($0.element.id) }.map { index, m in
+            MessageSummary(
+                id: m.id, threadId: m.id, from: m.from, subject: m.subject, snippet: String(m.body.prefix(80)), unread: index == 1,
+                authenticationResults: m.authenticationResults
+            )
+        }
+    }
+
+    /// The inbox as a previous run would have saved it.
+    static var savedInbox: InboxSnapshot {
+        InboxSnapshot(account: "demo@example.com", messages: summaries(), firstMessages: ["demo-2"])
+    }
+
     /// A mailbox that remembers what happens to it, so the UI can be exercised end to end.
     actor Mail: MailService {
         private var gone: Set<String> = []
         private(set) var sent: [OutgoingMessage] = []
 
         func listInbox(maxResults: Int) async throws -> [MessageSummary] {
-            all.enumerated().filter { !gone.contains($0.element.id) }.map { index, m in
-                MessageSummary(
-                    id: m.id, threadId: m.id, from: m.from, subject: m.subject, snippet: String(m.body.prefix(80)), unread: index == 1,
-                    authenticationResults: m.authenticationResults
-                )
-            }
+            if Demo.isOffline { throw URLError(.notConnectedToInternet) }
+            return Demo.summaries(excluding: gone)
         }
 
         func getMessage(id: String) async throws -> MessageDetail {

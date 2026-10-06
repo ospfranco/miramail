@@ -13,6 +13,9 @@ object Demo {
     /** `--ez demo_signed_out true` starts signed out, to see the intro and the sign-in screen. */
     const val EXTRA_SIGNED_OUT = "demo_signed_out"
 
+    /** `--ez demo_offline true` starts with a saved inbox and Gmail out of reach, to see the inbox snapshot. */
+    const val EXTRA_OFFLINE = "demo_offline"
+
     private val welcome = MessageDetail(
         id = "demo-1",
         from = "Trustmail Team <hello@example.com>",
@@ -50,15 +53,22 @@ object Demo {
 
     private val all = listOf(welcome, phishing)
 
+    private fun summaries(gone: Set<String> = emptySet()) =
+        all.withIndex().filter { it.value.id !in gone }.map { (index, m) ->
+            MessageSummary(m.id, m.id, m.from, m.subject, m.body.take(80), unread = index == 1, authenticationResults = m.authenticationResults)
+        }
+
+    /** The inbox as a previous run would have saved it. */
+    val savedInbox get() = InboxSnapshot("demo@example.com", summaries(), setOf("demo-2"))
+
     /** A mailbox that remembers what happens to it, so the UI can be exercised end to end. */
-    class Mailbox : MailService {
+    class Mailbox(private val offline: Boolean = false) : MailService {
         private val gone = mutableSetOf<String>()
         val sent = mutableListOf<OutgoingMessage>()
 
-        override suspend fun listInbox(maxResults: Int) = synchronized(gone) {
-            all.withIndex().filter { it.value.id !in gone }.map { (index, m) ->
-                MessageSummary(m.id, m.id, m.from, m.subject, m.body.take(80), unread = index == 1, authenticationResults = m.authenticationResults)
-            }
+        override suspend fun listInbox(maxResults: Int): List<MessageSummary> {
+            if (offline) throw java.io.IOException("Unable to resolve host \"gmail.googleapis.com\": No address associated with hostname")
+            return synchronized(gone) { summaries(gone) }
         }
 
         override suspend fun getMessage(id: String) =
@@ -96,5 +106,5 @@ object Demo {
         override suspend fun signOut() {}
     }
 
-    fun services(signedOut: Boolean = false) = Services(DemoAuth(signedOut), Mailbox())
+    fun services(signedOut: Boolean = false, offline: Boolean = false) = Services(DemoAuth(signedOut), Mailbox(offline))
 }

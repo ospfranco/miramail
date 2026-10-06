@@ -42,6 +42,7 @@ The logic is ported line for line, so a change in one file has a twin in the oth
 | Gmail API | `Mail/GmailClient.swift` | `mail/GmailClient.kt` |
 | Google sign-in | `Mail/GoogleAuth.swift` | `mail/GoogleAuth.kt` |
 | Mail/auth interfaces and models | `Mail/MailModels.swift` | `mail/MailModels.kt` |
+| Saved inbox (offline snapshot) | `Mail/InboxSnapshot.swift` | `mail/InboxSnapshot.kt` |
 | Demo data (debug only) | `Mail/DemoMail.swift` | `mail/DemoMail.kt` |
 | Intro screen (shown once, before the first sign-in) | `UI/IntroView.swift`, `RootView` in `TrustmailApp.swift`, asset `IntroPreview` | `ui/IntroScreen.kt`, gating in `MainActivity.kt`, `res/drawable-nodpi/intro_preview.png` |
 | Floating action bar (delete / archive / move / reply) and notice banner | `UI/ActionBar.swift` | `ui/ActionBar.kt` |
@@ -82,6 +83,15 @@ The sender is marked like a link in the body:
 ### The verdict's explanation (security panel)
 
 Under the verdict, the panel explains a warning or a danger in plain words: what was found and what to do (`SecurityScanner.explanation`, test tag / accessibility id `security-explanation`). Unsafe findings (a failed sender check, unsafe links) take over from suspicious ones; a safe email gets none. The sender checks are told apart by `SenderCheckLabel` (the labels are an enum on both platforms), so a new sender check needs a case there and, if it can warn, a sentence in `explanation`. The exact sentences are pinned by `explainsTheVerdict` on both platforms.
+
+### Saved inbox (offline snapshot)
+
+The latest inbox (the list and its sender markers) is kept on the device, so the app opens straight to it and still shows it when Gmail can't be reached. Only the inbox list is saved, not email bodies, so opening an email still needs the network.
+
+- At launch the session shows the saved copy of the signed-in account (`InboxSnapshot.account` must match), then refreshes. If the refresh fails, the copy stays with the note "Couldn't refresh your inbox. Showing the copy saved on this device." (`saved-inbox`), in place of the raw error.
+- It is saved after every refresh, after the sender history comes in, and after archive/delete/move; it is deleted on sign out.
+- Storage: iOS `Application Support/inbox-snapshot.json` with complete file protection, excluded from backup; Android `filesDir/inbox_snapshot.json` (private, and the app has `allowBackup="false"`). Tests and demo runs use `MemoryInboxSnapshotStore`.
+- **Offline launch keeps the session.** A network failure while restoring Google sign-in no longer signs out: iOS remembers the account email and checks `GoogleAuth.isNetworkError` (the token is restored on the next request); Android keeps the account on a `NETWORK_ERROR` from `authorize()`. Real sign-in can't run in demo mode, so test this by hand with a real account in airplane mode.
 
 ### The intro screen
 
@@ -158,8 +168,8 @@ Versions live in `android/gradle/libs.versions.toml`.
 
 Debug builds can run against canned mail, which is what the UI tests use:
 
-- iOS: launch with the `-demo` argument (`xcrun simctl launch <device> com.ospfranco.trustmail -demo`). Add `-demo-signed-out` to start signed out (to see the intro and the sign-in screen).
-- Android: `adb shell am start -n com.ospfranco.trustmail/.MainActivity --ez demo true`. Add `--ez demo_signed_out true` to start signed out.
+- iOS: launch with the `-demo` argument (`xcrun simctl launch <device> com.ospfranco.trustmail -demo`). Add `-demo-signed-out` to start signed out (to see the intro and the sign-in screen), or `-demo-offline` to start with a saved inbox and Gmail out of reach.
+- Android: `adb shell am start -n com.ospfranco.trustmail/.MainActivity --ez demo true`. Add `--ez demo_signed_out true` to start signed out, or `--ez demo_offline true` to start offline with a saved inbox.
 
 The demo mailbox pauses 1.5 seconds in every scan (in the sender-history lookup), so the grey "scanning" tab stays up long enough for UI tests to see it (accessibility id / test tag `security-scanning`; once the scan is done it becomes `security-tab`). It also remembers what you do: archived, deleted or moved emails leave the inbox, and sent emails are kept. Notices stay up for 8 seconds in demo runs (2.5 otherwise) so UI tests can find them.
 

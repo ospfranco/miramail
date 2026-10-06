@@ -17,13 +17,19 @@ final class SessionModel {
     private var historyTask: Task<Void, Never>?
     private(set) var isLoading = true
     private(set) var error: String?
+    /// The inbox couldn't be refreshed, so what's shown is the copy saved on the device.
+    private(set) var showsSavedInbox = false
+    /// Whether `messages` came from the snapshot rather than from Gmail.
+    private var messagesAreSaved = false
+    private let snapshots: InboxSnapshotStore
     /// A short message shown over whatever screen is open ("Archived", "Message sent", ...).
     private(set) var notice: String?
     private var noticeTask: Task<Void, Never>?
     private let noticeDuration: Duration
 
-    init(services: Services, noticeDuration: Duration = .seconds(2.5)) {
+    init(services: Services, snapshots: InboxSnapshotStore = MemoryInboxSnapshotStore(), noticeDuration: Duration = .seconds(2.5)) {
         self.services = services
+        self.snapshots = snapshots
         self.noticeDuration = noticeDuration
     }
 
@@ -39,13 +45,22 @@ final class SessionModel {
     /// Drops a message that was archived, deleted or moved out of the inbox.
     func removeMessage(_ id: String, notice: String) {
         messages.removeAll { $0.id == id }
+        saveSnapshot()
         showNotice(notice)
     }
 
     func start() async {
         do {
             user = try await services.auth.restoreSession()
-            if user != nil { await loadInbox() }
+            if let user {
+                // Show the last saved inbox straight away; the refresh replaces it.
+                if let snapshot = snapshots.load(), snapshot.account == user.email {
+                    messages = snapshot.messages
+                    firstMessages = snapshot.firstMessages
+                    messagesAreSaved = true
+                }
+                await loadInbox()
+            }
         } catch {
             self.error = error.localizedDescription
         }
@@ -57,12 +72,23 @@ final class SessionModel {
         error = nil
         do {
             messages = try await services.mail.listInbox(maxResults: 20)
+            messagesAreSaved = false
+            showsSavedInbox = false
+            saveSnapshot()
             historyTask?.cancel()
             historyTask = Task { await loadSenderHistory() }
         } catch {
             self.error = error.localizedDescription
+            showsSavedInbox = messagesAreSaved
         }
         isLoading = false
+    }
+
+    /// Keeps the inbox on the device, for the next launch and for when Gmail can't be reached.
+    private func saveSnapshot() {
+        guard let user else { return }
+        let ids = Set(messages.map(\.id))
+        snapshots.save(InboxSnapshot(account: user.email, messages: messages, firstMessages: firstMessages.intersection(ids)))
     }
 
     /// Finds the inbox emails whose sender is new to you: the same lookup as the security panel's sender history,
@@ -80,7 +106,10 @@ final class SessionModel {
             for await id in group { if let id { ids.insert(id) } }
             return ids
         }
-        if !Task.isCancelled { firstMessages = first }
+        if !Task.isCancelled {
+            firstMessages = first
+            saveSnapshot()
+        }
     }
 
     func signIn() async {
@@ -99,6 +128,10 @@ final class SessionModel {
         messages = []
         historyTask?.cancel()
         firstMessages = []
+        showsSavedInbox = false
+        messagesAreSaved = false
+        // The saved inbox is private to the account that signed out.
+        snapshots.clear()
     }
 }
 

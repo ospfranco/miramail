@@ -47,6 +47,15 @@ import com.ospfranco.trustmail.mail.bareAddress
 import com.ospfranco.trustmail.mail.senderName
 import com.ospfranco.trustmail.security.senderFailed
 
+/** Material's "cloud off" icon, for the note shown when the inbox is the saved copy. */
+private val CloudOffIcon = icon(
+    "cloud_off",
+    "M19.35,10.04C18.67,6.59 15.64,4 12,4c-1.48,0 -2.85,0.43 -4.01,1.17l1.46,1.46C10.21,6.23 11.08,6 12,6c3.04,0 5.5,2.46 5.5,5.5v0.5H19" +
+        "c1.66,0 3,1.34 3,3 0,1.13 -0.64,2.11 -1.56,2.62l1.45,1.45C23.16,18.16 24,16.68 24,15c0,-2.64 -2.05,-4.78 -4.65,-4.96z" +
+        "M3,5.27l2.75,2.74C2.56,8.15 0,10.77 0,14c0,3.31 2.69,6 6,6h11.73l2,2L21,20.73 4.27,4 3,5.27z" +
+        "M7.73,10l8,8H6c-2.21,0 -4,-1.79 -4,-4s1.79,-4 4,-4h1.73z",
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InboxScreen(session: SessionViewModel, onOpenMessage: (String) -> Unit, onOpenSettings: () -> Unit, onNewMessage: () -> Unit) {
@@ -121,7 +130,19 @@ private fun SignedOut(session: SessionViewModel) {
 @Composable
 private fun SignedIn(session: SessionViewModel, onOpenMessage: (String) -> Unit) {
     Column(Modifier.fillMaxSize()) {
-        session.error?.let { AppText(it, TextKind.Small, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(horizontal = Spacing.three)) }
+        // With the saved copy on screen, the note says what happened; the raw error would only repeat it.
+        if (session.showsSavedInbox) {
+            Row(
+                modifier = Modifier.padding(horizontal = Spacing.three, vertical = Spacing.two).testTag("saved-inbox"),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.two),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(CloudOffIcon, contentDescription = null, tint = Theme.colors.textSecondary, modifier = Modifier.size(18.dp))
+                AppText("Couldn't refresh your inbox. Showing the copy saved on this device.", TextKind.Small, color = Theme.colors.textSecondary)
+            }
+        } else {
+            session.error?.let { AppText(it, TextKind.Small, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(horizontal = Spacing.three)) }
+        }
 
         PullToRefreshBox(isRefreshing = session.isLoading, onRefresh = session::refresh, modifier = Modifier.fillMaxSize()) {
             // Room at the bottom so the last email can scroll clear of the new message button.

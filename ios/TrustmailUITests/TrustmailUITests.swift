@@ -247,6 +247,25 @@ final class TrustmailUITests: XCTestCase {
 
     // MARK: - Intro
 
+    // MARK: - Saved inbox
+
+    func testOfflineLaunchShowsTheSavedInbox() {
+        app.terminate()
+        app.launchArguments = ["-demo", "-demo-offline"]
+        app.launch()
+        XCTAssertTrue(app.descendants(matching: .any)["saved-inbox"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["message-demo-1"].exists)
+        // The saved copy keeps its markers.
+        let marked = app.buttons.matching(identifier: "message-demo-2").element(matching: NSPredicate(format: "label CONTAINS %@", "First message from this sender"))
+        XCTAssertTrue(marked.exists)
+        screenshot("inbox-saved")
+    }
+
+    func testOnlineLaunchShowsNoSavedInboxNote() {
+        XCTAssertTrue(app.buttons["message-demo-1"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.descendants(matching: .any)["saved-inbox"].exists)
+    }
+
     private func relaunchSignedOut() {
         app.terminate()
         app.launchArguments = ["-demo", "-demo-signed-out"]

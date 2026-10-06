@@ -1,24 +1,10 @@
 package com.ospfranco.trustmail
 
-import android.content.Intent
-import android.content.IntentSender
-import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.activity.enableEdgeToEdge
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.lifecycle.viewmodel.initializer
-import androidx.lifecycle.viewmodel.viewModelFactory
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import com.ospfranco.trustmail.mail.ConsentLauncher
-import com.ospfranco.trustmail.mail.Demo
-import com.ospfranco.trustmail.mail.OutgoingMessage
-import com.ospfranco.trustmail.mail.Services
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Box
@@ -31,19 +17,36 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import android.content.Intent
+import android.content.IntentSender
+import android.os.Bundle
+import com.ospfranco.trustmail.mail.ConsentLauncher
+import com.ospfranco.trustmail.mail.Demo
+import com.ospfranco.trustmail.mail.FileInboxSnapshotStore
+import com.ospfranco.trustmail.mail.InboxSnapshotStore
+import com.ospfranco.trustmail.mail.MemoryInboxSnapshotStore
+import com.ospfranco.trustmail.mail.OutgoingMessage
+import com.ospfranco.trustmail.mail.Services
+import com.ospfranco.trustmail.settings.AppSettings
+import com.ospfranco.trustmail.settings.MemorySettingsStore
 import com.ospfranco.trustmail.ui.ComposeScreen
 import com.ospfranco.trustmail.ui.ComposeViewModel
-import com.ospfranco.trustmail.ui.NoticeBanner
-import com.ospfranco.trustmail.ui.Spacing
 import com.ospfranco.trustmail.ui.InboxScreen
 import com.ospfranco.trustmail.ui.IntroScreen
 import com.ospfranco.trustmail.ui.MessageScreen
 import com.ospfranco.trustmail.ui.MessageViewModel
-import com.ospfranco.trustmail.ui.TrustmailTheme
-import com.ospfranco.trustmail.settings.AppSettings
-import com.ospfranco.trustmail.settings.MemorySettingsStore
+import com.ospfranco.trustmail.ui.NoticeBanner
 import com.ospfranco.trustmail.ui.SessionViewModel
 import com.ospfranco.trustmail.ui.SettingsScreen
+import com.ospfranco.trustmail.ui.Spacing
+import com.ospfranco.trustmail.ui.TrustmailTheme
 import kotlinx.coroutines.CompletableDeferred
 
 /** How long a screen takes to slide in or out. */
@@ -67,8 +70,15 @@ class MainActivity : ComponentActivity(), ConsentLauncher {
     private val isDemo get() = BuildConfig.DEBUG && intent.getBooleanExtra(Demo.EXTRA, false)
 
     private fun services(): Services =
-        if (isDemo) Demo.services(signedOut = intent.getBooleanExtra(Demo.EXTRA_SIGNED_OUT, false))
+        if (isDemo) Demo.services(signedOut = intent.getBooleanExtra(Demo.EXTRA_SIGNED_OUT, false), offline = isDemoOffline)
         else (application as TrustmailApplication).liveServices
+
+    private val isDemoOffline get() = isDemo && intent.getBooleanExtra(Demo.EXTRA_OFFLINE, false)
+
+    /** Demo runs keep the inbox snapshot in memory (seeded when offline); the app keeps it in a private file. */
+    private fun snapshots(): InboxSnapshotStore =
+        if (isDemo) MemoryInboxSnapshotStore(if (isDemoOffline) Demo.savedInbox else null)
+        else FileInboxSnapshotStore(filesDir)
 
     /** Demo runs start from the default settings every launch and never touch the real preferences. */
     private fun settings(): AppSettings =
@@ -81,11 +91,12 @@ class MainActivity : ComponentActivity(), ConsentLauncher {
         ConsentBridge.delegate = this
         val services = services()
         val settings = settings()
+        val snapshots = snapshots()
 
         setContent {
             TrustmailTheme {
                 val navController = rememberNavController()
-                val session: SessionViewModel = viewModel(factory = viewModelFactory { initializer { SessionViewModel(services, noticeDurationMs = if (isDemo) 8000 else 2500) } })
+                val session: SessionViewModel = viewModel(factory = viewModelFactory { initializer { SessionViewModel(services, snapshots, noticeDurationMs = if (isDemo) 8000 else 2500) } })
 
                 // The intro first (once, before anyone has signed in), then the inbox.
                 val showIntro = session.user == null && !session.isLoading && !settings.hasSeenIntro

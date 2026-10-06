@@ -5,7 +5,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ospfranco.trustmail.mail.InboxSnapshot
+import com.ospfranco.trustmail.mail.InboxSnapshotStore
 import com.ospfranco.trustmail.mail.MailLabel
+import com.ospfranco.trustmail.mail.MemoryInboxSnapshotStore
 import com.ospfranco.trustmail.mail.MessageDetail
 import com.ospfranco.trustmail.mail.MessageSummary
 import com.ospfranco.trustmail.mail.Mime
@@ -31,6 +34,7 @@ private fun Throwable.display(): String = message ?: toString()
 
 class SessionViewModel(
     private val services: Services,
+    private val snapshots: InboxSnapshotStore = MemoryInboxSnapshotStore(),
     private val noticeDurationMs: Long = 2500,
 ) : ViewModel() {
     /** A short message shown over whatever screen is open ("Archived", "Message sent", ...). */
@@ -50,6 +54,7 @@ class SessionViewModel(
     /** Drops a message that was archived, deleted or moved out of the inbox. */
     fun removeMessage(id: String, notice: String) {
         messages = messages.filter { it.id != id }
+        viewModelScope.launch { saveSnapshot() }
         showNotice(notice)
     }
 
@@ -65,6 +70,11 @@ class SessionViewModel(
         private set
     var error by mutableStateOf<String?>(null)
         private set
+    /** The inbox couldn't be refreshed, so what's shown is the copy saved on the device. */
+    var showsSavedInbox by mutableStateOf(false)
+        private set
+    /** Whether [messages] came from the snapshot rather than from Gmail. */
+    private var messagesAreSaved = false
 
     init {
         viewModelScope.launch { start() }
@@ -72,8 +82,17 @@ class SessionViewModel(
 
     suspend fun start() {
         try {
-            user = services.auth.restoreSession()
-            if (user != null) loadInbox()
+            val restored = services.auth.restoreSession()
+            user = restored
+            if (restored != null) {
+                // Show the last saved inbox straight away; the refresh replaces it.
+                snapshots.load()?.takeIf { it.account == restored.email }?.let {
+                    messages = it.messages
+                    firstMessages = it.firstMessages
+                    messagesAreSaved = true
+                }
+                loadInbox()
+            }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -91,14 +110,25 @@ class SessionViewModel(
         error = null
         try {
             messages = services.mail.listInbox(20)
+            messagesAreSaved = false
+            showsSavedInbox = false
+            saveSnapshot()
             historyJob?.cancel()
             historyJob = viewModelScope.launch { loadSenderHistory() }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             error = e.display()
+            showsSavedInbox = messagesAreSaved
         }
         isLoading = false
+    }
+
+    /** Keeps the inbox on the device, for the next launch and for when Gmail can't be reached. */
+    private suspend fun saveSnapshot() {
+        val account = user?.email ?: return
+        val ids = messages.map { it.id }.toSet()
+        snapshots.save(InboxSnapshot(account, messages, firstMessages intersect ids))
     }
 
     /**
@@ -121,6 +151,7 @@ class SessionViewModel(
             }.awaitAll().filterNotNull().toSet()
         }
         firstMessages = first
+        saveSnapshot()
     }
 
     fun signIn() {
@@ -144,6 +175,10 @@ class SessionViewModel(
             messages = emptyList()
             historyJob?.cancel()
             firstMessages = emptySet()
+            showsSavedInbox = false
+            messagesAreSaved = false
+            // The saved inbox is private to the account that signed out.
+            snapshots.clear()
         }
     }
 }

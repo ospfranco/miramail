@@ -16,14 +16,36 @@ final class GoogleAuth: AuthService {
         "https://www.googleapis.com/auth/gmail.send",
     ]
 
-    init() {
+    /// The signed-in account, remembered so the app can open (and show the saved inbox) when Google can't be reached.
+    private static let emailKey = "googleAuth.email"
+    private let defaults: UserDefaults
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
         GIDSignIn.sharedInstance.configuration = GIDConfiguration(clientID: Self.clientID)
     }
 
     func restoreSession() async throws -> UserProfile? {
         guard GIDSignIn.sharedInstance.hasPreviousSignIn() else { return nil }
-        let user = try await GIDSignIn.sharedInstance.restorePreviousSignIn()
-        return profile(of: user)
+        do {
+            return profile(of: try await GIDSignIn.sharedInstance.restorePreviousSignIn())
+        } catch where Self.isNetworkError(error) {
+            // Offline: stay signed in. The token is restored on the next request that reaches Google.
+            guard let email = defaults.string(forKey: Self.emailKey) else { throw error }
+            return UserProfile(email: email)
+        }
+    }
+
+    /// Whether the error (or one it wraps) is a failure to reach the network, rather than a sign-in that is no longer valid.
+    static func isNetworkError(_ error: Error) -> Bool {
+        var current: NSError? = error as NSError
+        while let nsError = current {
+            if nsError.domain == NSURLErrorDomain { return true }
+            // AppAuth, which Google Sign-In uses for tokens: OIDErrorCodeNetworkError.
+            if nsError.domain == "org.openid.appauth.general" && nsError.code == -5 { return true }
+            current = nsError.userInfo[NSUnderlyingErrorKey] as? NSError
+        }
+        return false
     }
 
     func signIn() async throws -> UserProfile? {
@@ -42,10 +64,15 @@ final class GoogleAuth: AuthService {
 
     func signOut() async {
         GIDSignIn.sharedInstance.signOut()
+        defaults.removeObject(forKey: Self.emailKey)
     }
 
     /// Returns a valid access token, refreshing it if it has expired.
     func accessToken(forceRefresh: Bool) async throws -> String {
+        // After an offline launch the session wasn't restored yet; do it now that Google may be reachable.
+        if GIDSignIn.sharedInstance.currentUser == nil && GIDSignIn.sharedInstance.hasPreviousSignIn() {
+            _ = try await GIDSignIn.sharedInstance.restorePreviousSignIn()
+        }
         guard let user = GIDSignIn.sharedInstance.currentUser else {
             throw GmailError(status: 401, body: "Not signed in")
         }
@@ -54,7 +81,9 @@ final class GoogleAuth: AuthService {
     }
 
     private func profile(of user: GIDGoogleUser) -> UserProfile {
-        UserProfile(email: user.profile?.email ?? "")
+        let email = user.profile?.email ?? ""
+        defaults.set(email, forKey: Self.emailKey)
+        return UserProfile(email: email)
     }
 
     private static func topViewController() -> UIViewController? {

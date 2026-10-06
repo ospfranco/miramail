@@ -16,6 +16,7 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.tasks.await
+import java.io.IOException
 
 /** Shows Google's consent UI. Implemented by the activity, which owns the result launcher. */
 interface ConsentLauncher {
@@ -64,7 +65,12 @@ class GoogleAuth(
         val result = try {
             authorizeSilently()
         } catch (e: ApiException) {
+            // Offline: stay signed in (and keep the saved inbox). The token is fetched on the next request that
+            // reaches Google. Any other failure means the grant is gone.
+            if (e.statusCode == CommonStatusCodes.NETWORK_ERROR) return UserProfile(email)
             null
+        } catch (e: IOException) {
+            return UserProfile(email)
         }
         if (result == null) {
             prefs.edit().remove(KEY_EMAIL).apply()

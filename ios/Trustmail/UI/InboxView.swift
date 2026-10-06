@@ -87,7 +87,12 @@ struct InboxView: View {
 
     private var signedIn: some View {
         List {
-            if let error = session.error {
+            // With the saved copy on screen, the note says what happened; the raw error would only repeat it.
+            if session.showsSavedInbox {
+                Label("Couldn't refresh your inbox. Showing the copy saved on this device.", systemImage: "icloud.slash")
+                    .textStyle(.small, color: Theme.textSecondary)
+                    .accessibilityIdentifier("saved-inbox")
+            } else if let error = session.error {
                 Text(error).textStyle(.small, color: Verdict.danger.color)
             }
             ForEach(session.messages) { message in

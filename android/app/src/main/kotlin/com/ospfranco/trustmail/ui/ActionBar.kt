@@ -26,7 +26,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 
 /** Material icon outlines, built from path data so no icon library is needed. */
-private fun icon(name: String, path: String, evenOdd: Boolean = false): ImageVector =
+internal fun icon(name: String, path: String, evenOdd: Boolean = false): ImageVector =
     ImageVector.Builder(name, 24.dp, 24.dp, 24f, 24f)
         .addPath(
             addPathNodes(path),

@@ -1,5 +1,7 @@
 package com.ospfranco.trustmail.mail
 
+import kotlinx.serialization.Serializable
+
 /** The name in `Name <address>` (without quotes), or the address when there is no name. */
 fun senderName(header: String): String {
     val name = Regex("""^\s*"?([^"<]*?)"?\s*<""").find(header)?.groupValues?.get(1).orEmpty()
@@ -19,6 +21,7 @@ data class SenderAvatar(val initial: String, val hexColor: String) {
     }
 }
 
+@Serializable
 data class MessageSummary(
     val id: String,
     val threadId: String,
