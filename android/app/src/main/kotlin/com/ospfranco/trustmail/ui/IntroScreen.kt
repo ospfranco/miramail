@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -21,6 +22,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -59,7 +62,7 @@ fun IntroScreen(onContinue: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(Spacing.four),
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.two)) {
-                    Text("Welcome to Trustmail", color = colors.text, fontSize = 28.sp, fontWeight = FontWeight.SemiBold, textAlign = TextAlign.Center)
+                    Text("Welcome to Trustmail", color = colors.text, style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
                     AppText(
                         "Trustmail checks every email for phishing before you act on it.",
                         TextKind.Regular,
@@ -87,7 +90,7 @@ fun IntroScreen(onContinue: () -> Unit) {
                                 modifier = Modifier.size(28.dp).background(colors.brand, CircleShape).semantics { contentDescription = "" },
                                 contentAlignment = Alignment.Center,
                             ) {
-                                Text("${index + 1}", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                Text("${index + 1}", color = MaterialTheme.colorScheme.onPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                             }
                             Column(verticalArrangement = Arrangement.spacedBy(Spacing.half)) {
                                 AppText(title, TextKind.SmallBold)
@@ -107,21 +110,16 @@ fun IntroScreen(onContinue: () -> Unit) {
             }
         }
 
-        Box(
+        Button(
+            onClick = onContinue,
+            contentPadding = PaddingValues(vertical = Spacing.three),
             modifier = Modifier
                 .padding(horizontal = Spacing.three)
                 .padding(bottom = Spacing.two)
                 .align(Alignment.CenterHorizontally)
                 .widthIn(max = Theme.maxContentWidth)
                 .fillMaxWidth()
-                .clip(RoundedCornerShape(Spacing.three))
-                .background(colors.brand)
-                .clickable(onClick = onContinue)
-                .padding(vertical = Spacing.three)
                 .testTag("intro-continue"),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text("Continue", color = Color.White, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
-        }
+        ) { Text("Continue", style = MaterialTheme.typography.titleMedium) }
     }
 }

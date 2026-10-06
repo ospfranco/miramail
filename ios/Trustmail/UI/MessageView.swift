@@ -69,19 +69,28 @@ struct MessageView: View {
 
     private func content(_ message: MessageDetail) -> some View {
         VStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: Spacing.half) {
+            VStack(alignment: .leading, spacing: Spacing.three) {
                 Text(message.subject)
-                    .font(.system(size: 20, weight: .semibold))
+                    .font(.title2.weight(.bold))
                     .foregroundStyle(Theme.text)
                     .fixedSize(horizontal: false, vertical: true)
-                Text(message.from).textStyle(.small).lineLimit(1)
-                Text(message.date).textStyle(.small, color: Theme.textSecondary).lineLimit(1)
+                HStack(spacing: Spacing.three) {
+                    AvatarView(from: message.from)
+                    VStack(alignment: .leading, spacing: Spacing.half) {
+                        Text(senderName(message.from)).font(.headline).foregroundStyle(Theme.text).lineLimit(1)
+                        Text(message.from).textStyle(.small, color: Theme.textSecondary).lineLimit(1)
+                        Text(message.date).font(.caption).foregroundStyle(Theme.textSecondary).lineLimit(1)
+                    }
+                }
                 if model.evaluation == nil {
-                    Text("Scanning links…").textStyle(.small, color: Theme.textSecondary)
+                    Label("Scanning links…", systemImage: "shield.lefthalf.filled")
+                        .textStyle(.small, color: Theme.textSecondary)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(Spacing.three)
+
+            Divider()
 
             EmailBodyView(
                 body: message.body,

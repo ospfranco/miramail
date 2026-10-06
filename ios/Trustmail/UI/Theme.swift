@@ -26,16 +26,20 @@ extension Color {
     }
 }
 
+/// The system's semantic colors, so every screen follows light/dark mode, high contrast and the platform's look.
 enum Theme {
-    static let text = Color(light: "000000", dark: "FFFFFF")
-    static let background = Color(light: "FFFFFF", dark: "000000")
-    static let backgroundElement = Color(light: "F0F0F3", dark: "212225")
-    static let backgroundSelected = Color(light: "E0E1E6", dark: "2E3135")
-    static let textSecondary = Color(light: "60646C", dark: "B0B4BA")
-    static let linkPrimary = Color(hex: "3C87F7")
+    static let text = Color(uiColor: .label)
+    static let textSecondary = Color(uiColor: .secondaryLabel)
+    static let background = Color(uiColor: .systemBackground)
+    static let backgroundElement = Color(uiColor: .secondarySystemBackground)
+    static let backgroundSelected = Color(uiColor: .separator)
+    /// Behind grouped content (settings, the security panel), with `groupedElement` for the cards on it.
+    static let groupedBackground = Color(uiColor: .systemGroupedBackground)
+    static let groupedElement = Color(uiColor: .secondarySystemGroupedBackground)
+    static let linkPrimary = Color.accentColor
     /// The security tab while an email is still being scanned.
     static let scanning = Color(hex: "7A7F87")
-    /// The blue of the app icon.
+    /// The blue of the app icon, used as the app's tint.
     static let brand = Color(hex: "208AEF")
 
     static let maxContentWidth: CGFloat = 800
@@ -55,17 +59,17 @@ extension Verdict {
     var color: Color { Color(hex: hexColor) }
 }
 
-/// Text styles shared by every screen.
+/// Text styles shared by every screen, on the system's Dynamic Type scale.
 enum TextStyle {
     case regular, small, smallBold, subtitle, link
 
     fileprivate var font: Font {
         switch self {
-        case .regular: .system(size: 16, weight: .medium)
-        case .small: .system(size: 14, weight: .medium)
-        case .smallBold: .system(size: 14, weight: .bold)
-        case .subtitle: .system(size: 32, weight: .semibold)
-        case .link: .system(size: 14)
+        case .regular: .body
+        case .small: .subheadline
+        case .smallBold: .subheadline.weight(.semibold)
+        case .subtitle: .largeTitle.bold()
+        case .link: .subheadline
         }
     }
 }
@@ -73,6 +77,37 @@ enum TextStyle {
 extension View {
     func textStyle(_ style: TextStyle, color: Color = Theme.text) -> some View {
         font(style.font).foregroundStyle(color)
+    }
+
+    /// Liquid Glass where the system has it (iOS 26), a translucent material before that.
+    @ViewBuilder
+    func glassBackground<S: Shape>(in shape: S) -> some View {
+        if #available(iOS 26, *) {
+            glassEffect(.regular.interactive(), in: shape)
+        } else {
+            background(.regularMaterial, in: shape)
+                .overlay(shape.stroke(Theme.backgroundSelected.opacity(0.5), lineWidth: 0.5))
+                .shadow(color: .black.opacity(0.15), radius: 10, y: 3)
+        }
+    }
+}
+
+/// The sender's initial on a colored circle.
+struct AvatarView: View {
+    let from: String
+    var size: CGFloat = 40
+
+    var body: some View {
+        let avatar = SenderAvatar(from)
+        Circle()
+            .fill(Color(hex: avatar.hexColor).gradient)
+            .frame(width: size, height: size)
+            .overlay {
+                Text(avatar.initial)
+                    .font(.system(size: size * 0.42, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white)
+            }
+            .accessibilityHidden(true)
     }
 }
 

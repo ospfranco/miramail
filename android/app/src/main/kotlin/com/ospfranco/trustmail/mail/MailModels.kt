@@ -1,5 +1,24 @@
 package com.ospfranco.trustmail.mail
 
+/** The name in `Name <address>` (without quotes), or the address when there is no name. */
+fun senderName(header: String): String {
+    val name = Regex("""^\s*"?([^"<]*?)"?\s*<""").find(header)?.groupValues?.get(1).orEmpty()
+    return name.ifEmpty { bareAddress(header) }
+}
+
+/** The circle shown next to a sender: their initial on one of a few colors, the same color for the same address. */
+data class SenderAvatar(val initial: String, val hexColor: String) {
+    companion object {
+        val palette = listOf("1E88E5", "43A047", "F4511E", "8E24AA", "00897B", "6D4C41", "3949AB", "D81B60")
+
+        fun of(header: String): SenderAvatar {
+            val initial = senderName(header).firstOrNull { it.isLetterOrDigit() }?.uppercase() ?: "?"
+            val sum = bareAddress(header).codePoints().sum()
+            return SenderAvatar(initial, palette[sum % palette.size])
+        }
+    }
+}
+
 data class MessageSummary(
     val id: String,
     val threadId: String,

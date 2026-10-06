@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -42,6 +44,7 @@ import androidx.core.net.toUri
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import com.ospfranco.trustmail.mail.MailLabel
+import com.ospfranco.trustmail.mail.senderName
 import com.ospfranco.trustmail.security.ScannedLink
 import com.ospfranco.trustmail.security.SecurityScanner
 import com.ospfranco.trustmail.security.Verdict
@@ -121,13 +124,23 @@ fun MessageScreen(model: MessageViewModel, settings: AppSettings, session: Sessi
                 Column(Modifier.fillMaxSize()) {
                     Column(
                         modifier = Modifier.fillMaxWidth().padding(Spacing.three),
-                        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(Spacing.half),
+                        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(Spacing.three),
                     ) {
-                        Text(message.subject, color = colors.text, fontSize = 20.sp, lineHeight = 26.sp, fontWeight = FontWeight.SemiBold)
-                        AppText(message.from, TextKind.Small, maxLines = 1)
-                        AppText(message.date, TextKind.Small, color = colors.textSecondary, maxLines = 1)
+                        Text(message.subject, color = colors.text, style = MaterialTheme.typography.headlineSmall)
+                        androidx.compose.foundation.layout.Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(Spacing.three),
+                        ) {
+                            Avatar(message.from)
+                            Column {
+                                Text(senderName(message.from), color = colors.text, style = MaterialTheme.typography.titleMedium, maxLines = 1)
+                                AppText(message.from, TextKind.Small, color = colors.textSecondary, maxLines = 1)
+                                Text(message.date, color = colors.textSecondary, style = MaterialTheme.typography.bodySmall, maxLines = 1)
+                            }
+                        }
                         if (model.evaluation == null) AppText("Scanning links…", TextKind.Small, color = colors.textSecondary)
                     }
+                    HorizontalDivider(color = colors.backgroundSelected)
                     EmailBodyView(
                         body = message.body,
                         bodyType = message.bodyType,

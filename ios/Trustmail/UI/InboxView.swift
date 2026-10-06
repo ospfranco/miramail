@@ -12,13 +12,14 @@ struct InboxView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                topBar
+            Group {
                 if session.user == nil { signedOut } else { signedIn }
             }
             .frame(maxWidth: Theme.maxContentWidth)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Theme.background.ignoresSafeArea())
+            .navigationTitle(session.user == nil ? "" : "Inbox")
+            .toolbar { toolbar }
             .navigationDestination(for: Route.self) { route in
                 switch route {
                 case .message(let summary): MessageView(id: summary.id, session: session, settings: settings)
@@ -26,7 +27,6 @@ struct InboxView: View {
                 case .compose(let draft): ComposeView(draft: draft, session: session)
                 }
             }
-            .toolbar(.hidden, for: .navigationBar)
         }
         .overlay(alignment: .top) {
             if let notice = session.notice {
@@ -36,76 +36,100 @@ struct InboxView: View {
         .animation(.easeInOut(duration: 0.2), value: session.notice)
     }
 
-    /// The account on the left (when signed in); a pencil for a new email (when signed in) and the settings button on the right.
-    private var topBar: some View {
-        HStack(spacing: Spacing.three) {
-            if let email = session.user?.email {
-                Text(email).textStyle(.smallBold).lineLimit(1)
-                Spacer()
-                NavigationLink(value: Route.compose(OutgoingMessage(to: "", subject: "", body: ""))) {
-                    Image(systemName: "square.and.pencil")
-                        .font(.system(size: 18))
-                        .foregroundStyle(Theme.text)
-                }
-                .accessibilityLabel("New message")
-                .accessibilityIdentifier("new-message")
-            } else {
-                Spacer()
-            }
+    /// Settings at the top; like Mail, the account and the pencil for a new email sit in the bottom bar (when signed in).
+    @ToolbarContentBuilder
+    private var toolbar: some ToolbarContent {
+        ToolbarItem(placement: .topBarTrailing) {
             NavigationLink(value: Route.settings) {
                 Image(systemName: "gearshape")
-                    .font(.system(size: 18))
-                    .foregroundStyle(Theme.text)
             }
             .accessibilityLabel("Settings")
             .accessibilityIdentifier("settings-button")
         }
-        .padding(.horizontal, Spacing.three)
-        .padding(.vertical, Spacing.three)
+        if let email = session.user?.email {
+            ToolbarItem(placement: .status) {
+                Text(email).font(.caption).foregroundStyle(Theme.textSecondary).lineLimit(1)
+            }
+            ToolbarItemGroup(placement: .bottomBar) {
+                Spacer()
+                NavigationLink(value: Route.compose(OutgoingMessage(to: "", subject: "", body: ""))) {
+                    Image(systemName: "square.and.pencil")
+                }
+                .accessibilityLabel("New message")
+                .accessibilityIdentifier("new-message")
+            }
+        }
     }
 
     private var signedOut: some View {
         VStack(spacing: Spacing.four) {
+            Image(systemName: "envelope.badge.shield.half.filled")
+                .font(.system(size: 64))
+                .foregroundStyle(Theme.brand.gradient)
+                .accessibilityHidden(true)
             Text("Trustmail").textStyle(.subtitle)
             if session.isLoading {
                 ProgressView()
             } else {
                 Button { Task { await session.signIn() } } label: {
-                    Text("Sign in with Google")
-                        .textStyle(.regular)
-                        .padding(.horizontal, Spacing.four)
-                        .padding(.vertical, Spacing.three)
-                        .background(Theme.backgroundElement, in: RoundedRectangle(cornerRadius: Spacing.three))
+                    Text("Sign in with Google").font(.headline).padding(.horizontal, Spacing.three)
                 }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
                 .accessibilityIdentifier("sign-in")
             }
             if let error = session.error {
-                Text(error).textStyle(.small)
+                Text(error).textStyle(.small, color: Theme.textSecondary).multilineTextAlignment(.center)
             }
         }
         .padding(.horizontal, Spacing.three)
     }
 
     private var signedIn: some View {
-        VStack(spacing: 0) {
+        List {
             if let error = session.error {
-                Text(error).textStyle(.small).padding(.horizontal, Spacing.three)
+                Text(error).textStyle(.small, color: Verdict.danger.color)
             }
-
-            List(session.messages) { message in
+            ForEach(session.messages) { message in
                 NavigationLink(value: Route.message(message)) {
-                    VStack(alignment: .leading, spacing: Spacing.half) {
-                        Text(message.from).textStyle(message.unread ? .smallBold : .small).lineLimit(1)
-                        Text(message.subject).textStyle(message.unread ? .smallBold : .small).lineLimit(1)
-                        Text(message.snippet).textStyle(.small, color: Theme.textSecondary).lineLimit(2)
-                    }
-                    .padding(.vertical, Spacing.two)
+                    MessageRow(message: message)
                 }
-                .listRowBackground(Theme.background)
                 .accessibilityIdentifier("message-\(message.id)")
             }
-            .listStyle(.plain)
-            .refreshable { await session.loadInbox() }
         }
+        .listStyle(.plain)
+        .refreshable { await session.loadInbox() }
+    }
+}
+
+/// One email in the inbox, laid out like Mail: unread dot, avatar, sender, subject and a two-line preview.
+private struct MessageRow: View {
+    let message: MessageSummary
+
+    var body: some View {
+        HStack(alignment: .top, spacing: Spacing.three) {
+            Circle()
+                .fill(message.unread ? Color.accentColor : .clear)
+                .frame(width: 10, height: 10)
+                .padding(.top, 15)
+                .padding(.trailing, -Spacing.two)
+                .accessibilityHidden(true)
+            AvatarView(from: message.from)
+            VStack(alignment: .leading, spacing: Spacing.half) {
+                Text(senderName(message.from))
+                    .font(.headline.weight(message.unread ? .semibold : .regular))
+                    .foregroundStyle(Theme.text)
+                    .lineLimit(1)
+                Text(message.subject)
+                    .font(.subheadline.weight(message.unread ? .semibold : .regular))
+                    .foregroundStyle(Theme.text)
+                    .lineLimit(1)
+                Text(message.snippet)
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.textSecondary)
+                    .lineLimit(2)
+            }
+        }
+        .padding(.vertical, Spacing.one)
     }
 }

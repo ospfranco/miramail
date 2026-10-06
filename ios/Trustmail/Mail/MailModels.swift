@@ -56,6 +56,26 @@ func bareAddress(_ header: String) -> String {
     return address.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
 }
 
+/// The name in `Name <address>` (without quotes), or the address when there is no name.
+func senderName(_ header: String) -> String {
+    let name = header.firstMatch(of: /^\s*"?([^"<]*?)"?\s*</).map { String($0.1) } ?? ""
+    return name.isEmpty ? bareAddress(header) : name
+}
+
+/// The circle shown next to a sender: their initial on one of a few colors, the same color for the same address.
+struct SenderAvatar: Equatable {
+    static let palette = ["1E88E5", "43A047", "F4511E", "8E24AA", "00897B", "6D4C41", "3949AB", "D81B60"]
+
+    let initial: String
+    let hexColor: String
+
+    init(_ header: String) {
+        initial = senderName(header).first(where: { $0.isLetter || $0.isNumber }).map { String($0).uppercased() } ?? "?"
+        let sum = bareAddress(header).unicodeScalars.reduce(0) { $0 + Int($1.value) }
+        hexColor = Self.palette[sum % Self.palette.count]
+    }
+}
+
 extension MessageDetail {
     /// The prefilled reply: to the Reply-To address (else the sender), "Re:" subject, same conversation.
     func makeReply() -> OutgoingMessage {

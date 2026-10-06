@@ -19,7 +19,7 @@ struct IntroView: View {
                 VStack(spacing: Spacing.four) {
                     VStack(spacing: Spacing.two) {
                         Text("Welcome to Trustmail")
-                            .font(.system(size: 28, weight: .semibold))
+                            .font(.largeTitle.bold())
                             .foregroundStyle(Theme.text)
                             .accessibilityAddTraits(.isHeader)
                         Text("Trustmail checks every email for phishing before you act on it.")
@@ -32,7 +32,8 @@ struct IntroView: View {
                         .aspectRatio(Self.previewAspectRatio, contentMode: .fit)
                         .frame(maxWidth: 220 * Self.previewAspectRatio) // at most 220pt tall, and the frame hugs the image
                         .clipShape(RoundedRectangle(cornerRadius: Spacing.three))
-                        .overlay(RoundedRectangle(cornerRadius: Spacing.three).stroke(Theme.backgroundSelected, lineWidth: 1))
+                        .overlay(RoundedRectangle(cornerRadius: Spacing.three).stroke(Theme.backgroundSelected, lineWidth: 0.5))
+                        .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
                         .accessibilityLabel("Preview: an email with a safety mark next to each link and a shield on the edge")
                         .accessibilityIdentifier("intro-preview")
 
@@ -43,7 +44,7 @@ struct IntroView: View {
                                     .font(.system(size: 14, weight: .bold))
                                     .foregroundStyle(.white)
                                     .frame(width: 28, height: 28)
-                                    .background(Theme.brand, in: Circle())
+                                    .background(Color.accentColor.gradient, in: Circle())
                                     .accessibilityHidden(true)
                                 VStack(alignment: .leading, spacing: Spacing.half) {
                                     Text(step.title).textStyle(.smallBold)
@@ -65,13 +66,10 @@ struct IntroView: View {
             }
 
             Button(action: onContinue) {
-                Text("Continue")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, Spacing.three)
-                    .background(Theme.brand, in: RoundedRectangle(cornerRadius: Spacing.three))
+                Text("Continue").font(.headline).frame(maxWidth: .infinity)
             }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
             .padding(.horizontal, Spacing.three)
             .padding(.bottom, Spacing.two)
             .frame(maxWidth: Theme.maxContentWidth)

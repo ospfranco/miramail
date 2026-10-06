@@ -55,7 +55,8 @@ The logic is ported line for line, so a change in one file has a twin in the oth
 | App icon (a smiley on an envelope) | `Assets.xcassets/AppIcon.appiconset/icon-1024.png` | `res/drawable-nodpi/ic_launcher_{foreground,monochrome}.png`, `res/mipmap-anydpi-v26/ic_launcher.xml`, color `ic_launcher_background` |
 | Link scan when email JavaScript is off | `UI/LinkInspector.swift` (iOS only, see below) | not needed |
 | View models | `UI/Models.swift` | `ui/ViewModels.kt` |
-| Theme / text styles / spacing | `UI/Theme.swift` | `ui/Theme.kt` |
+| Theme / text styles / spacing, sender avatar (`AvatarView` / `Avatar`) | `UI/Theme.swift` | `ui/Theme.kt` |
+| Sender name and avatar initial/color (`senderName`, `SenderAvatar`) | `Mail/MailModels.swift` | `mail/MailModels.kt` |
 
 Tests mirror each other too: `ios/TrustmailTests/*Tests.swift` and `android/app/src/test/kotlin/com/ospfranco/trustmail/*Test.kt` cover the same cases with the same expected strings. UI tests: `ios/TrustmailUITests/` and `android/app/src/androidTest/`.
 
@@ -67,7 +68,7 @@ The floating bar at the bottom of an email has four buttons. They behave the sam
 
 - **Delete** moves the message to Gmail's Trash (`messages.trash`), so it can be recovered. **Archive** removes the `INBOX` label. **Move** adds a label and removes `INBOX`; the chooser lists the user's own labels (sorted, case-insensitive) and then Spam. Gmail has labels, not folders.
 - After one of these works, the app goes back to the inbox, the message is gone from the list, and a notice ("Archived", "Moved to Trash", "Moved to <label>") floats at the top for a moment. A failure shows a notice ("Couldn't archive the email", ...) and stays on the email. The buttons are disabled while an action runs.
-- **The inbox top bar** shows the account email, a **pencil** (new email, only when signed in) and the settings gear. Sign out lives in the settings, not on the inbox. The pencil opens the same compose screen, empty.
+- **The inbox** is titled "Inbox" and shows the account email, a **new message** button (only when signed in) and the settings gear. On iOS, as in Mail, the gear is in the navigation bar and the account and the pencil are in the bottom toolbar; on Android, as in Gmail, the account sits under the title and "New message" is an extended floating action button. Sign out lives in the settings, not on the inbox. New message opens the same compose screen, empty.
 - **Reply** opens the compose screen: To is the `Reply-To` address (else the sender), Subject gets one "Re: ", and the message is sent in the same thread (`threadId`, `In-Reply-To` and `References`). The body starts empty (the original is not quoted). Send needs a valid recipient list (`address` or `Name <address>`, separated by commas or semicolons) and goes out through `messages.send` as plain UTF-8 text. On success the compose screen closes and a "Message sent" notice shows.
 - `Mime.raw` strips line breaks from headers (so text can't inject headers) and encodes non-ASCII headers as RFC 2047. Its expected output is pinned by tests that must stay identical on both platforms.
 
@@ -154,6 +155,8 @@ The demo mailbox pauses 1.5 seconds in every scan (in the sender-history lookup)
 The demo inbox has a plain-text email from a known, verified sender and an HTML phishing email (mismatched link text, `http`, a shortener, a `javascript:` link, and a `<script>` that rewrites a status line from "Scripts in this email are blocked." to "...are running." so tests can tell whether scripts ran). Demo runs always start with default settings (in-memory on Android, a throwaway `UserDefaults` suite on iOS), so UI tests don't leak state into each other. Real Google sign-in cannot be exercised in demo mode; test it by hand with a real account.
 
 ## Conventions
+
+- **Each platform looks native.** Behavior and strings stay identical, but the styling follows each platform: iOS uses system semantic colors, Dynamic Type, navigation bars and toolbars, grouped `Form`s and Liquid Glass (`glassBackground`, with a material fallback before iOS 26); Android uses Material 3 with dynamic color (a brand-blue scheme before Android 12), the Material type scale, `Scaffold`/app bars, `ListItem`s and tonal surfaces. Use the theme's colors and text styles, not hard-coded ones (verdict colors excepted).
 
 - **Native only.** No web, no cross-platform layer.
 - **Prefer enums** over string-literal unions or loose strings (Swift `enum`, Kotlin `enum class`).

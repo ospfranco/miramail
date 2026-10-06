@@ -20,9 +20,7 @@ struct ActionBar: View {
         }
         .padding(.horizontal, Spacing.two)
         .padding(.vertical, Spacing.two)
-        .background(Theme.backgroundElement, in: Capsule())
-        .overlay(Capsule().stroke(Theme.backgroundSelected, lineWidth: 1))
-        .shadow(color: .black.opacity(0.15), radius: 10, y: 3)
+        .glassBackground(in: Capsule())
         .padding(.horizontal, Spacing.three)
         .padding(.bottom, Spacing.two)
         .opacity(isBusy ? 0.5 : 1)
@@ -36,10 +34,10 @@ struct ActionBar: View {
 
     private func label(_ title: String, systemImage: String) -> some View {
         VStack(spacing: Spacing.half) {
-            Image(systemName: systemImage).font(.system(size: 20))
-            Text(title).font(.system(size: 11, weight: .medium))
+            Image(systemName: systemImage).font(.title3)
+            Text(title).font(.caption2.weight(.medium))
         }
-        .foregroundStyle(Theme.text)
+        .foregroundStyle(Color.accentColor)
         .frame(maxWidth: .infinity)
         .padding(.vertical, Spacing.one)
         .contentShape(Rectangle())
@@ -52,11 +50,10 @@ struct NoticeBanner: View {
 
     var body: some View {
         Text(text)
-            .textStyle(.small, color: Theme.background)
-            .padding(.horizontal, Spacing.three)
-            .padding(.vertical, Spacing.two)
-            .background(Theme.text, in: Capsule())
-            .shadow(color: .black.opacity(0.2), radius: 6, y: 2)
+            .textStyle(.smallBold)
+            .padding(.horizontal, Spacing.four)
+            .padding(.vertical, Spacing.three)
+            .glassBackground(in: Capsule())
             .padding(.top, Spacing.two)
             .accessibilityIdentifier("notice")
     }

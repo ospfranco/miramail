@@ -107,7 +107,8 @@ final class TrustmailUITests: XCTestCase {
 
     func testEnablingJavaScriptLetsTheEmailsOwnScriptsRunAndKeepsEveryLinkScanned() {
         openSettings()
-        app.switches["javascript-toggle"].tap()
+        // In a settings form the switch is at the trailing end of its row; tapping the middle hits the label.
+        app.switches["javascript-toggle"].coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
         XCTAssertEqual(app.switches["javascript-toggle"].value as? String, "1")
         app.navigationBars.buttons.element(boundBy: 0).tap()
 

@@ -70,7 +70,7 @@ struct SecurityPanel: View {
 
                 HStack(spacing: Spacing.two) {
                     VerdictDot(verdict: evaluation.verdict, size: 28)
-                    Text(evaluation.summary).font(.system(size: 18, weight: .semibold)).foregroundStyle(Theme.text)
+                    Text(evaluation.summary).font(.title3.weight(.semibold)).foregroundStyle(Theme.text)
                 }
 
                 ForEach(evaluation.checks) { check in
@@ -83,7 +83,7 @@ struct SecurityPanel: View {
                         Spacer(minLength: 0)
                     }
                     .padding(Spacing.three)
-                    .background(Theme.backgroundElement, in: RoundedRectangle(cornerRadius: Spacing.three))
+                    .background(Theme.groupedElement, in: RoundedRectangle(cornerRadius: Spacing.three))
                 }
 
                 if !links.isEmpty {
@@ -110,7 +110,7 @@ struct SecurityPanel: View {
             .padding(Spacing.three)
             .padding(.bottom, bottomInset + Spacing.four)
         }
-        .background(Theme.background.ignoresSafeArea(edges: .vertical))
+        .background(Theme.groupedBackground.ignoresSafeArea(edges: .vertical))
         .shadow(color: .black.opacity(0.25), radius: 12)
     }
 }

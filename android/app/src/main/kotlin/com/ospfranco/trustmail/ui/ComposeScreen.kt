@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -60,7 +61,7 @@ fun ComposeScreen(model: ComposeViewModel, session: SessionViewModel, onBack: ()
                 if (model.isSending) {
                     CircularProgressIndicator(modifier = Modifier.padding(Spacing.two))
                 } else {
-                    TextButton(
+                    IconButton(
                         enabled = model.canSend,
                         onClick = {
                             scope.launch {
@@ -71,7 +72,7 @@ fun ComposeScreen(model: ComposeViewModel, session: SessionViewModel, onBack: ()
                             }
                         },
                         modifier = Modifier.testTag("compose-send"),
-                    ) { Text("Send") }
+                    ) { Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send") }
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = colors.background),

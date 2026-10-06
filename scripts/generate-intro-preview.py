@@ -24,8 +24,8 @@ WIDTH = 900  # output width in px
 # Pixel boxes in the full-size screenshots: what to keep, and the demo-only status line to paint out
 # ("Scripts in this email are blocked.", test scaffolding that doesn't belong in an intro image).
 CROPS = {
-    "ios": {"crop": (0, 380, 1206, 1441), "erase": (0, 1160, 940, 1232)},
-    "android": {"crop": (0, 258, 1080, 1284), "erase": (0, 925, 700, 985)},
+    "ios": {"crop": (0, 370, 1206, 1440), "erase": (0, 1270, 940, 1345)},
+    "android": {"crop": (0, 250, 1080, 1280), "erase": (0, 1035, 700, 1105)},
 }
 
 

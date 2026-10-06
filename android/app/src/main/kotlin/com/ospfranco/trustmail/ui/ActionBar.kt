@@ -1,7 +1,5 @@
 package com.ospfranco.trustmail.ui
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -11,21 +9,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.addPathNodes
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 
 /** Material icon outlines, built from path data so no icon library is needed. */
 private fun icon(name: String, path: String, evenOdd: Boolean = false): ImageVector =
@@ -63,23 +61,23 @@ fun ActionBar(
     onReply: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val colors = Theme.colors
-    Row(
+    Surface(
         modifier = modifier
             .padding(horizontal = Spacing.three)
             .padding(bottom = Spacing.two)
-            .alpha(if (isBusy) 0.5f else 1f)
-            .shadow(10.dp, CircleShape)
-            .background(colors.backgroundElement, CircleShape)
-            .border(1.dp, colors.backgroundSelected, CircleShape)
             .fillMaxWidth()
-            .padding(horizontal = Spacing.two, vertical = Spacing.two),
-        horizontalArrangement = Arrangement.SpaceEvenly,
+            .alpha(if (isBusy) 0.5f else 1f),
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        tonalElevation = 3.dp,
+        shadowElevation = 6.dp,
     ) {
-        Item("Delete", DeleteIcon, "action-delete", isBusy, onDelete)
-        Item("Archive", ArchiveIcon, "action-archive", isBusy, onArchive)
-        Item("Move", MoveIcon, "action-move", isBusy, onMove)
-        Item("Reply", ReplyIcon, "action-reply", isBusy, onReply)
+        Row(modifier = Modifier.padding(horizontal = Spacing.two, vertical = Spacing.one), horizontalArrangement = Arrangement.SpaceEvenly) {
+            Item("Delete", DeleteIcon, "action-delete", isBusy, onDelete)
+            Item("Archive", ArchiveIcon, "action-archive", isBusy, onArchive)
+            Item("Move", MoveIcon, "action-move", isBusy, onMove)
+            Item("Reply", ReplyIcon, "action-reply", isBusy, onReply)
+        }
     }
 }
 
@@ -94,28 +92,27 @@ private fun androidx.compose.foundation.layout.RowScope.Item(
     Column(
         modifier = Modifier
             .weight(1f)
+            .clip(CircleShape)
             .clickable(enabled = !disabled, onClick = onClick)
-            .padding(vertical = Spacing.one)
+            .padding(vertical = Spacing.two)
             .testTag(tag),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(icon, contentDescription = title, tint = Theme.colors.text, modifier = Modifier.size(24.dp))
-        Text(title, color = Theme.colors.text, fontSize = 11.sp, fontWeight = FontWeight.Medium)
+        Icon(icon, contentDescription = title, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(24.dp))
+        Text(title, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.labelSmall)
     }
 }
 
-/** A short message that floats over the current screen ("Archived", "Message sent", ...). */
+/** A short message that floats over the current screen ("Archived", "Message sent", ...), styled like a snackbar. */
 @Composable
 fun NoticeBanner(text: String, modifier: Modifier = Modifier) {
-    val colors = Theme.colors
-    Text(
-        text = text,
-        style = TextKind.Small.style,
-        color = colors.background,
-        modifier = modifier
-            .shadow(6.dp, CircleShape)
-            .background(colors.text, CircleShape)
-            .padding(horizontal = Spacing.three, vertical = Spacing.two)
-            .testTag("notice"),
-    )
+    Surface(
+        modifier = modifier,
+        shape = MaterialTheme.shapes.small,
+        color = MaterialTheme.colorScheme.inverseSurface,
+        contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+        shadowElevation = 6.dp,
+    ) {
+        Text(text, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(horizontal = Spacing.three, vertical = 14.dp).testTag("notice"))
+    }
 }
