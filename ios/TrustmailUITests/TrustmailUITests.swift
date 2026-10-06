@@ -68,7 +68,9 @@ final class TrustmailUITests: XCTestCase {
         app.webViews.links["paypal.com/login"].tap()
         let alert = app.alerts["This link looks unsafe"]
         XCTAssertTrue(alert.waitForExistence(timeout: 5))
-        XCTAssertTrue(alert.staticTexts.element(boundBy: 1).label.contains("Text shows paypal.com but the link goes to login.paypa1-secure.example.net."))
+        let warning = alert.staticTexts.element(boundBy: 1).label
+        XCTAssertTrue(warning.hasPrefix("Shown as: paypal.com/login\nGoes to: http://login.paypa1-secure.example.net/verify\n\n"))
+        XCTAssertTrue(warning.contains("Text shows paypal.com but the link goes to login.paypa1-secure.example.net."))
         screenshot("link-warning")
         alert.buttons["Cancel"].tap()
         XCTAssertFalse(alert.exists)

@@ -54,6 +54,38 @@ struct SecurityScannerTests {
         #expect(local("https://bit.ly/abc") == [LinkCheck(kind: .shortener, verdict: .warning, detail: "Shortened link hides the final destination.")])
     }
 
+    @Test func cleansUrls() {
+        #expect(SecurityScanner.cleanUrl(" https://a.com/path?utm_source=x&id=1#top ") == "https://a.com/path")
+        #expect(SecurityScanner.cleanUrl("https://a.com/#/route?x=1") == "https://a.com/")
+        #expect(SecurityScanner.cleanUrl("paypal.com/login") == "paypal.com/login")
+    }
+
+    @Test func linkWarningShowsTheShownAndRealUrls() {
+        let checks = [
+            LinkCheck(kind: .displayText, verdict: .danger, detail: "Text shows paypal.com but the link goes to login.example.net."),
+            LinkCheck(kind: .domainAge, verdict: .safe, detail: "Registered long ago."),
+            LinkCheck(kind: .encryption, verdict: .warning, detail: "Not encrypted (http)."),
+        ]
+        let mismatch = ScannedLink(
+            url: "http://login.example.net/verify?session=abc#x", text: "paypal.com/login?ref=mail",
+            host: "login.example.net", verdict: .danger, checks: checks
+        )
+        #expect(SecurityScanner.linkWarning(mismatch) == """
+        Shown as: paypal.com/login
+        Goes to: http://login.example.net/verify
+
+        Text shows paypal.com but the link goes to login.example.net.
+
+        Not encrypted (http).
+        """)
+
+        let shortener = ScannedLink(
+            url: "https://bit.ly/abc?x=1", text: "Fix my account", host: "bit.ly", verdict: .warning,
+            checks: [LinkCheck(kind: .shortener, verdict: .warning, detail: "Shortened link hides the final destination.")]
+        )
+        #expect(SecurityScanner.linkWarning(shortener) == "Goes to: https://bit.ly/abc\n\nShortened link hides the final destination.")
+    }
+
     @Test func dedupesLinksKeepingTheOneWithText() {
         let unique = SecurityScanner.uniqueLinks([
             FoundLink(url: "https://a.com", text: ""),

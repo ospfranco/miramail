@@ -52,7 +52,7 @@ struct MessageView: View {
             Button("Cancel", role: .cancel) {}
             Button("Open anyway", role: .destructive) { open(link.url) }
         } message: { link in
-            Text(([link.host.isEmpty ? link.url : link.host] + link.checks.filter { $0.verdict != .safe }.map(\.detail)).joined(separator: "\n\n"))
+            Text(SecurityScanner.linkWarning(link))
         }
         .confirmationDialog("Move to", isPresented: $showMoveChooser, titleVisibility: .visible) {
             ForEach(moveTargets) { label in

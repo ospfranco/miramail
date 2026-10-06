@@ -43,6 +43,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import com.ospfranco.trustmail.mail.MailLabel
 import com.ospfranco.trustmail.security.ScannedLink
+import com.ospfranco.trustmail.security.SecurityScanner
 import com.ospfranco.trustmail.security.Verdict
 import com.ospfranco.trustmail.settings.AppSettings
 
@@ -157,7 +158,7 @@ fun MessageScreen(model: MessageViewModel, settings: AppSettings, session: Sessi
             onDismissRequest = { pendingLink = null },
             title = { Text(if (link.verdict == Verdict.Danger) "This link looks unsafe" else "Be careful with this link") },
             text = {
-                Text((listOf(link.host.ifEmpty { link.url }) + link.checks.filter { it.verdict != Verdict.Safe }.map { it.detail }).joinToString("\n\n"))
+                Text(SecurityScanner.linkWarning(link))
             },
             dismissButton = { TextButton(onClick = { pendingLink = null }) { Text("Cancel") } },
             confirmButton = {

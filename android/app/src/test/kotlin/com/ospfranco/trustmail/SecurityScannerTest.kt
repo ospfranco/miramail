@@ -81,6 +81,42 @@ class SecurityScannerTest {
     }
 
     @Test
+    fun cleansUrls() {
+        assertEquals("https://a.com/path", SecurityScanner.cleanUrl(" https://a.com/path?utm_source=x&id=1#top "))
+        assertEquals("https://a.com/", SecurityScanner.cleanUrl("https://a.com/#/route?x=1"))
+        assertEquals("paypal.com/login", SecurityScanner.cleanUrl("paypal.com/login"))
+    }
+
+    @Test
+    fun linkWarningShowsTheShownAndRealUrls() {
+        val checks = listOf(
+            LinkCheck(LinkCheckKind.DisplayText, Verdict.Danger, "Text shows paypal.com but the link goes to login.example.net."),
+            LinkCheck(LinkCheckKind.DomainAge, Verdict.Safe, "Registered long ago."),
+            LinkCheck(LinkCheckKind.Encryption, Verdict.Warning, "Not encrypted (http)."),
+        )
+        val mismatch = ScannedLink(
+            "http://login.example.net/verify?session=abc#x", "paypal.com/login?ref=mail", "login.example.net", Verdict.Danger, checks,
+        )
+        assertEquals(
+            """
+            Shown as: paypal.com/login
+            Goes to: http://login.example.net/verify
+
+            Text shows paypal.com but the link goes to login.example.net.
+
+            Not encrypted (http).
+            """.trimIndent(),
+            SecurityScanner.linkWarning(mismatch),
+        )
+
+        val shortener = ScannedLink(
+            "https://bit.ly/abc?x=1", "Fix my account", "bit.ly", Verdict.Warning,
+            listOf(LinkCheck(LinkCheckKind.Shortener, Verdict.Warning, "Shortened link hides the final destination.")),
+        )
+        assertEquals("Goes to: https://bit.ly/abc\n\nShortened link hides the final destination.", SecurityScanner.linkWarning(shortener))
+    }
+
+    @Test
     fun dedupesLinksKeepingTheOneWithText() {
         val unique = SecurityScanner.uniqueLinks(
             listOf(

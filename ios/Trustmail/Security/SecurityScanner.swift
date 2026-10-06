@@ -58,6 +58,21 @@ enum SecurityScanner {
         return text.wholeMatch(of: pattern).map { String($0.1).lowercased() }
     }
 
+    /// The URL without its query string or fragment, which mostly hold tracking parameters.
+    static func cleanUrl(_ url: String) -> String {
+        let trimmed = url.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.firstIndex(where: { $0 == "?" || $0 == "#" }).map { String(trimmed[..<$0]) } ?? trimmed
+    }
+
+    /// The text of the warning shown before opening a link that isn't safe: what the link text shows
+    /// (when it looks like a link), where the link really goes, then every problem found.
+    static func linkWarning(_ link: ScannedLink) -> String {
+        let shown = hostInText(link.text) != nil ? "Shown as: \(cleanUrl(link.text))" : nil
+        let target = "Goes to: \(cleanUrl(link.url))"
+        let problems = link.checks.filter { $0.verdict != .safe }.map(\.detail)
+        return ([[shown, target].compactMap { $0 }.joined(separator: "\n")] + problems).joined(separator: "\n\n")
+    }
+
     static func sameSite(_ a: String, _ b: String) -> Bool {
         func strip(_ host: String) -> String { host.hasPrefix("www.") ? String(host.dropFirst(4)) : host }
         let x = strip(a)

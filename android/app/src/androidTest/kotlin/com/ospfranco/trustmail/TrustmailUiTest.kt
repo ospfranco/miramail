@@ -127,6 +127,9 @@ class TrustmailUiTest {
         compose.waitUntil(5_000) { compose.onAllNodesWithTagOrText("This link looks unsafe") }
         // Scoped to the dialog: the same sentence also sits (off screen) in the closed security panel.
         compose.onNode(
+            hasText("Shown as: paypal.com/login\nGoes to: http://login.paypa1-secure.example.net/verify\n\n", substring = true) and hasAnyAncestor(isDialog()),
+        ).assertIsDisplayed()
+        compose.onNode(
             hasText("Text shows paypal.com but the link goes to login.paypa1-secure.example.net.", substring = true) and hasAnyAncestor(isDialog()),
         ).assertIsDisplayed()
         screenshot("link-warning")

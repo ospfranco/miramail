@@ -43,6 +43,24 @@ object SecurityScanner {
     /** Pulls a hostname out of link text that looks like a URL or bare domain, e.g. "paypal.com/login". */
     fun hostInText(text: String): String? = textHostPattern.find(text)?.groupValues?.get(1)?.lowercase()
 
+    /** The URL without its query string or fragment, which mostly hold tracking parameters. */
+    fun cleanUrl(url: String): String {
+        val trimmed = url.trim()
+        val end = trimmed.indexOfFirst { it == '?' || it == '#' }
+        return if (end == -1) trimmed else trimmed.substring(0, end)
+    }
+
+    /**
+     * The text of the warning shown before opening a link that isn't safe: what the link text shows
+     * (when it looks like a link), where the link really goes, then every problem found.
+     */
+    fun linkWarning(link: ScannedLink): String {
+        val shown = if (hostInText(link.text) != null) "Shown as: ${cleanUrl(link.text)}" else null
+        val target = "Goes to: ${cleanUrl(link.url)}"
+        val problems = link.checks.filter { it.verdict != Verdict.Safe }.map { it.detail }
+        return (listOf(listOfNotNull(shown, target).joinToString("\n")) + problems).joinToString("\n\n")
+    }
+
     fun sameSite(a: String, b: String): Boolean {
         fun strip(host: String) = host.removePrefix("www.")
         val x = strip(a)

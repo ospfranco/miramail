@@ -32,7 +32,7 @@ The logic is ported line for line, so a change in one file has a twin in the oth
 |---|---|---|
 | Verdicts, check kinds, labels | `Security/Verdict.swift` | `security/Verdict.kt` |
 | Link checks (DNS, TLS, domain age, caches) | `Security/LinkChecks.swift` | `security/LinkChecks.kt` |
-| Link scanning, URL parsing, evaluation | `Security/SecurityScanner.swift` | `security/SecurityScanner.kt` |
+| Link scanning, URL parsing, evaluation, the risky-link dialog text (`linkWarning`: "Shown as" / "Goes to", query and fragment stripped) | `Security/SecurityScanner.swift` | `security/SecurityScanner.kt` |
 | Sender (SPF/DKIM/DMARC) checks | `Security/SenderChecks.swift` | `security/SenderChecks.kt` |
 | X.509 reader | `Security/X509.swift` | `security/X509.kt` |
 | TLS handshake + system DNS | `Security/TlsInspector.swift` | `security/TlsInspector.kt` |
