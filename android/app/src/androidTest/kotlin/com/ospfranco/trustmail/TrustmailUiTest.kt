@@ -127,6 +127,9 @@ class TrustmailUiTest {
         compose.onNodeWithText("First message from this sender").assertIsDisplayed()
         // Three links, including the javascript: one, with JavaScript in emails off (the default).
         compose.onNodeWithText("3 links scanned").assertIsDisplayed()
+        compose.onNodeWithTag("security-explanation").assertTextEquals(
+            "This email failed the sender checks, so it may be forged and has 2 links that look unsafe. Don't open its links or reply with personal details. If it says it comes from someone you know, contact them another way.",
+        )
         screenshot("security-panel")
         compose.onNodeWithTag("security-close").performClick()
         compose.waitForIdle()

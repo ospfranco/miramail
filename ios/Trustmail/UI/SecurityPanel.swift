@@ -73,6 +73,13 @@ struct SecurityPanel: View {
                     Text(evaluation.summary).font(.title3.weight(.semibold)).foregroundStyle(Theme.text)
                 }
 
+                if let explanation = evaluation.explanation {
+                    Text(explanation)
+                        .textStyle(.regular, color: Theme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("security-explanation")
+                }
+
                 ForEach(evaluation.checks) { check in
                     HStack(alignment: .top, spacing: Spacing.two) {
                         VerdictDot(verdict: check.verdict)

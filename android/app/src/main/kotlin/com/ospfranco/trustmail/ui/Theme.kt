@@ -38,6 +38,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.foundation.layout.size
 import com.ospfranco.trustmail.mail.SenderAvatar
+import com.ospfranco.trustmail.security.SenderCheckLabel
 import com.ospfranco.trustmail.security.Verdict
 
 /** The colors screens use, all taken from the Material color scheme so they follow dynamic color and dark mode. */
@@ -234,6 +235,6 @@ fun FirstMessageLine() {
         horizontalArrangement = Arrangement.spacedBy(Spacing.one),
     ) {
         VerdictDot(Verdict.Warning, 14.dp)
-        AppText("First message from this sender", TextKind.Small, color = Theme.colors.textSecondary, maxLines = 1)
+        AppText(SenderCheckLabel.FirstMessage.text, TextKind.Small, color = Theme.colors.textSecondary, maxLines = 1)
     }
 }

@@ -141,6 +141,10 @@ fun SecurityPanel(evaluation: SecurityEvaluation?, links: List<ScannedLink>, mod
                         Text(evaluation.summary, color = colors.text, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
                     }
 
+                    evaluation.explanation?.let {
+                        AppText(it, TextKind.Regular, color = colors.textSecondary, modifier = Modifier.testTag("security-explanation"))
+                    }
+
                     for (check in evaluation.checks) {
                         Row(
                             modifier = Modifier

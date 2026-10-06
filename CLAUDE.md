@@ -79,6 +79,10 @@ The sender is marked like a link in the body:
 - **Failed sender checks** (a sender check is `danger`, e.g. DMARC failed): the sender's address with its domain in red and the red ✕ marker after it (`FailedSenderLine`, accessibility id / test tag `sender-warning`). In the email header this follows the scan (`SecurityEvaluation.senderFailed`). In the inbox it is known right away: `listInbox` also asks Gmail for `Authentication-Results` (`metadataHeaders`), kept to Gmail's own like `getMessage` does, and `MessageSummary.senderFailed` runs the same `checkSenderDomain`. "Sender not verified" is a warning and is not marked.
 - **First message from this sender** (inbox only): after the inbox loads, the session looks up every email's sender history in the background (`loadSenderHistory`, the same `hasCorrespondence` call as the security panel, one per email) and rows in `firstMessages` get a yellow marker and "First message from this sender" (`FirstMessageLine`, `first-message`). A lookup that fails marks nothing.
 
+### The verdict's explanation (security panel)
+
+Under the verdict, the panel explains a warning or a danger in plain words: what was found and what to do (`SecurityScanner.explanation`, test tag / accessibility id `security-explanation`). Unsafe findings (a failed sender check, unsafe links) take over from suspicious ones; a safe email gets none. The sender checks are told apart by `SenderCheckLabel` (the labels are an enum on both platforms), so a new sender check needs a case there and, if it can warn, a sentence in `explanation`. The exact sentences are pinned by `explainsTheVerdict` on both platforms.
+
 ### The intro screen
 
 Shown once, before anyone has signed in: a preview image, three steps, and a note that Google sign-in comes next. It is skipped for anyone already signed in, and never shown again after "Continue" (`hasSeenIntro` in the settings). The preview image is a crop of the UI-test screenshot of the demo phishing email, made by `scripts/generate-intro-preview.py` (see Shared data).

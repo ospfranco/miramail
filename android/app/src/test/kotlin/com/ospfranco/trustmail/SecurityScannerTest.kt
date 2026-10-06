@@ -7,6 +7,7 @@ import com.ospfranco.trustmail.security.ParsedUrl
 import com.ospfranco.trustmail.security.ScannedLink
 import com.ospfranco.trustmail.security.SecurityCheck
 import com.ospfranco.trustmail.security.SecurityScanner
+import com.ospfranco.trustmail.security.SenderCheckLabel
 import com.ospfranco.trustmail.security.Verdict
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -239,5 +240,28 @@ class SecurityScannerTest {
 
         val none = SecurityScanner.evaluateEmail(safeSender, listOf(scanned(Verdict.Safe), footer(Verdict.Safe)), ignoreFooterLinks = true)
         assertEquals("2 links scanned", none.checks.last().label)
+    }
+
+    private fun explain(labels: List<SenderCheckLabel>, unsafe: Int, suspicious: Int): String? =
+        SecurityScanner.explanation(labels.map { SecurityCheck(it.text, "", Verdict.Safe) }, unsafeLinks = unsafe, suspiciousLinks = suspicious)
+
+    /** The note under the verdict names what was found and what to do; unsafe findings take over from suspicious ones. */
+    @Test
+    fun explainsTheVerdict() {
+        assertEquals(null, explain(listOf(SenderCheckLabel.Verified, SenderCheckLabel.Known), unsafe = 0, suspicious = 0))
+        assertEquals("The email looks OK, but it's the first email from this sender. If anything about it seems suspicious, question the email before you act on it.", explain(listOf(SenderCheckLabel.Verified, SenderCheckLabel.FirstMessage), unsafe = 0, suspicious = 0))
+        assertEquals("The email looks OK, but Gmail couldn't confirm who really sent it. If anything about it seems suspicious, question the email before you act on it.", explain(listOf(SenderCheckLabel.NotVerified, SenderCheckLabel.Known), unsafe = 0, suspicious = 0))
+        assertEquals("The email looks OK, but Trustmail couldn't check whether this sender has emailed you before. If anything about it seems suspicious, question the email before you act on it.", explain(listOf(SenderCheckLabel.Verified, SenderCheckLabel.HistoryUnknown), unsafe = 0, suspicious = 0))
+        assertEquals("The email looks OK, but 1 link looks suspicious. Check where a link really goes before you open it.", explain(listOf(SenderCheckLabel.Verified, SenderCheckLabel.Known), unsafe = 0, suspicious = 1))
+        assertEquals("The email looks OK, but Gmail couldn't confirm who really sent it, it's the first email from this sender and 3 links look suspicious. Check where a link really goes before you open it. If anything about it seems suspicious, question the email before you act on it.", explain(listOf(SenderCheckLabel.NotVerified, SenderCheckLabel.FirstMessage), unsafe = 0, suspicious = 3))
+        assertEquals("This email failed the sender checks, so it may be forged. Don't open its links or reply with personal details. If it says it comes from someone you know, contact them another way.", explain(listOf(SenderCheckLabel.Failed, SenderCheckLabel.FirstMessage), unsafe = 0, suspicious = 1))
+        assertEquals("This email has a link that looks unsafe. Don't open its links or reply with personal details. If it says it comes from someone you know, contact them another way.", explain(listOf(SenderCheckLabel.Verified, SenderCheckLabel.Known), unsafe = 1, suspicious = 0))
+        assertEquals("This email failed the sender checks, so it may be forged and has 2 links that look unsafe. Don't open its links or reply with personal details. If it says it comes from someone you know, contact them another way.", explain(listOf(SenderCheckLabel.Failed, SenderCheckLabel.Known), unsafe = 2, suspicious = 0))
+
+        // The evaluation carries it, and has none when the email looks safe.
+        val firstMessage = listOf(SecurityCheck(SenderCheckLabel.FirstMessage.text, "", Verdict.Warning))
+        assertTrue(SecurityScanner.evaluateEmail(firstMessage, listOf(scanned(Verdict.Safe))).explanation!!.startsWith("The email looks OK, but it's the first email"))
+        val verified = listOf(SecurityCheck(SenderCheckLabel.Verified.text, "", Verdict.Safe))
+        assertNull(SecurityScanner.evaluateEmail(verified, listOf(scanned(Verdict.Safe))).explanation)
     }
 }

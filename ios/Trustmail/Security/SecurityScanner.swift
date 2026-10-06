@@ -32,6 +32,8 @@ struct SecurityEvaluation: Sendable, Equatable {
     let checks: [SecurityCheck]
     /// A sender check failed (the email may be forged), so the header marks the sender's domain like an unsafe link.
     var senderFailed = false
+    /// Under the verdict in the panel: what made the email risky and what to do about it. None when it looks safe.
+    var explanation: String? = nil
 }
 
 struct ParsedUrl: Equatable {
@@ -185,6 +187,44 @@ enum SecurityScanner {
         case .warning: "Be careful with this email"
         case .danger: "This email looks dangerous"
         }
-        return SecurityEvaluation(verdict: verdict, summary: summary, checks: checks, senderFailed: senderChecks.contains { $0.verdict == .danger })
+        return SecurityEvaluation(
+            verdict: verdict,
+            summary: summary,
+            checks: checks,
+            senderFailed: senderChecks.contains { $0.verdict == .danger },
+            explanation: explanation(senderChecks: senderChecks, unsafeLinks: bad, suspiciousLinks: suspicious)
+        )
+    }
+
+    /// What made the email risky, in plain words, and what to do about it. Unsafe findings take over from suspicious
+    /// ones. None when nothing was found.
+    static func explanation(senderChecks: [SecurityCheck], unsafeLinks: Int, suspiciousLinks: Int) -> String? {
+        let labels = Set(senderChecks.compactMap { SenderCheckLabel(rawValue: $0.label) })
+
+        var dangers: [String] = []
+        if labels.contains(.failed) { dangers.append("failed the sender checks, so it may be forged") }
+        if unsafeLinks > 0 { dangers.append(unsafeLinks == 1 ? "has a link that looks unsafe" : "has \(unsafeLinks) links that look unsafe") }
+        if !dangers.isEmpty {
+            return "This email \(joinedList(dangers)). Don't open its links or reply with personal details. "
+                + "If it says it comes from someone you know, contact them another way."
+        }
+
+        var senderReasons: [String] = []
+        if labels.contains(.notVerified) { senderReasons.append("Gmail couldn't confirm who really sent it") }
+        if labels.contains(.firstMessage) { senderReasons.append("it's the first email from this sender") }
+        if labels.contains(.historyUnknown) { senderReasons.append("Trustmail couldn't check whether this sender has emailed you before") }
+        let linkReasons = suspiciousLinks == 0 ? [] : [suspiciousLinks == 1 ? "1 link looks suspicious" : "\(suspiciousLinks) links look suspicious"]
+        if senderReasons.isEmpty && linkReasons.isEmpty { return nil }
+
+        let advice = [
+            linkReasons.isEmpty ? nil : "Check where a link really goes before you open it.",
+            senderReasons.isEmpty ? nil : "If anything about it seems suspicious, question the email before you act on it.",
+        ].compactMap { $0 }
+        return "The email looks OK, but \(joinedList(senderReasons + linkReasons)). " + advice.joined(separator: " ")
+    }
+
+    /// "a", "a and b", "a, b and c".
+    private static func joinedList(_ items: [String]) -> String {
+        items.count <= 1 ? items.joined() : items.dropLast().joined(separator: ", ") + " and " + items.last!
     }
 }

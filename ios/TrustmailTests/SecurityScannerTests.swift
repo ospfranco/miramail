@@ -190,4 +190,28 @@ struct SecurityScannerTests {
         let none = SecurityScanner.evaluateEmail(senderChecks: safeSender, links: [scanned(.safe), footer(.safe)], ignoreFooterLinks: true)
         #expect(none.checks.last?.label == "2 links scanned")
     }
+
+    private func explain(_ labels: [SenderCheckLabel], unsafe: Int, suspicious: Int) -> String? {
+        let checks = labels.map { SecurityCheck(label: $0.rawValue, detail: "", verdict: .safe) }
+        return SecurityScanner.explanation(senderChecks: checks, unsafeLinks: unsafe, suspiciousLinks: suspicious)
+    }
+
+    /// The note under the verdict names what was found and what to do; unsafe findings take over from suspicious ones.
+    @Test func explainsTheVerdict() {
+        #expect(explain([.verified, .known], unsafe: 0, suspicious: 0) == nil)
+        #expect(explain([.verified, .firstMessage], unsafe: 0, suspicious: 0) == "The email looks OK, but it's the first email from this sender. If anything about it seems suspicious, question the email before you act on it.")
+        #expect(explain([.notVerified, .known], unsafe: 0, suspicious: 0) == "The email looks OK, but Gmail couldn't confirm who really sent it. If anything about it seems suspicious, question the email before you act on it.")
+        #expect(explain([.verified, .historyUnknown], unsafe: 0, suspicious: 0) == "The email looks OK, but Trustmail couldn't check whether this sender has emailed you before. If anything about it seems suspicious, question the email before you act on it.")
+        #expect(explain([.verified, .known], unsafe: 0, suspicious: 1) == "The email looks OK, but 1 link looks suspicious. Check where a link really goes before you open it.")
+        #expect(explain([.notVerified, .firstMessage], unsafe: 0, suspicious: 3) == "The email looks OK, but Gmail couldn't confirm who really sent it, it's the first email from this sender and 3 links look suspicious. Check where a link really goes before you open it. If anything about it seems suspicious, question the email before you act on it.")
+        #expect(explain([.failed, .firstMessage], unsafe: 0, suspicious: 1) == "This email failed the sender checks, so it may be forged. Don't open its links or reply with personal details. If it says it comes from someone you know, contact them another way.")
+        #expect(explain([.verified, .known], unsafe: 1, suspicious: 0) == "This email has a link that looks unsafe. Don't open its links or reply with personal details. If it says it comes from someone you know, contact them another way.")
+        #expect(explain([.failed, .known], unsafe: 2, suspicious: 0) == "This email failed the sender checks, so it may be forged and has 2 links that look unsafe. Don't open its links or reply with personal details. If it says it comes from someone you know, contact them another way.")
+
+        // The evaluation carries it, and has none when the email looks safe.
+        let firstMessage = [SecurityCheck(label: SenderCheckLabel.firstMessage.rawValue, detail: "", verdict: .warning)]
+        #expect(SecurityScanner.evaluateEmail(senderChecks: firstMessage, links: [scanned(.safe)]).explanation?.hasPrefix("The email looks OK, but it's the first email") == true)
+        let verified = [SecurityCheck(label: SenderCheckLabel.verified.rawValue, detail: "", verdict: .safe)]
+        #expect(SecurityScanner.evaluateEmail(senderChecks: verified, links: [scanned(.safe)]).explanation == nil)
+    }
 }

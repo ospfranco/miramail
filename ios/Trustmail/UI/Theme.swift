@@ -153,7 +153,7 @@ struct FirstMessageLine: View {
     var body: some View {
         HStack(spacing: Spacing.one) {
             VerdictDot(verdict: .warning, size: 14)
-            Text("First message from this sender").textStyle(.small, color: Theme.textSecondary).lineLimit(1)
+            Text(SenderCheckLabel.firstMessage.rawValue).textStyle(.small, color: Theme.textSecondary).lineLimit(1)
         }
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("first-message")

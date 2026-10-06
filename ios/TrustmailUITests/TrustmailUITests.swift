@@ -75,6 +75,7 @@ final class TrustmailUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["First message from this sender"].exists)
         // Three links, including the javascript: one, with JavaScript in emails off (the default).
         XCTAssertTrue(app.staticTexts["3 links scanned"].exists)
+        XCTAssertEqual(app.staticTexts["security-explanation"].label, "This email failed the sender checks, so it may be forged and has 2 links that look unsafe. Don't open its links or reply with personal details. If it says it comes from someone you know, contact them another way.")
         app.buttons["security-close"].tap()
 
         app.webViews.links["paypal.com/login"].tap()
