@@ -49,6 +49,7 @@ The logic is ported line for line, so a change in one file has a twin in the oth
 | Compose screen (from the inbox pencil, or the reply button) | `UI/ComposeView.swift` | `ui/ComposeScreen.kt` |
 | Building the outgoing email (RFC 822) | `Mail/Mime.swift` | `mail/Mime.kt` |
 | Inbox / message screens | `UI/InboxView.swift`, `UI/MessageView.swift` | `ui/InboxScreen.kt`, `ui/MessageScreen.kt` |
+| Email header (full, and compact once the body is scrolled; `HeaderCollapse` decides) | `UI/MessageHeader.swift` | `ui/MessageHeader.kt` |
 | Email web view (CSP, link scan script, badges) | `UI/EmailBody.swift` | `ui/EmailBody.kt` |
 | Security panel and its tab (grey with a spinner while the email is scanned, then the verdict) | `UI/SecurityPanel.swift` | `ui/SecurityPanel.kt` |
 | Settings (store + screen; the screen also has Sign out, shown only when signed in) | `Settings/AppSettings.swift`, `UI/SettingsView.swift` | `settings/AppSettings.kt`, `ui/SettingsScreen.kt` |
@@ -92,6 +93,10 @@ The latest inbox (the list and its sender markers) is kept on the device, so the
 - It is saved after every refresh, after the sender history comes in, and after archive/delete/move; it is deleted on sign out.
 - Storage: iOS `Application Support/inbox-snapshot.json` with complete file protection, excluded from backup; Android `filesDir/inbox_snapshot.json` (private, and the app has `allowBackup="false"`). Tests and demo runs use `MemoryInboxSnapshotStore`.
 - **Offline launch keeps the session.** A network failure while restoring Google sign-in no longer signs out: iOS remembers the account email and checks `GoogleAuth.isNetworkError` (the token is restored on the next request); Android keeps the account on a `NETWORK_ERROR` from `authorize()`. Real sign-in can't run in demo mode, so test this by hand with a real account in airplane mode.
+
+### The email header shrinks while reading
+
+Scrolling the email body down past 48pt/dp swaps the header (subject, sender, address, date) for one compact row (small avatar, one-line subject, and the sender's name, or the red failed-sender line); back within 8pt/dp of the top, the full header returns. It only shrinks when the body can scroll more than 240pt/dp, since the height it frees could otherwise push a short email back to the top and make the header bounce. The rule is `HeaderCollapse.collapsed` (tested on both platforms); the web view reports its scroll (iOS: KVO on the scroll view's `contentOffset`; Android: `setOnScrollChangeListener`, converted to dp). Test ids: `message-header`, `message-header-compact`. The demo welcome email is long so UI tests can scroll it.
 
 ### The intro screen
 
