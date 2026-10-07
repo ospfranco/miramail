@@ -171,10 +171,13 @@ fun EmailBodyView(
     /** Whether scripts inside the email may run (the "Allow JavaScript in emails" setting). */
     allowJavaScript: Boolean,
     modifier: Modifier = Modifier,
+    /** The body scrolled: how far down, and how far it can scroll in all (dp). */
+    onScroll: (offset: Float, scrollable: Float) -> Unit = { _, _ -> },
 ) {
     val token = remember { UUID.randomUUID().toString() }
     val currentOnLinksFound = rememberUpdatedState(onLinksFound)
     val currentOnLinkPress = rememberUpdatedState(onLinkPress)
+    val currentOnScroll = rememberUpdatedState(onScroll)
 
     AndroidView(
         modifier = modifier,
@@ -188,6 +191,13 @@ fun EmailBodyView(
                 settings.allowContentAccess = false
                 settings.domStorageEnabled = false
                 settings.setSupportMultipleWindows(false)
+
+                setOnScrollChangeListener { view, _, scrollY, _, _ ->
+                    val density = view.resources.displayMetrics.density
+                    // contentHeight is in CSS pixels, which match dp at the page's initial scale of 1.
+                    val scrollable = (this.contentHeight * density - view.height) / density
+                    currentOnScroll.value(scrollY / density, scrollable)
+                }
 
                 addJavascriptInterface(
                     Bridge { json ->

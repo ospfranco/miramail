@@ -113,6 +113,8 @@ struct EmailBodyView: UIViewRepresentable {
     let onLinkPress: (String) -> Void
     /// Whether scripts inside the email may run (the "Allow JavaScript in emails" setting).
     let allowJavaScript: Bool
+    /// The body scrolled: how far down, and how far it can scroll in all (points).
+    var onScroll: (_ offset: CGFloat, _ scrollable: CGFloat) -> Void = { _, _ in }
 
     // Runs our script in its own world so nothing in the email can see or call it.
     static let world = WKContentWorld.world(name: "trustmail")
@@ -144,6 +146,9 @@ struct EmailBodyView: UIViewRepresentable {
         context.coordinator.body = body
         context.coordinator.bodyType = bodyType
         context.coordinator.allowJavaScript = allowJavaScript
+        context.coordinator.scrollObservation = webView.scrollView.observe(\.contentOffset) { [weak coordinator = context.coordinator] scrollView, _ in
+            MainActor.assumeIsolated { coordinator?.scrolled(scrollView) }
+        }
         return webView
     }
 
@@ -151,6 +156,7 @@ struct EmailBodyView: UIViewRepresentable {
         let coordinator = context.coordinator
         coordinator.onLinksFound = onLinksFound
         coordinator.onLinkPress = onLinkPress
+        coordinator.onScroll = onScroll
         if let scannedLinks, scannedLinks != coordinator.appliedLinks {
             coordinator.appliedLinks = scannedLinks
             webView.evaluateJavaScript(EmailHtml.applyBadgesScript(scannedLinks), in: nil, in: Self.world, completionHandler: nil)
@@ -166,10 +172,20 @@ struct EmailBodyView: UIViewRepresentable {
         weak var webView: WKWebView?
         var onLinksFound: ([FoundLink]) -> Void = { _ in }
         var onLinkPress: (String) -> Void = { _ in }
+        var onScroll: (CGFloat, CGFloat) -> Void = { _, _ in }
+        var scrollObservation: NSKeyValueObservation?
         var appliedLinks: [ScannedLink]?
         var body = ""
         var bodyType = BodyType.html
         var allowJavaScript = false
+
+        func scrolled(_ scrollView: UIScrollView) {
+            let insets = scrollView.adjustedContentInset
+            onScroll(
+                scrollView.contentOffset.y + insets.top,
+                scrollView.contentSize.height + insets.top + insets.bottom - scrollView.bounds.height
+            )
+        }
 
         func userContentController(_ controller: WKUserContentController, didReceive message: WKScriptMessage) {
             guard let body = message.body as? [String: Any], let type = body["type"] as? String else { return }

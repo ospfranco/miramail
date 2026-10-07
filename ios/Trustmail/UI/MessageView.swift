@@ -22,6 +22,8 @@ struct MessageView: View {
     @State private var pendingLink: ScannedLink?
     @State private var browser: BrowserDestination?
     @State private var unopenableLink: String?
+    /// The email body is scrolled down, so the header is compact.
+    @State private var headerCollapsed = false
     @Environment(\.dismiss) private var dismiss
 
     init(id: String, session: SessionModel, settings: AppSettings) {
@@ -69,30 +71,7 @@ struct MessageView: View {
 
     private func content(_ message: MessageDetail) -> some View {
         VStack(spacing: 0) {
-            VStack(alignment: .leading, spacing: Spacing.three) {
-                Text(message.subject)
-                    .font(.title2.weight(.bold))
-                    .foregroundStyle(Theme.text)
-                    .fixedSize(horizontal: false, vertical: true)
-                HStack(spacing: Spacing.three) {
-                    AvatarView(from: message.from)
-                    VStack(alignment: .leading, spacing: Spacing.half) {
-                        Text(senderName(message.from)).font(.headline).foregroundStyle(Theme.text).lineLimit(1)
-                        if model.evaluation?.senderFailed == true {
-                            FailedSenderLine(address: message.fromAddress)
-                        } else {
-                            Text(message.from).textStyle(.small, color: Theme.textSecondary).lineLimit(1)
-                        }
-                        Text(message.date).font(.caption).foregroundStyle(Theme.textSecondary).lineLimit(1)
-                    }
-                }
-                if model.evaluation == nil {
-                    Label("Scanning links…", systemImage: "shield.lefthalf.filled")
-                        .textStyle(.small, color: Theme.textSecondary)
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(Spacing.three)
+            MessageHeader(message: message, evaluation: model.evaluation, collapsed: headerCollapsed)
 
             Divider()
 
@@ -102,7 +81,12 @@ struct MessageView: View {
                 scannedLinks: model.links,
                 onLinksFound: { found in Task { await model.linksFound(found, ignoreFooterLinks: settings.ignoreFooterLinks) } },
                 onLinkPress: handleLinkPress,
-                allowJavaScript: settings.allowEmailJavaScript
+                allowJavaScript: settings.allowEmailJavaScript,
+                onScroll: { offset, scrollable in
+                    let collapsed = HeaderCollapse.collapsed(current: headerCollapsed, offset: offset, scrollable: scrollable)
+                    // Changed outside the view update the scroll may have come from.
+                    if collapsed != headerCollapsed { Task { headerCollapsed = collapsed } }
+                }
             )
         }
         .safeAreaInset(edge: .bottom) {

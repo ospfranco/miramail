@@ -5,10 +5,8 @@ import UIKit
 /// Google Sign-In wrapper that also hands out Gmail access tokens.
 @MainActor
 final class GoogleAuth: AuthService {
-    // OAuth client IDs are public identifiers, not secrets.
-    // TODO(rename): this client was registered for the OLD bundle ID com.ospfranco.safemail, so Google sign-in will not
-    // work until you create an iOS OAuth client for com.ospfranco.trustmail in Google Cloud and put its client ID here,
-    // and its reversed form in ios/Info.plist. See RELEASING.md ("Google sign-in after the rename").
+    // OAuth client IDs are public identifiers, not secrets. This iOS client is registered for com.ospfranco.trustmail;
+    // its reversed form is the URL scheme in ios/Info.plist.
     private static let clientID = "760054649215-log9rqaj7h239g6lr9qsink2adnla6i2.apps.googleusercontent.com"
 
     static let gmailScopes = [

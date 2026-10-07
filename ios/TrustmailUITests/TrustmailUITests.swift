@@ -89,6 +89,18 @@ final class TrustmailUITests: XCTestCase {
         XCTAssertFalse(alert.exists)
     }
 
+    func testTheHeaderShrinksWhileReadingALongEmail() {
+        app.buttons["message-demo-1"].tap()
+        XCTAssertTrue(app.otherElements["message-header"].waitForExistence(timeout: 10))
+        app.webViews.firstMatch.swipeUp()
+        XCTAssertTrue(app.otherElements["message-header-compact"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Hello from the Trustmail team"].exists, "the subject stays in view")
+        screenshot("message-header-compact")
+        app.webViews.firstMatch.swipeDown()
+        app.webViews.firstMatch.swipeDown()
+        XCTAssertTrue(app.otherElements["message-header"].waitForExistence(timeout: 5))
+    }
+
     func testPlainTextEmailFromKnownSender() {
         app.buttons["message-demo-1"].tap()
         XCTAssertTrue(app.staticTexts["Hello from the Trustmail team"].waitForExistence(timeout: 10))

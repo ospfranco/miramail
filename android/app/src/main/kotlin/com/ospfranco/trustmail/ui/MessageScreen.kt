@@ -79,6 +79,8 @@ fun MessageScreen(model: MessageViewModel, settings: AppSettings, session: Sessi
     val context = LocalContext.current
     var pendingLink by remember { mutableStateOf<ScannedLink?>(null) }
     var unopenableLink by remember { mutableStateOf<String?>(null) }
+    /** The email body is scrolled down, so the header is compact. */
+    var headerCollapsed by remember { mutableStateOf(false) }
     var moveTargets by remember { mutableStateOf<List<MailLabel>?>(null) }
     val scope = rememberCoroutineScope()
 
@@ -130,28 +132,7 @@ fun MessageScreen(model: MessageViewModel, settings: AppSettings, session: Sessi
             message == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             else -> Box(Modifier.fillMaxSize()) {
                 Column(Modifier.fillMaxSize()) {
-                    Column(
-                        modifier = Modifier.fillMaxWidth().padding(Spacing.three),
-                        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(Spacing.three),
-                    ) {
-                        Text(message.subject, color = colors.text, style = MaterialTheme.typography.headlineSmall)
-                        androidx.compose.foundation.layout.Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(Spacing.three),
-                        ) {
-                            Avatar(message.from)
-                            Column {
-                                Text(senderName(message.from), color = colors.text, style = MaterialTheme.typography.titleMedium, maxLines = 1)
-                                if (model.evaluation?.senderFailed == true) {
-                                    FailedSenderLine(message.fromAddress)
-                                } else {
-                                    AppText(message.from, TextKind.Small, color = colors.textSecondary, maxLines = 1)
-                                }
-                                Text(message.date, color = colors.textSecondary, style = MaterialTheme.typography.bodySmall, maxLines = 1)
-                            }
-                        }
-                        if (model.evaluation == null) AppText("Scanning links…", TextKind.Small, color = colors.textSecondary)
-                    }
+                    MessageHeader(message, model.evaluation, headerCollapsed)
                     HorizontalDivider(color = colors.backgroundSelected)
                     EmailBodyView(
                         body = message.body,
@@ -160,6 +141,9 @@ fun MessageScreen(model: MessageViewModel, settings: AppSettings, session: Sessi
                         onLinksFound = { model.onLinksFound(it, settings.ignoreFooterLinks) },
                         onLinkPress = ::handleLinkPress,
                         allowJavaScript = settings.allowEmailJavaScript,
+                        onScroll = { offset, scrollable ->
+                            headerCollapsed = HeaderCollapse.collapsed(headerCollapsed, offset, scrollable)
+                        },
                         modifier = Modifier.fillMaxWidth().weight(1f),
                     )
                     ActionBar(

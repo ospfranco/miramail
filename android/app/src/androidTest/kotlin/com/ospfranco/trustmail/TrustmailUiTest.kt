@@ -176,6 +176,22 @@ class TrustmailUiTest {
         onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
 
     @Test
+    fun theHeaderShrinksWhileReadingALongEmail() {
+        launch()
+        waitForTag("message-demo-1", 10_000)
+        compose.onNodeWithTag("message-demo-1").performClick()
+        waitForTag("message-header", 10_000)
+        // Scroll the email body (a WebView, outside Compose) with a finger swipe in the middle of the screen.
+        val x = device.displayWidth / 2
+        device.swipe(x, device.displayHeight * 3 / 4, x, device.displayHeight / 3, 20)
+        waitForTag("message-header-compact", 5_000)
+        compose.onNodeWithText("Hello from the Trustmail team").assertExists()
+        screenshot("message-header-compact")
+        repeat(2) { device.swipe(x, device.displayHeight / 3, x, device.displayHeight * 3 / 4, 20) }
+        waitForTag("message-header", 5_000)
+    }
+
+    @Test
     fun plainTextEmailFromKnownSender() {
         launch()
         waitForTag("message-demo-1", 10_000)

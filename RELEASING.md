@@ -34,19 +34,14 @@ Google Play, builds both apps, and uploads them. Steps that need your Apple and 
 
 ### Google Cloud (so Google sign-in works for testers). Important.
 Sign-in only works when the app's signing key is registered with the Google OAuth client.
-- **Google sign-in after the rename (do this first).** The app was renamed from safemail to **Trustmail**, with new
-  identifiers (`com.ospfranco.trustmail`). Google ties OAuth clients to those identifiers, so the clients created for
-  the old ones don't apply, and **sign-in is broken until you create new ones**. In Google Cloud Console → APIs &
-  Services → Credentials (the same project, the same consent screen and test users):
-  - **iOS:** Create credentials → OAuth client ID → **iOS**, bundle ID `com.ospfranco.trustmail`. Put the new client
-    ID in `ios/Trustmail/Mail/GoogleAuth.swift` (`clientID`) and its reversed form
-    (`com.googleusercontent.apps.<the part before .apps.googleusercontent.com>`) in `ios/Info.plist`. Both places
-    carry a `TODO(rename)`; remove it when done.
-  - **Android, sideload APK** (the debug-signed `release` build): Create credentials → OAuth client ID →
-    **Android**, package `com.ospfranco.trustmail`, SHA-1 `5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25`.
-    No code change.
+- **The OAuth clients** live in Google Cloud Console → APIs & Services → Credentials, all for
+  `com.ospfranco.trustmail` (when the app was renamed from safemail, the existing clients were edited to the new bundle
+  ID and package, which keeps their client IDs):
+  - **iOS:** its client ID is `clientID` in `ios/Trustmail/Mail/GoogleAuth.swift`, and its reversed form
+    (`com.googleusercontent.apps.<the part before .apps.googleusercontent.com>`) is the URL scheme in `ios/Info.plist`.
+  - **Android, sideload APK** (the debug-signed `release` build): an Android client with SHA-1
+    `5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25`. No code change.
   - **Android, Google Play:** another Android client with Google's signing key (next bullet).
-  - Test users carry over (the consent screen is shared).
 - **Android from Google Play** is signed by **Google's** key, not yours, so the debug key already registered does
   *not* cover it. After your first upload: Play Console → your app → **Test and release → App integrity → Play app
   signing** → copy the **App signing key certificate SHA-1**. Then Google Cloud Console → APIs & Services →
