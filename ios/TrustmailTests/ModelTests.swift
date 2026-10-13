@@ -92,7 +92,7 @@ struct ModelTests {
         await model.linksFound([FoundLink(url: "mailto:a@b.com", text: "mail"), FoundLink(url: "http://10.0.0.1/", text: "ip")])
         #expect(model.links?.count == 2)
         #expect(model.evaluation?.verdict == .danger)
-        #expect(model.evaluation?.checks.map(\.label) == ["Sender not verified", "Known sender", "2 links scanned"])
+        #expect(model.evaluation?.checks.map(\.label) == ["Sender not verified", "Known sender", "Unsafe links"])
     }
 
     @Test func messageModelIgnoresASecondScan() async {

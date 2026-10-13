@@ -100,7 +100,7 @@ final class SessionModel {
         snapshots.save(InboxSnapshot(account: user.email, messages: messages, firstMessages: firstMessages.intersection(ids)))
     }
 
-    /// Finds the inbox emails whose sender is new to you: the same lookup as the security panel's sender history,
+    /// Finds the inbox emails whose sender is new to you: the same lookup as the email header's sender history,
     /// one per email. A lookup that fails marks nothing.
     func loadSenderHistory() async {
         let (mail, senders) = (services.mail, services.senders)

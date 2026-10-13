@@ -36,7 +36,7 @@ The logic is ported line for line, so a change in one file has a twin in the oth
 |---|---|---|
 | Verdicts, check kinds, labels | `Security/Verdict.swift` | `security/Verdict.kt` |
 | Link checks (DNS, TLS, domain age, caches) | `Security/LinkChecks.swift` | `security/LinkChecks.kt` |
-| Link scanning, URL parsing, evaluation, the risky-link dialog text (`linkWarning`: "Shown as" / "Goes to", query and fragment stripped) | `Security/SecurityScanner.swift` | `security/SecurityScanner.kt` |
+| Link scanning, URL parsing, evaluation (`findings`), the risky-link dialog text (`linkWarning`: "Shown as" / "Goes to", query and fragment stripped, then the plain reasons from `LinkCheckKind.reason` in `Verdict`) | `Security/SecurityScanner.swift` | `security/SecurityScanner.kt` |
 | Sender (SPF/DKIM/DMARC) checks | `Security/SenderChecks.swift` | `security/SenderChecks.kt` |
 | X.509 reader | `Security/X509.swift` | `security/X509.kt` |
 | TLS handshake + system DNS | `Security/TlsInspector.swift` | `security/TlsInspector.kt` |
@@ -54,9 +54,8 @@ The logic is ported line for line, so a change in one file has a twin in the oth
 | Compose screen (from the inbox pencil, or the reply button) | `UI/ComposeView.swift` | `ui/ComposeScreen.kt` |
 | Building the outgoing email (RFC 822) | `Mail/Mime.swift` | `mail/Mime.kt` |
 | Inbox / message screens | `UI/InboxView.swift`, `UI/MessageView.swift` | `ui/InboxScreen.kt`, `ui/MessageScreen.kt` |
-| Email header (full, and compact once the body is scrolled; `HeaderCollapse` decides) | `UI/MessageHeader.swift` | `ui/MessageHeader.kt` |
+| Email header (full, and compact once the body is scrolled; `HeaderCollapse` decides) and the scan's findings in it | `UI/MessageHeader.swift` | `ui/MessageHeader.kt` |
 | Email web view (CSP, link scan script, badges) | `UI/EmailBody.swift` | `ui/EmailBody.kt` |
-| Security panel and its tab (grey with a spinner while the email is scanned, then the verdict) | `UI/SecurityPanel.swift` | `ui/SecurityPanel.kt` |
 | Settings (store + screen; the screen also has Sign out, shown only when signed in) | `Settings/AppSettings.swift`, `UI/SettingsView.swift` | `settings/AppSettings.kt`, `ui/SettingsScreen.kt` |
 | Splash screen (the word "Trustmail" on the app background, light/dark) | `LaunchScreen.storyboard` | `res/drawable/splash_icon.xml` (+ `splash_*` colors, `Theme.Trustmail.Starting`) |
 | App icon (a smiley on an envelope) | `Assets.xcassets/AppIcon.appiconset/icon-1024.png` | `res/drawable-nodpi/ic_launcher_{foreground,monochrome}.png`, `res/mipmap-anydpi-v26/ic_launcher.xml`, color `ic_launcher_background` |
@@ -84,12 +83,20 @@ The floating bar at the bottom of an email has four buttons. They behave the sam
 The sender is marked like a link in the body:
 
 - **Failed sender checks** (a sender check is `danger`, e.g. DMARC failed): the sender's address with its domain in red and the red ✕ marker after it (`FailedSenderLine`, accessibility id / test tag `sender-warning`). In the email header this follows the scan (`SecurityEvaluation.senderFailed`). In the inbox it is known right away: `listInbox` also asks Gmail for `Authentication-Results` (`metadataHeaders`), kept to Gmail's own like `getMessage` does, and `MessageSummary.senderFailed` runs the same `checkSenderDomain`. "Sender not verified" is a warning and is not marked.
-- **First message from this sender** (inbox only): after the inbox loads, the session looks up every email's sender history in the background (`loadSenderHistory`, the same `SenderChecks.isKnownSender` call as the security panel, one per email) and rows in `firstMessages` get a yellow marker and "First message from this sender" (`FirstMessageLine`, `first-message`). A lookup that fails marks nothing.
+- **First message from this sender** (inbox only): after the inbox loads, the session looks up every email's sender history in the background (`loadSenderHistory`, the same `SenderChecks.isKnownSender` call as the email header, one per email) and rows in `firstMessages` get a yellow marker and "First message from this sender" (`FirstMessageLine`, `first-message`). A lookup that fails marks nothing.
 - **Sender history** (`isKnownSender`) must survive the user deleting what they've read. A sender is known if (1) the device has seen another email from them in the inbox (`KnownSenders`: address → first email seen; that email itself doesn't count), or else (2) Gmail finds other mail from or to the address, Trash included (`includeSpamTrash=true`), Spam excluded (`-in:spam`). Senders that failed their checks (`senderFailed`) are never remembered, so a forged address can't make itself known; moving an email to Spam forgets its sender. Storage: iOS `Application Support/known-senders.json` (complete file protection, no backup), Android `filesDir/known_senders.json`; deleted on sign out. Tests and demo runs keep it in memory.
 
-### The verdict's explanation (security panel)
+### What the scan found (email header)
 
-Under the verdict, the panel explains a warning or a danger in plain words: what was found and what to do (`SecurityScanner.explanation`, test tag / accessibility id `security-explanation`). Unsafe findings (a failed sender check, unsafe links) take over from suspicious ones; a safe email gets none. The sender checks are told apart by `SenderCheckLabel` (the labels are an enum on both platforms), so a new sender check needs a case there and, if it can warn, a sentence in `explanation`. The exact sentences are pinned by `explainsTheVerdict` on both platforms.
+There is no separate security screen: the result of the scan sits in the email header, under the sender and date.
+
+- While the email is checked: a quiet row with a spinner, "Checking this email…" (`security-scanning`).
+- Nothing wrong: one small green line, "No problems found" (`security-safe`).
+- Otherwise one bright card per problem (`security-findings`), red for unsafe and amber for suspicious, unsafe ones first (`SecurityEvaluation.findings`). A card shows its title; tapping it opens a plain-words explanation of what it means and what to do. Safe checks ("Sender verified", "Known sender") are not shown. Links never get one card each: there is at most an "Unsafe links" and a "Suspicious links" card (`LinkFindingLabel`), since each link already carries its own mark in the email.
+- The compact header keeps a dot in the verdict's color when something is wrong.
+- Every title, verdict and explanation lives in an enum (`SenderCheckLabel`, `LinkFindingLabel`), pinned word for word by `describesEveryCheckInPlainWords` on both platforms. A new sender check needs a case there.
+- Tapping a link that isn't safe still asks first. The dialog shows "Shown as" / "Goes to", then why the link is risky in plain words (one sentence per kind of problem, `LinkCheckKind.reason`, unsafe ones first) and what to do. The technical `LinkCheck.detail` strings are kept for tests and debugging but not shown.
+- Four cards make the header tall, so `HeaderCollapse` only shrinks it when the body can scroll further than the full header is tall (the header's measured height is passed in).
 
 ### Saved inbox (offline snapshot)
 
@@ -122,7 +129,7 @@ The inbox has a settings button (gear, top right) opening a settings screen with
 ### "Ignore footer links" (Settings, off by default)
 
 - A link is a **footer link** if it sits inside `footer, [role="contentinfo"], [id*="footer" i], [class*="footer" i]` (`EmailHtml.footerSelector` / `EmailHtml.FOOTER_SELECTOR`). The scan scripts (and `LinkInspector` on iOS) report it as `inFooter`. A URL that also appears outside the footer is not a footer link (`uniqueLinks`). Plain-text emails have no footer.
-- **On:** suspicious (warning) footer links don't count toward the email's verdict, and the panel adds a green "N footer link(s) ignored" check. **Unsafe (danger) footer links always count**, so wrapping a phishing link in `class="footer"` can't hide it. Footer links are still scanned, badged, and warned about when tapped. Applies the next time an email is opened.
+- **On:** suspicious (warning) footer links don't count toward the email's verdict, and they get no card in the header. **Unsafe (danger) footer links always count**, so wrapping a phishing link in `class="footer"` can't hide it. Footer links are still scanned, badged, and warned about when tapped. Applies the next time an email is opened.
 - Pinned by `SecurityScannerTests`/`SecurityScannerTest` (`ignoresSuspiciousFooterLinksOnlyWhenAsked`), `AppSettings` tests, and `footerLinksAreMarked` in the web view tests.
 
 ### Shared data (must stay identical)
@@ -182,7 +189,7 @@ Debug builds can run against canned mail, which is what the UI tests use:
 - iOS: launch with the `-demo` argument (`xcrun simctl launch <device> com.ospfranco.trustmail -demo`). Add `-demo-signed-out` to start signed out (to see the intro and the sign-in screen), or `-demo-offline` to start with a saved inbox and Gmail out of reach.
 - Android: `adb shell am start -n com.ospfranco.trustmail/.MainActivity --ez demo true`. Add `--ez demo_signed_out true` to start signed out, or `--ez demo_offline true` to start offline with a saved inbox.
 
-The demo mailbox pauses 1.5 seconds in every scan (in the sender-history lookup), so the grey "scanning" tab stays up long enough for UI tests to see it (accessibility id / test tag `security-scanning`; once the scan is done it becomes `security-tab`). It also remembers what you do: archived, deleted or moved emails leave the inbox, and sent emails are kept. Notices stay up for 8 seconds in demo runs (2.5 otherwise) so UI tests can find them.
+The demo mailbox pauses 1.5 seconds in every scan (in the sender-history lookup), so the header's "Checking this email…" row stays up long enough for UI tests to see it (accessibility id / test tag `security-scanning`; once the scan is done it becomes `security-findings` or `security-safe`). It also remembers what you do: archived, deleted or moved emails leave the inbox, and sent emails are kept. Notices stay up for 8 seconds in demo runs (2.5 otherwise) so UI tests can find them.
 
 The demo inbox has a plain-text email from a known, verified sender and an HTML phishing email (mismatched link text, `http`, a shortener, a `javascript:` link, and a `<script>` that rewrites a status line from "Scripts in this email are blocked." to "...are running." so tests can tell whether scripts ran). Demo runs always start with default settings (in-memory on Android, a throwaway `UserDefaults` suite on iOS), so UI tests don't leak state into each other. Real Google sign-in cannot be exercised in demo mode; test it by hand with a real account.
 

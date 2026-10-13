@@ -70,20 +70,23 @@ struct SecurityScannerTests {
             url: "http://login.example.net/verify?session=abc#x", text: "paypal.com/login?ref=mail",
             host: "login.example.net", verdict: .danger, checks: checks
         )
+        // Why it's risky in plain words, unsafe problems first and one sentence per kind, then what to do.
         #expect(SecurityScanner.linkWarning(mismatch) == """
         Shown as: paypal.com/login
         Goes to: http://login.example.net/verify
 
-        Text shows paypal.com but the link goes to login.example.net.
+        The link's text shows one website, but it takes you to another. Fake emails do this to look trustworthy.
 
-        Not encrypted (http).
+        The connection to this website isn't secure, so anything you type there, like a password, could be seen by others.
+
+        Don't open it unless you're sure where it goes, and never enter a password or personal details there.
         """)
 
         let shortener = ScannedLink(
             url: "https://bit.ly/abc?x=1", text: "Fix my account", host: "bit.ly", verdict: .warning,
             checks: [LinkCheck(kind: .shortener, verdict: .warning, detail: "Shortened link hides the final destination.")]
         )
-        #expect(SecurityScanner.linkWarning(shortener) == "Goes to: https://bit.ly/abc\n\nShortened link hides the final destination.")
+        #expect(SecurityScanner.linkWarning(shortener) == "Goes to: https://bit.ly/abc\n\nThe link is shortened, so you can't see where it really goes before you open it.\n\nOnly open it if you trust where it goes.")
     }
 
     @Test func dedupesLinksKeepingTheOneWithText() {
@@ -126,22 +129,21 @@ struct SecurityScannerTests {
     }
 
     @Test func evaluatesEmail() {
-        let safeSender = [SecurityCheck(label: "Sender verified", detail: "", verdict: .safe)]
+        let safeSender = [SecurityCheck(.verified)]
 
+        // Links are only mentioned when some are a problem.
         let none = SecurityScanner.evaluateEmail(senderChecks: safeSender, links: [])
         #expect(none.verdict == .safe)
         #expect(none.summary == "No problems found")
-        #expect(none.checks.last == SecurityCheck(label: "No links", detail: "No problems found in links.", verdict: .safe))
-
-        let one = SecurityScanner.evaluateEmail(senderChecks: safeSender, links: [scanned(.safe)])
-        #expect(one.checks.last?.label == "1 link scanned")
+        #expect(none.checks == safeSender)
+        #expect(SecurityScanner.evaluateEmail(senderChecks: safeSender, links: [scanned(.safe)]).checks == safeSender)
 
         let mixed = SecurityScanner.evaluateEmail(senderChecks: safeSender, links: [scanned(.safe), scanned(.warning), scanned(.danger), scanned(.danger)])
         #expect(mixed.verdict == .danger)
         #expect(mixed.summary == "This email looks dangerous")
-        #expect(mixed.checks.last == SecurityCheck(label: "4 links scanned", detail: "2 unsafe, 1 suspicious", verdict: .danger))
+        #expect(mixed.checks == safeSender + [SecurityCheck(.unsafe), SecurityCheck(.suspicious)])
 
-        let warnSender = [SecurityCheck(label: "First message from this sender", detail: "", verdict: .warning)]
+        let warnSender = [SecurityCheck(.firstMessage)]
         let warn = SecurityScanner.evaluateEmail(senderChecks: warnSender, links: [scanned(.safe)])
         #expect(warn.verdict == .warning)
         #expect(warn.summary == "Be careful with this email")
@@ -149,13 +151,19 @@ struct SecurityScannerTests {
         #expect(!mixed.senderFailed, "unsafe links alone don't mark the sender")
     }
 
+    @Test func theHeaderShowsOnlyProblemsUnsafeFirst() {
+        let evaluation = SecurityScanner.evaluateEmail(senderChecks: [SecurityCheck(.verified), SecurityCheck(.firstMessage)], links: [scanned(.danger)])
+        #expect(evaluation.findings == [SecurityCheck(.unsafe), SecurityCheck(.firstMessage)])
+        #expect(SecurityScanner.evaluateEmail(senderChecks: [SecurityCheck(.verified), SecurityCheck(.known)], links: [scanned(.safe)]).findings.isEmpty)
+    }
+
     @Test func marksTheSenderOnlyWhenASenderCheckFails() {
         let failed = [
-            SecurityCheck(label: "Sender verification failed", detail: "", verdict: .danger),
-            SecurityCheck(label: "Known sender", detail: "", verdict: .safe),
+            SecurityCheck(.failed),
+            SecurityCheck(.known),
         ]
         #expect(SecurityScanner.evaluateEmail(senderChecks: failed, links: []).senderFailed)
-        let unverified = [SecurityCheck(label: "Sender not verified", detail: "", verdict: .warning)]
+        let unverified = [SecurityCheck(.notVerified)]
         #expect(!SecurityScanner.evaluateEmail(senderChecks: unverified, links: []).senderFailed)
     }
 
@@ -164,54 +172,39 @@ struct SecurityScannerTests {
     }
 
     @Test func ignoresSuspiciousFooterLinksOnlyWhenAsked() {
-        let safeSender = [SecurityCheck(label: "Sender verified", detail: "", verdict: .safe)]
+        let safeSender = [SecurityCheck(.verified)]
         let links = [scanned(.safe), footer(.warning)]
 
         let counted = SecurityScanner.evaluateEmail(senderChecks: safeSender, links: links)
         #expect(counted.verdict == .warning)
-        #expect(counted.checks.last == SecurityCheck(label: "2 links scanned", detail: "1 suspicious", verdict: .warning))
+        #expect(counted.checks == safeSender + [SecurityCheck(.suspicious)])
 
         let ignored = SecurityScanner.evaluateEmail(senderChecks: safeSender, links: links, ignoreFooterLinks: true)
         #expect(ignored.verdict == .safe)
         #expect(ignored.summary == "No problems found")
-        #expect(ignored.checks.suffix(2) == [
-            SecurityCheck(label: "2 links scanned", detail: "No problems found in links.", verdict: .safe),
-            SecurityCheck(label: "1 footer link ignored", detail: "Suspicious links in the footer don't count. You can change this in Settings.", verdict: .safe),
-        ])
+        #expect(ignored.checks == safeSender)
 
         // An unsafe footer link always counts.
         let unsafe = SecurityScanner.evaluateEmail(senderChecks: safeSender, links: [footer(.warning), footer(.danger), scanned(.warning)], ignoreFooterLinks: true)
         #expect(unsafe.verdict == .danger)
-        #expect(unsafe.checks.suffix(2) == [
-            SecurityCheck(label: "3 links scanned", detail: "1 unsafe, 1 suspicious", verdict: .danger),
-            SecurityCheck(label: "1 footer link ignored", detail: "Suspicious links in the footer don't count. You can change this in Settings.", verdict: .safe),
+        #expect(unsafe.checks == safeSender + [SecurityCheck(.unsafe), SecurityCheck(.suspicious)])
+    }
+
+    /// Every card in the security panel says, in plain words, what was found and what to do.
+    @Test func describesEveryCheckInPlainWords() {
+        #expect(SenderCheckLabel.allCases.map { "\($0.rawValue): \($0.description)" } == [
+            "Sender verified: Gmail confirmed that this email really comes from the address it shows.",
+            "Sender not verified: Gmail couldn't confirm that this email really comes from the address it shows. That's often harmless, but someone could be pretending to be this sender. Be careful if it asks you to do something or to share information.",
+            "Sender verification failed: This email pretends to come from an address that didn't send it, so it's probably a fake. Don't open its links or reply with personal details. If it claims to be from someone you know, contact them another way.",
+            "Known sender: You've exchanged emails with this address before.",
+            "First message from this sender: This is the first email you get from this address. If it asks you to do something or to share information, be careful before you continue.",
+            "Sender history unknown: Trustmail couldn't check whether this address has emailed you before, for example because you're offline. Be careful if it asks you to do something or to share information.",
         ])
-
-        let none = SecurityScanner.evaluateEmail(senderChecks: safeSender, links: [scanned(.safe), footer(.safe)], ignoreFooterLinks: true)
-        #expect(none.checks.last?.label == "2 links scanned")
-    }
-
-    private func explain(_ labels: [SenderCheckLabel], unsafe: Int, suspicious: Int) -> String? {
-        let checks = labels.map { SecurityCheck(label: $0.rawValue, detail: "", verdict: .safe) }
-        return SecurityScanner.explanation(senderChecks: checks, unsafeLinks: unsafe, suspiciousLinks: suspicious)
-    }
-
-    /// The note under the verdict names what was found and what to do; unsafe findings take over from suspicious ones.
-    @Test func explainsTheVerdict() {
-        #expect(explain([.verified, .known], unsafe: 0, suspicious: 0) == nil)
-        #expect(explain([.verified, .firstMessage], unsafe: 0, suspicious: 0) == "The email looks OK, but it's the first email from this sender. If anything about it seems suspicious, question the email before you act on it.")
-        #expect(explain([.notVerified, .known], unsafe: 0, suspicious: 0) == "The email looks OK, but Gmail couldn't confirm who really sent it. If anything about it seems suspicious, question the email before you act on it.")
-        #expect(explain([.verified, .historyUnknown], unsafe: 0, suspicious: 0) == "The email looks OK, but Trustmail couldn't check whether this sender has emailed you before. If anything about it seems suspicious, question the email before you act on it.")
-        #expect(explain([.verified, .known], unsafe: 0, suspicious: 1) == "The email looks OK, but 1 link looks suspicious. Check where a link really goes before you open it.")
-        #expect(explain([.notVerified, .firstMessage], unsafe: 0, suspicious: 3) == "The email looks OK, but Gmail couldn't confirm who really sent it, it's the first email from this sender and 3 links look suspicious. Check where a link really goes before you open it. If anything about it seems suspicious, question the email before you act on it.")
-        #expect(explain([.failed, .firstMessage], unsafe: 0, suspicious: 1) == "This email failed the sender checks, so it may be forged. Don't open its links or reply with personal details. If it says it comes from someone you know, contact them another way.")
-        #expect(explain([.verified, .known], unsafe: 1, suspicious: 0) == "This email has a link that looks unsafe. Don't open its links or reply with personal details. If it says it comes from someone you know, contact them another way.")
-        #expect(explain([.failed, .known], unsafe: 2, suspicious: 0) == "This email failed the sender checks, so it may be forged and has 2 links that look unsafe. Don't open its links or reply with personal details. If it says it comes from someone you know, contact them another way.")
-
-        // The evaluation carries it, and has none when the email looks safe.
-        let firstMessage = [SecurityCheck(label: SenderCheckLabel.firstMessage.rawValue, detail: "", verdict: .warning)]
-        #expect(SecurityScanner.evaluateEmail(senderChecks: firstMessage, links: [scanned(.safe)]).explanation?.hasPrefix("The email looks OK, but it's the first email") == true)
-        let verified = [SecurityCheck(label: SenderCheckLabel.verified.rawValue, detail: "", verdict: .safe)]
-        #expect(SecurityScanner.evaluateEmail(senderChecks: verified, links: [scanned(.safe)]).explanation == nil)
+        #expect(LinkFindingLabel.allCases.map { "\($0.rawValue): \($0.description)" } == [
+            "Unsafe links: Some links in this email may lead to a fake or harmful website. Don't open the links marked with a red ✕.",
+            "Suspicious links: Some links in this email look unusual. Tap one marked with a yellow ! to see why before anything opens.",
+        ])
+        #expect(SenderCheckLabel.allCases.map(\.verdict) == [.safe, .warning, .danger, .safe, .warning, .warning])
+        #expect(LinkFindingLabel.allCases.map(\.verdict) == [.danger, .warning])
     }
 }

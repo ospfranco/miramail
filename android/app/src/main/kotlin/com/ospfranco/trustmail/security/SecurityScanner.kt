@@ -18,17 +18,34 @@ data class ScannedLink(
 
 data class SecurityCheck(val label: String, val detail: String, val verdict: Verdict)
 
-/**
- * [senderFailed]: a sender check failed (the email may be forged), so the header marks the sender's domain like an unsafe link.
- * [explanation]: under the verdict in the panel, what made the email risky and what to do about it. Null when it looks safe.
- */
+/** [senderFailed]: a sender check failed (the email may be forged), so the header marks the sender's domain like an unsafe link. */
 data class SecurityEvaluation(
     val verdict: Verdict,
     val summary: String,
     val checks: List<SecurityCheck>,
     val senderFailed: Boolean = false,
-    val explanation: String? = null,
-)
+) {
+    /** What the email header shows: the checks that found a problem, unsafe ones first. */
+    val findings: List<SecurityCheck>
+        get() = checks.filter { it.verdict == Verdict.Danger } + checks.filter { it.verdict == Verdict.Warning }
+}
+
+/** The finding about the email's links, only there when some look unsafe or suspicious. */
+enum class LinkFindingLabel(val text: String, val verdict: Verdict, val description: String) {
+    Unsafe(
+        "Unsafe links",
+        Verdict.Danger,
+        "Some links in this email may lead to a fake or harmful website. Don't open the links marked with a red ✕.",
+    ),
+    Suspicious(
+        "Suspicious links",
+        Verdict.Warning,
+        "Some links in this email look unusual. Tap one marked with a yellow ! to see why before anything opens.",
+    ),
+    ;
+
+    val check: SecurityCheck get() = SecurityCheck(text, description, verdict)
+}
 
 data class ParsedUrl(val scheme: String, val host: String, val hasUserInfo: Boolean)
 
@@ -62,13 +79,20 @@ object SecurityScanner {
 
     /**
      * The text of the warning shown before opening a link that isn't safe: what the link text shows
-     * (when it looks like a link), where the link really goes, then every problem found.
+     * (when it looks like a link), where the link really goes, then why it's risky in plain words (unsafe problems
+     * first, one sentence per kind) and what to do.
      */
     fun linkWarning(link: ScannedLink): String {
         val shown = if (hostInText(link.text) != null) "Shown as: ${cleanUrl(link.text)}" else null
         val target = "Goes to: ${cleanUrl(link.url)}"
-        val problems = link.checks.filter { it.verdict != Verdict.Safe }.map { it.detail }
-        return (listOf(listOfNotNull(shown, target).joinToString("\n")) + problems).joinToString("\n\n")
+        val problems = link.checks.filter { it.verdict == Verdict.Danger } + link.checks.filter { it.verdict == Verdict.Warning }
+        val reasons = problems.map { it.kind.reason }.distinct()
+        val advice = if (link.verdict == Verdict.Danger) {
+            "Don't open it unless you're sure where it goes, and never enter a password or personal details there."
+        } else {
+            "Only open it if you trust where it goes."
+        }
+        return (listOf(listOfNotNull(shown, target).joinToString("\n")) + reasons + advice).joinToString("\n\n")
     }
 
     fun sameSite(a: String, b: String): Boolean {
@@ -144,29 +168,10 @@ object SecurityScanner {
         val bad = links.count { it.verdict == Verdict.Danger }
         val ignored = if (ignoreFooterLinks) links.count { it.inFooter && it.verdict == Verdict.Warning } else 0
         val suspicious = links.count { it.verdict == Verdict.Warning } - ignored
-        val linkCheck = SecurityCheck(
-            label = if (links.isEmpty()) "No links" else "${links.size} link${if (links.size == 1) "" else "s"} scanned",
-            detail = if (bad > 0 || suspicious > 0) {
-                listOfNotNull(
-                    if (bad > 0) "$bad unsafe" else null,
-                    if (suspicious > 0) "$suspicious suspicious" else null,
-                ).joinToString(", ")
-            } else {
-                "No problems found in links."
-            },
-            verdict = if (bad > 0) Verdict.Danger else if (suspicious > 0) Verdict.Warning else Verdict.Safe,
-        )
-
-        val checks = senderChecks + linkCheck + listOfNotNull(
-            if (ignored > 0) {
-                SecurityCheck(
-                    label = "$ignored footer link${if (ignored == 1) "" else "s"} ignored",
-                    detail = "Suspicious links in the footer don't count. You can change this in Settings.",
-                    verdict = Verdict.Safe,
-                )
-            } else {
-                null
-            },
+        // Safe links aren't listed: links are only mentioned when they are the problem.
+        val checks = senderChecks + listOfNotNull(
+            if (bad > 0) LinkFindingLabel.Unsafe.check else null,
+            if (suspicious > 0) LinkFindingLabel.Suspicious.check else null,
         )
         val verdict = Verdict.worst(checks.map { it.verdict })
         val summary = when (verdict) {
@@ -179,42 +184,6 @@ object SecurityScanner {
             summary,
             checks,
             senderFailed = senderChecks.any { it.verdict == Verdict.Danger },
-            explanation = explanation(senderChecks, unsafeLinks = bad, suspiciousLinks = suspicious),
         )
     }
-
-    /**
-     * What made the email risky, in plain words, and what to do about it. Unsafe findings take over from suspicious
-     * ones. Null when nothing was found.
-     */
-    fun explanation(senderChecks: List<SecurityCheck>, unsafeLinks: Int, suspiciousLinks: Int): String? {
-        val labels = senderChecks.mapNotNull { check -> SenderCheckLabel.entries.firstOrNull { it.text == check.label } }.toSet()
-
-        val dangers = buildList {
-            if (SenderCheckLabel.Failed in labels) add("failed the sender checks, so it may be forged")
-            if (unsafeLinks > 0) add(if (unsafeLinks == 1) "has a link that looks unsafe" else "has $unsafeLinks links that look unsafe")
-        }
-        if (dangers.isNotEmpty()) {
-            return "This email ${joinedList(dangers)}. Don't open its links or reply with personal details. " +
-                "If it says it comes from someone you know, contact them another way."
-        }
-
-        val senderReasons = buildList {
-            if (SenderCheckLabel.NotVerified in labels) add("Gmail couldn't confirm who really sent it")
-            if (SenderCheckLabel.FirstMessage in labels) add("it's the first email from this sender")
-            if (SenderCheckLabel.HistoryUnknown in labels) add("Trustmail couldn't check whether this sender has emailed you before")
-        }
-        val linkReasons = if (suspiciousLinks == 0) emptyList() else listOf(if (suspiciousLinks == 1) "1 link looks suspicious" else "$suspiciousLinks links look suspicious")
-        if (senderReasons.isEmpty() && linkReasons.isEmpty()) return null
-
-        val advice = listOfNotNull(
-            if (linkReasons.isEmpty()) null else "Check where a link really goes before you open it.",
-            if (senderReasons.isEmpty()) null else "If anything about it seems suspicious, question the email before you act on it.",
-        )
-        return "The email looks OK, but ${joinedList(senderReasons + linkReasons)}. " + advice.joinToString(" ")
-    }
-
-    /** "a", "a and b", "a, b and c". */
-    private fun joinedList(items: List<String>): String =
-        if (items.size <= 1) items.joinToString("") else items.dropLast(1).joinToString(", ") + " and " + items.last()
 }

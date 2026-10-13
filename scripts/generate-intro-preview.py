@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Makes the small preview image on the intro screen: the demo-mode phishing email with its verdict marks and
-the shield tab, cropped from the UI-test screenshot of each platform (the "message-scanned" screenshot).
+Makes the small preview image on the intro screen: the demo-mode phishing email with its warnings in the header
+and its verdict marks, cropped from the UI-test screenshot of each platform (the "message-scanned" screenshot).
 
   python3 scripts/generate-intro-preview.py IOS_SCREENSHOT.png ANDROID_SCREENSHOT.png
 
@@ -24,8 +24,8 @@ WIDTH = 900  # output width in px
 # Pixel boxes in the full-size screenshots: what to keep, and the demo-only status line to paint out
 # ("Scripts in this email are blocked.", test scaffolding that doesn't belong in an intro image).
 CROPS = {
-    "ios": {"crop": (0, 370, 1206, 1440), "erase": (0, 1270, 940, 1345)},
-    "android": {"crop": (0, 250, 1080, 1280), "erase": (0, 1035, 700, 1105)},
+    "ios": {"crop": (0, 370, 1206, 1960), "erase": (0, 1990, 940, 2060)},
+    "android": {"crop": (0, 250, 1080, 1700), "erase": (0, 1705, 700, 1775)},
 }
 
 

@@ -32,8 +32,39 @@ struct SecurityEvaluation: Sendable, Equatable {
     let checks: [SecurityCheck]
     /// A sender check failed (the email may be forged), so the header marks the sender's domain like an unsafe link.
     var senderFailed = false
-    /// Under the verdict in the panel: what made the email risky and what to do about it. None when it looks safe.
-    var explanation: String? = nil
+
+    /// What the email header shows: the checks that found a problem, unsafe ones first.
+    var findings: [SecurityCheck] {
+        checks.filter { $0.verdict == .danger } + checks.filter { $0.verdict == .warning }
+    }
+}
+
+/// The finding about the email's links, only there when some look unsafe or suspicious.
+enum LinkFindingLabel: String, CaseIterable {
+    case unsafe = "Unsafe links"
+    case suspicious = "Suspicious links"
+
+    var verdict: Verdict {
+        switch self {
+        case .unsafe: .danger
+        case .suspicious: .warning
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .unsafe:
+            "Some links in this email may lead to a fake or harmful website. Don't open the links marked with a red ✕."
+        case .suspicious:
+            "Some links in this email look unusual. Tap one marked with a yellow ! to see why before anything opens."
+        }
+    }
+}
+
+extension SecurityCheck {
+    init(_ label: LinkFindingLabel) {
+        self.init(label: label.rawValue, detail: label.description, verdict: label.verdict)
+    }
 }
 
 struct ParsedUrl: Equatable {
@@ -69,12 +100,18 @@ enum SecurityScanner {
     }
 
     /// The text of the warning shown before opening a link that isn't safe: what the link text shows
-    /// (when it looks like a link), where the link really goes, then every problem found.
+    /// (when it looks like a link), where the link really goes, then why it's risky in plain words (unsafe problems
+    /// first, one sentence per kind) and what to do.
     static func linkWarning(_ link: ScannedLink) -> String {
         let shown = hostInText(link.text) != nil ? "Shown as: \(cleanUrl(link.text))" : nil
         let target = "Goes to: \(cleanUrl(link.url))"
-        let problems = link.checks.filter { $0.verdict != .safe }.map(\.detail)
-        return ([[shown, target].compactMap { $0 }.joined(separator: "\n")] + problems).joined(separator: "\n\n")
+        let problems = link.checks.filter { $0.verdict == .danger } + link.checks.filter { $0.verdict == .warning }
+        var reasons: [String] = []
+        for check in problems where !reasons.contains(check.kind.reason) { reasons.append(check.kind.reason) }
+        let advice = link.verdict == .danger
+            ? "Don't open it unless you're sure where it goes, and never enter a password or personal details there."
+            : "Only open it if you trust where it goes."
+        return ([[shown, target].compactMap { $0 }.joined(separator: "\n")] + reasons + [advice]).joined(separator: "\n\n")
     }
 
     static func sameSite(_ a: String, _ b: String) -> Bool {
@@ -165,22 +202,8 @@ enum SecurityScanner {
         let bad = links.filter { $0.verdict == .danger }.count
         let ignored = ignoreFooterLinks ? links.filter { $0.inFooter && $0.verdict == .warning }.count : 0
         let suspicious = links.filter { $0.verdict == .warning }.count - ignored
-        let linkCheck = SecurityCheck(
-            label: links.isEmpty ? "No links" : "\(links.count) link\(links.count == 1 ? "" : "s") scanned",
-            detail: bad > 0 || suspicious > 0
-                ? [bad > 0 ? "\(bad) unsafe" : nil, suspicious > 0 ? "\(suspicious) suspicious" : nil].compactMap { $0 }.joined(separator: ", ")
-                : "No problems found in links.",
-            verdict: bad > 0 ? .danger : suspicious > 0 ? .warning : .safe
-        )
-
-        var checks = senderChecks + [linkCheck]
-        if ignored > 0 {
-            checks.append(SecurityCheck(
-                label: "\(ignored) footer link\(ignored == 1 ? "" : "s") ignored",
-                detail: "Suspicious links in the footer don't count. You can change this in Settings.",
-                verdict: .safe
-            ))
-        }
+        // Safe links aren't listed: links are only mentioned when they are the problem.
+        let checks = senderChecks + (bad > 0 ? [SecurityCheck(.unsafe)] : []) + (suspicious > 0 ? [SecurityCheck(.suspicious)] : [])
         let verdict = Verdict.worst(of: checks.map(\.verdict))
         let summary = switch verdict {
         case .safe: "No problems found"
@@ -191,40 +214,7 @@ enum SecurityScanner {
             verdict: verdict,
             summary: summary,
             checks: checks,
-            senderFailed: senderChecks.contains { $0.verdict == .danger },
-            explanation: explanation(senderChecks: senderChecks, unsafeLinks: bad, suspiciousLinks: suspicious)
+            senderFailed: senderChecks.contains { $0.verdict == .danger }
         )
-    }
-
-    /// What made the email risky, in plain words, and what to do about it. Unsafe findings take over from suspicious
-    /// ones. None when nothing was found.
-    static func explanation(senderChecks: [SecurityCheck], unsafeLinks: Int, suspiciousLinks: Int) -> String? {
-        let labels = Set(senderChecks.compactMap { SenderCheckLabel(rawValue: $0.label) })
-
-        var dangers: [String] = []
-        if labels.contains(.failed) { dangers.append("failed the sender checks, so it may be forged") }
-        if unsafeLinks > 0 { dangers.append(unsafeLinks == 1 ? "has a link that looks unsafe" : "has \(unsafeLinks) links that look unsafe") }
-        if !dangers.isEmpty {
-            return "This email \(joinedList(dangers)). Don't open its links or reply with personal details. "
-                + "If it says it comes from someone you know, contact them another way."
-        }
-
-        var senderReasons: [String] = []
-        if labels.contains(.notVerified) { senderReasons.append("Gmail couldn't confirm who really sent it") }
-        if labels.contains(.firstMessage) { senderReasons.append("it's the first email from this sender") }
-        if labels.contains(.historyUnknown) { senderReasons.append("Trustmail couldn't check whether this sender has emailed you before") }
-        let linkReasons = suspiciousLinks == 0 ? [] : [suspiciousLinks == 1 ? "1 link looks suspicious" : "\(suspiciousLinks) links look suspicious"]
-        if senderReasons.isEmpty && linkReasons.isEmpty { return nil }
-
-        let advice = [
-            linkReasons.isEmpty ? nil : "Check where a link really goes before you open it.",
-            senderReasons.isEmpty ? nil : "If anything about it seems suspicious, question the email before you act on it.",
-        ].compactMap { $0 }
-        return "The email looks OK, but \(joinedList(senderReasons + linkReasons)). " + advice.joined(separator: " ")
-    }
-
-    /// "a", "a and b", "a, b and c".
-    private static func joinedList(_ items: [String]) -> String {
-        items.count <= 1 ? items.joined() : items.dropLast().joined(separator: ", ") + " and " + items.last!
     }
 }

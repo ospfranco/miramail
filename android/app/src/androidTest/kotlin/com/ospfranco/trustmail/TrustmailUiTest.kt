@@ -17,7 +17,6 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.semantics.SemanticsProperties
-import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTestTag
@@ -33,7 +32,9 @@ import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import com.ospfranco.trustmail.mail.Demo
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -92,6 +93,12 @@ class TrustmailUiTest {
         FileOutputStream(File(dir, "android-$name.png")).use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
 
+    /** Scrolls the email body (a WebView, outside Compose) a little, with a finger swipe near the bottom of the screen. */
+    private fun scrollEmailBody() {
+        val x = device.displayWidth / 2
+        device.swipe(x, device.displayHeight * 85 / 100, x, device.displayHeight * 70 / 100, 20)
+    }
+
     private fun waitForTag(tag: String, timeoutMs: Long = 60_000) {
         compose.waitUntil(timeoutMs) { compose.onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty() }
     }
@@ -130,43 +137,34 @@ class TrustmailUiTest {
 
         compose.onNodeWithTag("message-demo-2").performClick()
 
-        // The panel tab only appears once every link and the sender have been checked.
-        waitForTag("security-tab")
-        compose.onNodeWithTag("security-tab").assert(
-            SemanticsMatcher.expectValue(SemanticsProperties.ContentDescription, listOf("Security: This email looks dangerous")),
+        // Once every link and the sender have been checked, the problems show in the header, unsafe ones first.
+        waitForTag("security-findings")
+        assertEquals(
+            listOf("Sender verification failed", "Unsafe links", "First message from this sender", "Suspicious links"),
+            findingTitles(),
         )
-        screenshot("message-scanned")
+        // Each one opens to explain itself in plain words.
+        compose.onNodeWithText("First message from this sender").performClick()
+        compose.onNodeWithText("This is the first email you get from this address.", substring = true).assertIsDisplayed()
         // The header marks the sender's domain like an unsafe link.
         compose.onNodeWithTag("sender-warning").assertExists()
+        screenshot("message-scanned")
 
-        // The email's own <script> must not have run.
+        // The email's own <script> must not have run. (The warnings fill the top of the screen, so scroll to it.)
+        scrollEmailBody()
         assertNotNull(device.wait(Until.findObject(By.text("Scripts in this email are blocked.")), 10_000))
-
-        compose.onNodeWithTag("security-tab").performClick()
-        compose.waitUntil(5_000) { compose.onAllNodesWithTag("security-close").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("This email looks dangerous").assertIsDisplayed()
-        compose.onNodeWithText("Sender verification failed").assertIsDisplayed()
-        compose.onNodeWithText("First message from this sender").assertIsDisplayed()
-        // Three links, including the javascript: one, with JavaScript in emails off (the default).
-        compose.onNodeWithText("3 links scanned").assertIsDisplayed()
-        compose.onNodeWithTag("security-explanation").assertTextEquals(
-            "This email failed the sender checks, so it may be forged and has 2 links that look unsafe. Don't open its links or reply with personal details. If it says it comes from someone you know, contact them another way.",
-        )
-        screenshot("security-panel")
-        compose.onNodeWithTag("security-close").performClick()
-        compose.waitForIdle()
 
         // Tap the link inside the email (the WebView exposes it to accessibility as a node).
         val link = device.wait(Until.findObject(By.text("paypal.com/login")), 10_000)
         assertNotNull("link not found in the email", link)
         link.click()
         compose.waitUntil(5_000) { compose.onAllNodesWithTagOrText("This link looks unsafe") }
-        // Scoped to the dialog: the same sentence also sits (off screen) in the closed security panel.
         compose.onNode(
             hasText("Shown as: paypal.com/login\nGoes to: http://login.paypa1-secure.example.net/verify\n\n", substring = true) and hasAnyAncestor(isDialog()),
         ).assertIsDisplayed()
         compose.onNode(
-            hasText("Text shows paypal.com but the link goes to login.paypa1-secure.example.net.", substring = true) and hasAnyAncestor(isDialog()),
+            // Why, in plain words.
+            hasText("The link's text shows one website, but it takes you to another.", substring = true) and hasAnyAncestor(isDialog()),
         ).assertIsDisplayed()
         screenshot("link-warning")
         compose.onNode(hasText("Cancel") and hasAnyAncestor(isDialog())).performClick()
@@ -175,12 +173,28 @@ class TrustmailUiTest {
     private fun androidx.compose.ui.test.junit4.ComposeTestRule.onAllNodesWithTagOrText(text: String): Boolean =
         onAllNodesWithText(text).fetchSemanticsNodes().isNotEmpty()
 
+    /** The titles of the problems the header can show. */
+    private val titles = setOf(
+        "Sender not verified", "Sender verification failed", "First message from this sender", "Sender history unknown",
+        "Unsafe links", "Suspicious links",
+    )
+
+    /** The problem titles in the header, top to bottom. */
+    private fun findingTitles(): List<String> =
+        compose.onAllNodes(hasAnyAncestor(hasTestTag("security-findings")), useUnmergedTree = true).fetchSemanticsNodes()
+            .flatMap { it.config.getOrElse(SemanticsProperties.Text) { emptyList() }.map { text -> text.text } }
+            .filter { it in titles }
+
     @Test
     fun theHeaderShrinksWhileReadingALongEmail() {
         launch()
         waitForTag("message-demo-1", 10_000)
         compose.onNodeWithTag("message-demo-1").performClick()
         waitForTag("message-header", 10_000)
+        // Wait for the check to finish: the header changes height then, and a swipe before the page is ready is lost.
+        compose.waitUntil(60_000) {
+            listOf("security-safe", "security-findings").any { compose.onAllNodesWithTag(it).fetchSemanticsNodes().isNotEmpty() }
+        }
         // Scroll the email body (a WebView, outside Compose) with a finger swipe in the middle of the screen.
         val x = device.displayWidth / 2
         device.swipe(x, device.displayHeight * 3 / 4, x, device.displayHeight / 3, 20)
@@ -196,13 +210,14 @@ class TrustmailUiTest {
         launch()
         waitForTag("message-demo-1", 10_000)
         compose.onNodeWithTag("message-demo-1").performClick()
-        waitForTag("security-tab")
-        compose.onNodeWithTag("security-tab").performClick()
-        compose.waitUntil(5_000) { compose.onAllNodesWithTag("security-close").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("Sender verified").assertIsDisplayed()
-        compose.onNodeWithText("Known sender").assertIsDisplayed()
+        // A verified, known sender: nothing about the sender in the header. (Its one link is checked over the real
+        // network, so whether the header is green or warns about the link depends on the network.)
+        compose.waitUntil(60_000) {
+            listOf("security-safe", "security-findings").any { compose.onAllNodesWithTag(it).fetchSemanticsNodes().isNotEmpty() }
+        }
+        assertTrue(findingTitles().none { it.startsWith("Sender") || it.startsWith("First") })
         compose.onNodeWithTag("sender-warning").assertDoesNotExist()
-        screenshot("plain-text-panel")
+        screenshot("plain-text-scanned")
     }
 
     private fun openSettings() {
@@ -233,14 +248,12 @@ class TrustmailUiTest {
 
         waitForTag("message-demo-2", 10_000)
         compose.onNodeWithTag("message-demo-2").performClick()
-        waitForTag("security-tab")
+        waitForTag("security-findings")
+        scrollEmailBody()
         assertNotNull(device.wait(Until.findObject(By.text("Scripts in this email are running.")), 10_000))
+        // The links are judged the same with the email's scripts on.
+        assertTrue("Unsafe links" in findingTitles())
         screenshot("message-javascript-on")
-
-        compose.onNodeWithTag("security-tab").performClick()
-        compose.waitUntil(5_000) { compose.onAllNodesWithTag("security-close").fetchSemanticsNodes().isNotEmpty() }
-        compose.onNodeWithText("3 links scanned").assertIsDisplayed()
-        compose.onNodeWithText("This email looks dangerous").assertIsDisplayed()
     }
 
     @Test
@@ -282,8 +295,7 @@ class TrustmailUiTest {
         for (tag in listOf("action-delete", "action-archive", "action-move", "action-reply")) {
             compose.onNodeWithTag(tag).assertIsDisplayed()
         }
-        waitForTag("security-tab")
-        screenshot("message-scanned")
+        waitForTag("security-findings")
     }
 
     @Test
@@ -435,27 +447,20 @@ class TrustmailUiTest {
         compose.onNodeWithTag("settings-button").assertIsDisplayed()
     }
 
-    // The security tab while scanning
+    // The header while the email is checked
 
     @Test
-    fun theTabShowsASpinnerWhileTheEmailIsScannedThenTheVerdict() {
+    fun theHeaderShowsThatTheEmailIsBeingCheckedThenTheResult() {
         launch()
-        openMessage("demo-1")
+        openMessage("demo-2")
 
-        // Right away: a tab with a spinner that doesn't open anything yet.
+        // Right away: a quiet row saying the email is being checked.
         waitForTag("security-scanning", 5_000)
-        compose.onNodeWithTag("security-scanning").assertContentDescriptionEquals("Security: scanning links")
-        compose.onNodeWithTag("security-scanning").assertIsNotEnabled()
-        compose.onNodeWithText("Scanning links…").assertIsDisplayed()
+        compose.onNodeWithText("Checking this email…").assertIsDisplayed()
         screenshot("security-scanning")
-        compose.onNodeWithTag("security-scanning").performClick()
-        assert(compose.onAllNodesWithTag("security-close").fetchSemanticsNodes().isEmpty()) { "the panel has nothing to show yet" }
 
-        // Then the same tab turns into the verdict, and opens.
-        waitForTag("security-tab")
+        // Then the problems, in place of the row.
+        waitForTag("security-findings")
         assert(compose.onAllNodesWithTag("security-scanning").fetchSemanticsNodes().isEmpty())
-        compose.onNodeWithTag("security-tab").assertIsEnabled()
-        compose.onNodeWithTag("security-tab").performClick()
-        waitForTag("security-close", 5_000)
     }
 }

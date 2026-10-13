@@ -11,14 +11,40 @@ private enum class AuthResult(val value: String) { Pass("pass"), Fail("fail") }
 
 private enum class AuthMethod(val value: String) { Dmarc("dmarc"), Dkim("dkim"), Spf("spf") }
 
-/** The labels of the sender checks, so the evaluation can tell which one raised a problem. */
-enum class SenderCheckLabel(val text: String) {
-    Verified("Sender verified"),
-    NotVerified("Sender not verified"),
-    Failed("Sender verification failed"),
-    Known("Known sender"),
-    FirstMessage("First message from this sender"),
-    HistoryUnknown("Sender history unknown"),
+/**
+ * The sender checks, so the evaluation can tell which one raised a problem. Each has a fixed verdict and a plain
+ * description for the email header, written for someone who doesn't know how email works.
+ */
+enum class SenderCheckLabel(val text: String, val verdict: Verdict, val description: String) {
+    Verified("Sender verified", Verdict.Safe, "Gmail confirmed that this email really comes from the address it shows."),
+    NotVerified(
+        "Sender not verified",
+        Verdict.Warning,
+        "Gmail couldn't confirm that this email really comes from the address it shows. That's often harmless, " +
+            "but someone could be pretending to be this sender. Be careful if it asks you to do something or to share information.",
+    ),
+    Failed(
+        "Sender verification failed",
+        Verdict.Danger,
+        "This email pretends to come from an address that didn't send it, so it's probably a fake. Don't open its links " +
+            "or reply with personal details. If it claims to be from someone you know, contact them another way.",
+    ),
+    Known("Known sender", Verdict.Safe, "You've exchanged emails with this address before."),
+    FirstMessage(
+        "First message from this sender",
+        Verdict.Warning,
+        "This is the first email you get from this address. If it asks you to do something or to share information, " +
+            "be careful before you continue.",
+    ),
+    HistoryUnknown(
+        "Sender history unknown",
+        Verdict.Warning,
+        "Trustmail couldn't check whether this address has emailed you before, for example because you're offline. " +
+            "Be careful if it asks you to do something or to share information.",
+    ),
+    ;
+
+    val check: SecurityCheck get() = SecurityCheck(text, description, verdict)
 }
 
 data class MethodResult(val method: String, val result: String, val properties: Map<String, String>)
@@ -65,62 +91,26 @@ object SenderChecks {
     fun checkSenderDomain(fromAddress: String, authenticationResults: List<String>): SecurityCheck {
         val fromDomain = domainOf(fromAddress) ?: "unknown"
         val results = authenticationResults.flatMap(::parseAuthenticationResults)
-
-        if (results.isEmpty()) {
-            return SecurityCheck(
-                SenderCheckLabel.NotVerified.text,
-                "Gmail recorded no authentication results, so $fromDomain can't be confirmed as the real sender.",
-                Verdict.Warning,
-            )
-        }
+        if (results.isEmpty()) return SenderCheckLabel.NotVerified.check
 
         val dmarc = results.firstOrNull { it.method == AuthMethod.Dmarc.value }
-        if (dmarc?.result == AuthResult.Pass.value) {
-            return SecurityCheck(SenderCheckLabel.Verified.text, "Gmail confirmed this email really comes from $fromDomain (DMARC).", Verdict.Safe)
-        }
-        if (dmarc?.result == AuthResult.Fail.value) {
-            return SecurityCheck(
-                SenderCheckLabel.Failed.text,
-                "$fromDomain says it didn't send this email (DMARC failed). It may be forged.",
-                Verdict.Danger,
-            )
-        }
+        if (dmarc?.result == AuthResult.Pass.value) return SenderCheckLabel.Verified.check
+        if (dmarc?.result == AuthResult.Fail.value) return SenderCheckLabel.Failed.check
 
         // No conclusive DMARC (the domain has no policy, or a lookup error): judge SPF/DKIM directly.
-        val dkimPasses = results.filter { it.method == AuthMethod.Dkim.value && it.result == AuthResult.Pass.value }
-        val spfPasses = results.filter { it.method == AuthMethod.Spf.value && it.result == AuthResult.Pass.value }
-        val alignedDkim = dkimPasses.firstOrNull { aligned(domainOf(it.properties["header.d"] ?: it.properties["header.i"]), fromDomain) }
-        val alignedSpf = spfPasses.firstOrNull { aligned(domainOf(it.properties["smtp.mailfrom"]), fromDomain) }
-
-        if (alignedDkim != null || alignedSpf != null) {
-            return SecurityCheck(
-                SenderCheckLabel.Verified.text,
-                "Gmail confirmed this email was ${if (alignedDkim != null) "signed" else "sent"} by $fromDomain (${if (alignedDkim != null) "DKIM" else "SPF"}).",
-                Verdict.Safe,
-            )
+        val alignedDkim = results.any {
+            it.method == AuthMethod.Dkim.value && it.result == AuthResult.Pass.value &&
+                aligned(domainOf(it.properties["header.d"] ?: it.properties["header.i"]), fromDomain)
         }
+        val alignedSpf = results.any {
+            it.method == AuthMethod.Spf.value && it.result == AuthResult.Pass.value && aligned(domainOf(it.properties["smtp.mailfrom"]), fromDomain)
+        }
+        if (alignedDkim || alignedSpf) return SenderCheckLabel.Verified.check
 
         val failed = results.any {
             (it.method == AuthMethod.Dkim.value || it.method == AuthMethod.Spf.value) && it.result == AuthResult.Fail.value
         }
-        if (failed) {
-            return SecurityCheck(SenderCheckLabel.Failed.text, "This email failed $fromDomain's sender checks. It may be forged.", Verdict.Danger)
-        }
-
-        val relay = domainOf(
-            dkimPasses.firstOrNull()?.properties?.get("header.d")
-                ?: dkimPasses.firstOrNull()?.properties?.get("header.i")
-                ?: spfPasses.firstOrNull()?.properties?.get("smtp.mailfrom"),
-        )
-        return SecurityCheck(
-            SenderCheckLabel.NotVerified.text,
-            if (relay != null) {
-                "Sent through $relay on behalf of $fromDomain, but $fromDomain itself isn't verified."
-            } else {
-                "$fromDomain couldn't be verified as the real sender."
-            },
-            Verdict.Warning,
-        )
+        return if (failed) SenderCheckLabel.Failed.check else SenderCheckLabel.NotVerified.check
     }
 
     /**
@@ -131,16 +121,11 @@ object SenderChecks {
         senders.knows(address, besides = excludingMessageId) || mail.hasCorrespondence(address, excludingMessageId)
 
     suspend fun checkSenderHistory(message: MessageDetail, mail: MailService, senders: KnownSenders = KnownSenders()): SecurityCheck = try {
-        val known = isKnownSender(message.fromAddress, message.id, mail, senders)
-        if (known) {
-            SecurityCheck(SenderCheckLabel.Known.text, "You've exchanged email with this address before.", Verdict.Safe)
-        } else {
-            SecurityCheck(SenderCheckLabel.FirstMessage.text, "You haven't exchanged email with this address before.", Verdict.Warning)
-        }
+        if (isKnownSender(message.fromAddress, message.id, mail, senders)) SenderCheckLabel.Known.check else SenderCheckLabel.FirstMessage.check
     } catch (e: kotlinx.coroutines.CancellationException) {
         throw e
     } catch (e: Exception) {
-        SecurityCheck(SenderCheckLabel.HistoryUnknown.text, "Couldn't search your past email.", Verdict.Warning)
+        SenderCheckLabel.HistoryUnknown.check
     }
 
     suspend fun checkSender(message: MessageDetail, mail: MailService, senders: KnownSenders = KnownSenders()): List<SecurityCheck> =

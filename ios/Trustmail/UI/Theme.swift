@@ -33,12 +33,10 @@ enum Theme {
     static let background = Color(uiColor: .systemBackground)
     static let backgroundElement = Color(uiColor: .secondarySystemBackground)
     static let backgroundSelected = Color(uiColor: .separator)
-    /// Behind grouped content (settings, the security panel), with `groupedElement` for the cards on it.
+    /// Behind grouped content (settings), with `groupedElement` for the cards on it.
     static let groupedBackground = Color(uiColor: .systemGroupedBackground)
     static let groupedElement = Color(uiColor: .secondarySystemGroupedBackground)
     static let linkPrimary = Color.accentColor
-    /// The security tab while an email is still being scanned.
-    static let scanning = Color(hex: "7A7F87")
     /// The blue of the app icon, used as the app's tint.
     static let brand = Color(hex: "208AEF")
 
@@ -57,6 +55,7 @@ enum Spacing {
 
 extension Verdict {
     var color: Color { Color(hex: hexColor) }
+    var contentColor: Color { Color(hex: contentHexColor) }
 }
 
 /// Text styles shared by every screen, on the system's Dynamic Type scale.

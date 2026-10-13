@@ -122,6 +122,7 @@ object Spacing {
 }
 
 val Verdict.color: Color get() = Color(0xFF000000 or hexColor.toLong(16))
+val Verdict.contentColor: Color get() = Color(0xFF000000 or contentHexColor.toLong(16))
 
 /** Material 3 with dynamic color (Android 12+): the app takes its colors from the user's wallpaper, like the system apps. */
 @Composable

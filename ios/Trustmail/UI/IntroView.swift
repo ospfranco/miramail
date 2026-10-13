@@ -6,7 +6,7 @@ struct IntroView: View {
 
     private let steps: [(title: String, text: String)] = [
         ("Open an email", "Trustmail checks who really sent it and scans every link in it."),
-        ("See the verdict", "A green, yellow or red mark sits next to each link, and the shield on the edge opens the full report."),
+        ("See the verdict", "A green, yellow or red mark sits next to each link, and anything wrong is explained at the top of the email."),
         ("Tap with confidence", "Risky links ask you to confirm before they open."),
     ]
 
@@ -34,7 +34,7 @@ struct IntroView: View {
                         .clipShape(RoundedRectangle(cornerRadius: Spacing.three))
                         .overlay(RoundedRectangle(cornerRadius: Spacing.three).stroke(Theme.backgroundSelected, lineWidth: 0.5))
                         .shadow(color: .black.opacity(0.12), radius: 12, y: 4)
-                        .accessibilityLabel("Preview: an email with a safety mark next to each link and a shield on the edge")
+                        .accessibilityLabel("Preview: an email with a safety mark next to each link and a warning at the top")
                         .accessibilityIdentifier("intro-preview")
 
                     VStack(alignment: .leading, spacing: Spacing.three) {

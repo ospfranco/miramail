@@ -43,7 +43,7 @@ import com.ospfranco.trustmail.R
 
 private val steps = listOf(
     "Open an email" to "Trustmail checks who really sent it and scans every link in it.",
-    "See the verdict" to "A green, yellow or red mark sits next to each link, and the shield on the edge opens the full report.",
+    "See the verdict" to "A green, yellow or red mark sits next to each link, and anything wrong is explained at the top of the email.",
     "Tap with confidence" to "Risky links ask you to confirm before they open.",
 )
 
@@ -74,7 +74,7 @@ fun IntroScreen(onContinue: () -> Unit) {
 
                 Image(
                     painter = painterResource(R.drawable.intro_preview),
-                    contentDescription = "Preview: an email with a safety mark next to each link and a shield on the edge",
+                    contentDescription = "Preview: an email with a safety mark next to each link and a warning at the top",
                     contentScale = ContentScale.Fit,
                     modifier = Modifier
                         .heightIn(max = 220.dp)

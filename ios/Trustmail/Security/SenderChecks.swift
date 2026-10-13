@@ -9,14 +9,50 @@ private enum AuthMethod: String {
     case dmarc, dkim, spf
 }
 
-/// The labels of the sender checks, so the evaluation can tell which one raised a problem.
-enum SenderCheckLabel: String {
+/// The sender checks, so the evaluation can tell which one raised a problem. Each has a fixed verdict and a plain
+/// description for the email header, written for someone who doesn't know how email works.
+enum SenderCheckLabel: String, CaseIterable {
     case verified = "Sender verified"
     case notVerified = "Sender not verified"
     case failed = "Sender verification failed"
     case known = "Known sender"
     case firstMessage = "First message from this sender"
     case historyUnknown = "Sender history unknown"
+
+    var verdict: Verdict {
+        switch self {
+        case .verified, .known: .safe
+        case .notVerified, .firstMessage, .historyUnknown: .warning
+        case .failed: .danger
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .verified:
+            "Gmail confirmed that this email really comes from the address it shows."
+        case .notVerified:
+            "Gmail couldn't confirm that this email really comes from the address it shows. That's often harmless, "
+                + "but someone could be pretending to be this sender. Be careful if it asks you to do something or to share information."
+        case .failed:
+            "This email pretends to come from an address that didn't send it, so it's probably a fake. Don't open its links "
+                + "or reply with personal details. If it claims to be from someone you know, contact them another way."
+        case .known:
+            "You've exchanged emails with this address before."
+        case .firstMessage:
+            "This is the first email you get from this address. If it asks you to do something or to share information, "
+                + "be careful before you continue."
+        case .historyUnknown:
+            "Trustmail couldn't check whether this address has emailed you before, for example because you're offline. "
+                + "Be careful if it asks you to do something or to share information."
+        }
+    }
+}
+
+extension SecurityCheck {
+    init(_ label: SenderCheckLabel) {
+        self.init(label: label.rawValue, detail: label.description, verdict: label.verdict)
+    }
 }
 
 struct MethodResult: Equatable {
@@ -70,57 +106,26 @@ enum SenderChecks {
     static func checkSenderDomain(fromAddress: String, authenticationResults: [String]) -> SecurityCheck {
         let fromDomain = domainOf(fromAddress) ?? "unknown"
         let results = authenticationResults.flatMap(parseAuthenticationResults)
-
-        if results.isEmpty {
-            return SecurityCheck(
-                label: SenderCheckLabel.notVerified.rawValue,
-                detail: "Gmail recorded no authentication results, so \(fromDomain) can't be confirmed as the real sender.",
-                verdict: .warning
-            )
-        }
+        if results.isEmpty { return SecurityCheck(.notVerified) }
 
         let dmarc = results.first { $0.method == AuthMethod.dmarc.rawValue }
-        if dmarc?.result == AuthResult.pass.rawValue {
-            return SecurityCheck(label: SenderCheckLabel.verified.rawValue, detail: "Gmail confirmed this email really comes from \(fromDomain) (DMARC).", verdict: .safe)
-        }
-        if dmarc?.result == AuthResult.fail.rawValue {
-            return SecurityCheck(
-                label: SenderCheckLabel.failed.rawValue,
-                detail: "\(fromDomain) says it didn't send this email (DMARC failed). It may be forged.",
-                verdict: .danger
-            )
-        }
+        if dmarc?.result == AuthResult.pass.rawValue { return SecurityCheck(.verified) }
+        if dmarc?.result == AuthResult.fail.rawValue { return SecurityCheck(.failed) }
 
         // No conclusive DMARC (the domain has no policy, or a lookup error): judge SPF/DKIM directly.
-        let dkimPasses = results.filter { $0.method == AuthMethod.dkim.rawValue && $0.result == AuthResult.pass.rawValue }
-        let spfPasses = results.filter { $0.method == AuthMethod.spf.rawValue && $0.result == AuthResult.pass.rawValue }
-        let alignedDkim = dkimPasses.first { aligned(domainOf($0.properties["header.d"] ?? $0.properties["header.i"]), fromDomain) }
-        let alignedSpf = spfPasses.first { aligned(domainOf($0.properties["smtp.mailfrom"]), fromDomain) }
-
-        if alignedDkim != nil || alignedSpf != nil {
-            return SecurityCheck(
-                label: SenderCheckLabel.verified.rawValue,
-                detail: "Gmail confirmed this email was \(alignedDkim != nil ? "signed" : "sent") by \(fromDomain) (\(alignedDkim != nil ? "DKIM" : "SPF")).",
-                verdict: .safe
-            )
+        let alignedDkim = results.contains {
+            $0.method == AuthMethod.dkim.rawValue && $0.result == AuthResult.pass.rawValue
+                && aligned(domainOf($0.properties["header.d"] ?? $0.properties["header.i"]), fromDomain)
         }
+        let alignedSpf = results.contains {
+            $0.method == AuthMethod.spf.rawValue && $0.result == AuthResult.pass.rawValue && aligned(domainOf($0.properties["smtp.mailfrom"]), fromDomain)
+        }
+        if alignedDkim || alignedSpf { return SecurityCheck(.verified) }
 
         let failed = results.contains {
             ($0.method == AuthMethod.dkim.rawValue || $0.method == AuthMethod.spf.rawValue) && $0.result == AuthResult.fail.rawValue
         }
-        if failed {
-            return SecurityCheck(label: SenderCheckLabel.failed.rawValue, detail: "This email failed \(fromDomain)'s sender checks. It may be forged.", verdict: .danger)
-        }
-
-        let relay = domainOf(
-            dkimPasses.first?.properties["header.d"] ?? dkimPasses.first?.properties["header.i"] ?? spfPasses.first?.properties["smtp.mailfrom"]
-        )
-        return SecurityCheck(
-            label: SenderCheckLabel.notVerified.rawValue,
-            detail: relay.map { "Sent through \($0) on behalf of \(fromDomain), but \(fromDomain) itself isn't verified." }
-                ?? "\(fromDomain) couldn't be verified as the real sender.",
-            verdict: .warning
-        )
+        return SecurityCheck(failed ? .failed : .notVerified)
     }
 
     /// Whether you've had other mail from or to `address`: a sender already seen in the inbox counts even after
@@ -133,11 +138,9 @@ enum SenderChecks {
     static func checkSenderHistory(_ message: MessageDetail, mail: MailService, senders: KnownSenders = KnownSenders()) async -> SecurityCheck {
         do {
             let known = try await isKnownSender(message.fromAddress, excluding: message.id, mail: mail, senders: senders)
-            return known
-                ? SecurityCheck(label: SenderCheckLabel.known.rawValue, detail: "You've exchanged email with this address before.", verdict: .safe)
-                : SecurityCheck(label: SenderCheckLabel.firstMessage.rawValue, detail: "You haven't exchanged email with this address before.", verdict: .warning)
+            return SecurityCheck(known ? .known : .firstMessage)
         } catch {
-            return SecurityCheck(label: SenderCheckLabel.historyUnknown.rawValue, detail: "Couldn't search your past email.", verdict: .warning)
+            return SecurityCheck(.historyUnknown)
         }
     }
 

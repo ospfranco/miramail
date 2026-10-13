@@ -177,7 +177,7 @@ class ViewModelTest {
         advanceUntilIdle()
         assertEquals(2, model.links?.size)
         assertEquals(Verdict.Danger, model.evaluation?.verdict)
-        assertEquals(listOf("Sender not verified", "Known sender", "2 links scanned"), model.evaluation?.checks?.map { it.label })
+        assertEquals(listOf("Sender not verified", "Known sender", "Unsafe links"), model.evaluation?.checks?.map { it.label })
     }
 
     @Test

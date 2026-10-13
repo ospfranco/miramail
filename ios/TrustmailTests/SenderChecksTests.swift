@@ -28,60 +28,48 @@ struct SenderChecksTests {
     }
 
     @Test func noResultsMeansUnverified() {
-        let result = check()
-        #expect(result.verdict == .warning)
-        #expect(result.label == "Sender not verified")
-        #expect(result.detail == "Gmail recorded no authentication results, so github.com can't be confirmed as the real sender.")
+        #expect(check() == SecurityCheck(.notVerified))
+        #expect(check().verdict == .warning)
     }
 
     @Test func dmarcPassIsVerified() {
-        let result = check("mx.google.com; dkim=pass header.i=@github.com; dmarc=pass header.from=github.com")
-        #expect(result == SecurityCheck(label: "Sender verified", detail: "Gmail confirmed this email really comes from github.com (DMARC).", verdict: .safe))
+        #expect(check("mx.google.com; dkim=pass header.i=@github.com; dmarc=pass header.from=github.com") == SecurityCheck(.verified))
     }
 
     @Test func dmarcFailIsDangerous() {
         let result = check("mx.google.com; spf=pass smtp.mailfrom=x@github.com; dmarc=fail header.from=github.com")
+        #expect(result == SecurityCheck(.failed))
         #expect(result.verdict == .danger)
-        #expect(result.label == "Sender verification failed")
-        #expect(result.detail == "github.com says it didn't send this email (DMARC failed). It may be forged.")
     }
 
     @Test func alignedDkimWithoutDmarcIsVerified() {
-        let result = check("mx.google.com; dkim=pass header.i=@mail.github.com; dmarc=none", address: "a@github.com")
-        #expect(result == SecurityCheck(label: "Sender verified", detail: "Gmail confirmed this email was signed by github.com (DKIM).", verdict: .safe))
+        #expect(check("mx.google.com; dkim=pass header.i=@mail.github.com; dmarc=none", address: "a@github.com") == SecurityCheck(.verified))
     }
 
     @Test func alignedSpfWithoutDmarcIsVerified() {
-        let result = check("mx.google.com; spf=pass smtp.mailfrom=bounces@mail.github.com", address: "a@github.com")
-        #expect(result == SecurityCheck(label: "Sender verified", detail: "Gmail confirmed this email was sent by github.com (SPF).", verdict: .safe))
+        #expect(check("mx.google.com; spf=pass smtp.mailfrom=bounces@mail.github.com", address: "a@github.com") == SecurityCheck(.verified))
     }
 
     @Test func failedSpfOrDkimWithoutDmarcIsDangerous() {
-        let result = check("mx.google.com; spf=fail smtp.mailfrom=x@github.com", address: "a@github.com")
-        #expect(result.verdict == .danger)
-        #expect(result.detail == "This email failed github.com's sender checks. It may be forged.")
+        #expect(check("mx.google.com; spf=fail smtp.mailfrom=x@github.com", address: "a@github.com") == SecurityCheck(.failed))
     }
 
     @Test func passThroughARelayIsOnlyAWarning() {
         let result = check("mx.google.com; dkim=pass header.d=sendgrid.net; spf=pass smtp.mailfrom=bounce@sendgrid.net", address: "a@github.com")
-        #expect(result.verdict == .warning)
-        #expect(result.detail == "Sent through sendgrid.net on behalf of github.com, but github.com itself isn't verified.")
+        #expect(result == SecurityCheck(.notVerified))
     }
 
     @Test func inconclusiveResultsAreUnverified() {
-        let result = check("mx.google.com; spf=softfail smtp.mailfrom=x@evil.com", address: "a@github.com")
-        #expect(result == SecurityCheck(label: "Sender not verified", detail: "github.com couldn't be verified as the real sender.", verdict: .warning))
+        #expect(check("mx.google.com; spf=softfail smtp.mailfrom=x@evil.com", address: "a@github.com") == SecurityCheck(.notVerified))
     }
 
     @Test func senderHistory() async {
         let message = makeMessage()
-        let known = await SenderChecks.checkSenderHistory(message, mail: FakeMail(known: true))
-        #expect(known == SecurityCheck(label: "Known sender", detail: "You've exchanged email with this address before.", verdict: .safe))
+        #expect(await SenderChecks.checkSenderHistory(message, mail: FakeMail(known: true)) == SecurityCheck(.known))
         let unknown = await SenderChecks.checkSenderHistory(message, mail: FakeMail(known: false))
-        #expect(unknown.label == "First message from this sender")
+        #expect(unknown == SecurityCheck(.firstMessage))
         #expect(unknown.verdict == .warning)
-        let failed = await SenderChecks.checkSenderHistory(message, mail: FakeMail(failsHistory: true))
-        #expect(failed == SecurityCheck(label: "Sender history unknown", detail: "Couldn't search your past email.", verdict: .warning))
+        #expect(await SenderChecks.checkSenderHistory(message, mail: FakeMail(failsHistory: true)) == SecurityCheck(.historyUnknown))
     }
 
     @Test func sendersSeenBeforeStayKnownAfterTheirEmailIsDeleted() async {

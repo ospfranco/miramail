@@ -15,5 +15,8 @@ class MessageHeaderTest {
         assertTrue("between the two offsets nothing changes", HeaderCollapse.collapsed(true, 30f, 1000f))
         assertFalse(HeaderCollapse.collapsed(true, 5f, 1000f))
         assertFalse("pulling past the top", HeaderCollapse.collapsed(true, -20f, 1000f))
+        // A header made tall by its warnings needs an email that scrolls further than the header is tall.
+        assertFalse(HeaderCollapse.collapsed(false, 60f, 300f, headerHeight = 380f))
+        assertTrue(HeaderCollapse.collapsed(false, 60f, 400f, headerHeight = 380f))
     }
 }

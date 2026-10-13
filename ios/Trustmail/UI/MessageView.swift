@@ -24,6 +24,8 @@ struct MessageView: View {
     @State private var unopenableLink: String?
     /// The email body is scrolled down, so the header is compact.
     @State private var headerCollapsed = false
+    /// How tall the full header is, so it only shrinks for emails long enough to scroll past it.
+    @State private var headerHeight: CGFloat = 0
     @Environment(\.dismiss) private var dismiss
 
     init(id: String, session: SessionModel, settings: AppSettings) {
@@ -72,6 +74,9 @@ struct MessageView: View {
     private func content(_ message: MessageDetail) -> some View {
         VStack(spacing: 0) {
             MessageHeader(message: message, evaluation: model.evaluation, collapsed: headerCollapsed)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+                    if !headerCollapsed { headerHeight = height }
+                }
 
             Divider()
 
@@ -83,7 +88,7 @@ struct MessageView: View {
                 onLinkPress: handleLinkPress,
                 allowJavaScript: settings.allowEmailJavaScript,
                 onScroll: { offset, scrollable in
-                    let collapsed = HeaderCollapse.collapsed(current: headerCollapsed, offset: offset, scrollable: scrollable)
+                    let collapsed = HeaderCollapse.collapsed(current: headerCollapsed, offset: offset, scrollable: scrollable, headerHeight: headerHeight)
                     // Changed outside the view update the scroll may have come from.
                     if collapsed != headerCollapsed { Task { headerCollapsed = collapsed } }
                 }
@@ -99,10 +104,6 @@ struct MessageView: View {
                     onMove: chooseMoveTarget
                 )
             }
-        }
-        .overlay {
-            // The tab is there from the start, with a spinner until the scan is done.
-            SecurityPanel(evaluation: model.evaluation, links: model.links ?? [])
         }
     }
 

@@ -45,7 +45,9 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
@@ -81,6 +83,9 @@ fun MessageScreen(model: MessageViewModel, settings: AppSettings, session: Sessi
     var unopenableLink by remember { mutableStateOf<String?>(null) }
     /** The email body is scrolled down, so the header is compact. */
     var headerCollapsed by remember { mutableStateOf(false) }
+    // How tall the full header is (dp), so it only shrinks for emails long enough to scroll past it.
+    var headerHeight by remember { mutableStateOf(0f) }
+    val density = LocalDensity.current
     var moveTargets by remember { mutableStateOf<List<MailLabel>?>(null) }
     val scope = rememberCoroutineScope()
 
@@ -132,7 +137,12 @@ fun MessageScreen(model: MessageViewModel, settings: AppSettings, session: Sessi
             message == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
             else -> Box(Modifier.fillMaxSize()) {
                 Column(Modifier.fillMaxSize()) {
-                    MessageHeader(message, model.evaluation, headerCollapsed)
+                    MessageHeader(
+                        message,
+                        model.evaluation,
+                        headerCollapsed,
+                        Modifier.onSizeChanged { if (!headerCollapsed) headerHeight = it.height / density.density },
+                    )
                     HorizontalDivider(color = colors.backgroundSelected)
                     EmailBodyView(
                         body = message.body,
@@ -142,7 +152,7 @@ fun MessageScreen(model: MessageViewModel, settings: AppSettings, session: Sessi
                         onLinkPress = ::handleLinkPress,
                         allowJavaScript = settings.allowEmailJavaScript,
                         onScroll = { offset, scrollable ->
-                            headerCollapsed = HeaderCollapse.collapsed(headerCollapsed, offset, scrollable)
+                            headerCollapsed = HeaderCollapse.collapsed(headerCollapsed, offset, scrollable, headerHeight)
                         },
                         modifier = Modifier.fillMaxWidth().weight(1f),
                     )
@@ -154,10 +164,6 @@ fun MessageScreen(model: MessageViewModel, settings: AppSettings, session: Sessi
                         onReply = onReply,
                     )
                 }
-                val evaluation = model.evaluation
-                val links = model.links
-                // The tab is there from the start, with a spinner until the scan is done.
-                SecurityPanel(evaluation, links.orEmpty())
             }
         }
     }

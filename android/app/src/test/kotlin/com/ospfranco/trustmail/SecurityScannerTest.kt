@@ -3,9 +3,9 @@ package com.ospfranco.trustmail
 import com.ospfranco.trustmail.security.FoundLink
 import com.ospfranco.trustmail.security.LinkCheck
 import com.ospfranco.trustmail.security.LinkCheckKind
+import com.ospfranco.trustmail.security.LinkFindingLabel
 import com.ospfranco.trustmail.security.ParsedUrl
 import com.ospfranco.trustmail.security.ScannedLink
-import com.ospfranco.trustmail.security.SecurityCheck
 import com.ospfranco.trustmail.security.SecurityScanner
 import com.ospfranco.trustmail.security.SenderCheckLabel
 import com.ospfranco.trustmail.security.Verdict
@@ -98,14 +98,17 @@ class SecurityScannerTest {
         val mismatch = ScannedLink(
             "http://login.example.net/verify?session=abc#x", "paypal.com/login?ref=mail", "login.example.net", Verdict.Danger, checks,
         )
+        // Why it's risky in plain words, unsafe problems first and one sentence per kind, then what to do.
         assertEquals(
             """
             Shown as: paypal.com/login
             Goes to: http://login.example.net/verify
 
-            Text shows paypal.com but the link goes to login.example.net.
+            The link's text shows one website, but it takes you to another. Fake emails do this to look trustworthy.
 
-            Not encrypted (http).
+            The connection to this website isn't secure, so anything you type there, like a password, could be seen by others.
+
+            Don't open it unless you're sure where it goes, and never enter a password or personal details there.
             """.trimIndent(),
             SecurityScanner.linkWarning(mismatch),
         )
@@ -114,7 +117,10 @@ class SecurityScannerTest {
             "https://bit.ly/abc?x=1", "Fix my account", "bit.ly", Verdict.Warning,
             listOf(LinkCheck(LinkCheckKind.Shortener, Verdict.Warning, "Shortened link hides the final destination.")),
         )
-        assertEquals("Goes to: https://bit.ly/abc\n\nShortened link hides the final destination.", SecurityScanner.linkWarning(shortener))
+        assertEquals(
+            "Goes to: https://bit.ly/abc\n\nThe link is shortened, so you can't see where it really goes before you open it.\n\nOnly open it if you trust where it goes.",
+            SecurityScanner.linkWarning(shortener),
+        )
     }
 
     @Test
@@ -165,14 +171,14 @@ class SecurityScannerTest {
 
     @Test
     fun evaluatesEmail() {
-        val safeSender = listOf(SecurityCheck("Sender verified", "", Verdict.Safe))
+        val safeSender = listOf(SenderCheckLabel.Verified.check)
 
+        // Links are only mentioned when some are a problem.
         val none = SecurityScanner.evaluateEmail(safeSender, emptyList())
         assertEquals(Verdict.Safe, none.verdict)
         assertEquals("No problems found", none.summary)
-        assertEquals(SecurityCheck("No links", "No problems found in links.", Verdict.Safe), none.checks.last())
-
-        assertEquals("1 link scanned", SecurityScanner.evaluateEmail(safeSender, listOf(scanned(Verdict.Safe))).checks.last().label)
+        assertEquals(safeSender, none.checks)
+        assertEquals(safeSender, SecurityScanner.evaluateEmail(safeSender, listOf(scanned(Verdict.Safe))).checks)
 
         val mixed = SecurityScanner.evaluateEmail(
             safeSender,
@@ -180,9 +186,9 @@ class SecurityScannerTest {
         )
         assertEquals(Verdict.Danger, mixed.verdict)
         assertEquals("This email looks dangerous", mixed.summary)
-        assertEquals(SecurityCheck("4 links scanned", "2 unsafe, 1 suspicious", Verdict.Danger), mixed.checks.last())
+        assertEquals(safeSender + LinkFindingLabel.Unsafe.check + LinkFindingLabel.Suspicious.check, mixed.checks)
 
-        val warnSender = listOf(SecurityCheck("First message from this sender", "", Verdict.Warning))
+        val warnSender = listOf(SenderCheckLabel.FirstMessage.check)
         val warn = SecurityScanner.evaluateEmail(warnSender, listOf(scanned(Verdict.Safe)))
         assertEquals(Verdict.Warning, warn.verdict)
         assertEquals("Be careful with this email", warn.summary)
@@ -191,13 +197,25 @@ class SecurityScannerTest {
     }
 
     @Test
+    fun theHeaderShowsOnlyProblemsUnsafeFirst() {
+        val evaluation = SecurityScanner.evaluateEmail(
+            listOf(SenderCheckLabel.Verified.check, SenderCheckLabel.FirstMessage.check),
+            listOf(scanned(Verdict.Danger)),
+        )
+        assertEquals(listOf(LinkFindingLabel.Unsafe.check, SenderCheckLabel.FirstMessage.check), evaluation.findings)
+        assertTrue(
+            SecurityScanner.evaluateEmail(listOf(SenderCheckLabel.Verified.check, SenderCheckLabel.Known.check), listOf(scanned(Verdict.Safe))).findings.isEmpty(),
+        )
+    }
+
+    @Test
     fun marksTheSenderOnlyWhenASenderCheckFails() {
         val failed = listOf(
-            SecurityCheck("Sender verification failed", "", Verdict.Danger),
-            SecurityCheck("Known sender", "", Verdict.Safe),
+            SenderCheckLabel.Failed.check,
+            SenderCheckLabel.Known.check,
         )
         assertTrue(SecurityScanner.evaluateEmail(failed, emptyList()).senderFailed)
-        val unverified = listOf(SecurityCheck("Sender not verified", "", Verdict.Warning))
+        val unverified = listOf(SenderCheckLabel.NotVerified.check)
         assertFalse(SecurityScanner.evaluateEmail(unverified, emptyList()).senderFailed)
     }
 
@@ -205,23 +223,17 @@ class SecurityScannerTest {
 
     @Test
     fun ignoresSuspiciousFooterLinksOnlyWhenAsked() {
-        val safeSender = listOf(SecurityCheck("Sender verified", "", Verdict.Safe))
+        val safeSender = listOf(SenderCheckLabel.Verified.check)
         val links = listOf(scanned(Verdict.Safe), footer(Verdict.Warning))
 
         val counted = SecurityScanner.evaluateEmail(safeSender, links)
         assertEquals(Verdict.Warning, counted.verdict)
-        assertEquals(SecurityCheck("2 links scanned", "1 suspicious", Verdict.Warning), counted.checks.last())
+        assertEquals(safeSender + LinkFindingLabel.Suspicious.check, counted.checks)
 
         val ignored = SecurityScanner.evaluateEmail(safeSender, links, ignoreFooterLinks = true)
         assertEquals(Verdict.Safe, ignored.verdict)
         assertEquals("No problems found", ignored.summary)
-        assertEquals(
-            listOf(
-                SecurityCheck("2 links scanned", "No problems found in links.", Verdict.Safe),
-                SecurityCheck("1 footer link ignored", "Suspicious links in the footer don't count. You can change this in Settings.", Verdict.Safe),
-            ),
-            ignored.checks.takeLast(2),
-        )
+        assertEquals(safeSender, ignored.checks)
 
         // An unsafe footer link always counts.
         val unsafe = SecurityScanner.evaluateEmail(
@@ -230,38 +242,34 @@ class SecurityScannerTest {
             ignoreFooterLinks = true,
         )
         assertEquals(Verdict.Danger, unsafe.verdict)
-        assertEquals(
-            listOf(
-                SecurityCheck("3 links scanned", "1 unsafe, 1 suspicious", Verdict.Danger),
-                SecurityCheck("1 footer link ignored", "Suspicious links in the footer don't count. You can change this in Settings.", Verdict.Safe),
-            ),
-            unsafe.checks.takeLast(2),
-        )
-
-        val none = SecurityScanner.evaluateEmail(safeSender, listOf(scanned(Verdict.Safe), footer(Verdict.Safe)), ignoreFooterLinks = true)
-        assertEquals("2 links scanned", none.checks.last().label)
+        assertEquals(safeSender + LinkFindingLabel.Unsafe.check + LinkFindingLabel.Suspicious.check, unsafe.checks)
     }
 
-    private fun explain(labels: List<SenderCheckLabel>, unsafe: Int, suspicious: Int): String? =
-        SecurityScanner.explanation(labels.map { SecurityCheck(it.text, "", Verdict.Safe) }, unsafeLinks = unsafe, suspiciousLinks = suspicious)
-
-    /** The note under the verdict names what was found and what to do; unsafe findings take over from suspicious ones. */
+    /** Every card in the security panel says, in plain words, what was found and what to do. */
     @Test
-    fun explainsTheVerdict() {
-        assertEquals(null, explain(listOf(SenderCheckLabel.Verified, SenderCheckLabel.Known), unsafe = 0, suspicious = 0))
-        assertEquals("The email looks OK, but it's the first email from this sender. If anything about it seems suspicious, question the email before you act on it.", explain(listOf(SenderCheckLabel.Verified, SenderCheckLabel.FirstMessage), unsafe = 0, suspicious = 0))
-        assertEquals("The email looks OK, but Gmail couldn't confirm who really sent it. If anything about it seems suspicious, question the email before you act on it.", explain(listOf(SenderCheckLabel.NotVerified, SenderCheckLabel.Known), unsafe = 0, suspicious = 0))
-        assertEquals("The email looks OK, but Trustmail couldn't check whether this sender has emailed you before. If anything about it seems suspicious, question the email before you act on it.", explain(listOf(SenderCheckLabel.Verified, SenderCheckLabel.HistoryUnknown), unsafe = 0, suspicious = 0))
-        assertEquals("The email looks OK, but 1 link looks suspicious. Check where a link really goes before you open it.", explain(listOf(SenderCheckLabel.Verified, SenderCheckLabel.Known), unsafe = 0, suspicious = 1))
-        assertEquals("The email looks OK, but Gmail couldn't confirm who really sent it, it's the first email from this sender and 3 links look suspicious. Check where a link really goes before you open it. If anything about it seems suspicious, question the email before you act on it.", explain(listOf(SenderCheckLabel.NotVerified, SenderCheckLabel.FirstMessage), unsafe = 0, suspicious = 3))
-        assertEquals("This email failed the sender checks, so it may be forged. Don't open its links or reply with personal details. If it says it comes from someone you know, contact them another way.", explain(listOf(SenderCheckLabel.Failed, SenderCheckLabel.FirstMessage), unsafe = 0, suspicious = 1))
-        assertEquals("This email has a link that looks unsafe. Don't open its links or reply with personal details. If it says it comes from someone you know, contact them another way.", explain(listOf(SenderCheckLabel.Verified, SenderCheckLabel.Known), unsafe = 1, suspicious = 0))
-        assertEquals("This email failed the sender checks, so it may be forged and has 2 links that look unsafe. Don't open its links or reply with personal details. If it says it comes from someone you know, contact them another way.", explain(listOf(SenderCheckLabel.Failed, SenderCheckLabel.Known), unsafe = 2, suspicious = 0))
-
-        // The evaluation carries it, and has none when the email looks safe.
-        val firstMessage = listOf(SecurityCheck(SenderCheckLabel.FirstMessage.text, "", Verdict.Warning))
-        assertTrue(SecurityScanner.evaluateEmail(firstMessage, listOf(scanned(Verdict.Safe))).explanation!!.startsWith("The email looks OK, but it's the first email"))
-        val verified = listOf(SecurityCheck(SenderCheckLabel.Verified.text, "", Verdict.Safe))
-        assertNull(SecurityScanner.evaluateEmail(verified, listOf(scanned(Verdict.Safe))).explanation)
+    fun describesEveryCheckInPlainWords() {
+        assertEquals(
+            listOf(
+                "Sender verified: Gmail confirmed that this email really comes from the address it shows.",
+                "Sender not verified: Gmail couldn't confirm that this email really comes from the address it shows. That's often harmless, but someone could be pretending to be this sender. Be careful if it asks you to do something or to share information.",
+                "Sender verification failed: This email pretends to come from an address that didn't send it, so it's probably a fake. Don't open its links or reply with personal details. If it claims to be from someone you know, contact them another way.",
+                "Known sender: You've exchanged emails with this address before.",
+                "First message from this sender: This is the first email you get from this address. If it asks you to do something or to share information, be careful before you continue.",
+                "Sender history unknown: Trustmail couldn't check whether this address has emailed you before, for example because you're offline. Be careful if it asks you to do something or to share information.",
+            ),
+            SenderCheckLabel.entries.map { "${it.text}: ${it.description}" },
+        )
+        assertEquals(
+            listOf(
+                "Unsafe links: Some links in this email may lead to a fake or harmful website. Don't open the links marked with a red ✕.",
+                "Suspicious links: Some links in this email look unusual. Tap one marked with a yellow ! to see why before anything opens.",
+            ),
+            LinkFindingLabel.entries.map { "${it.text}: ${it.description}" },
+        )
+        assertEquals(
+            listOf(Verdict.Safe, Verdict.Warning, Verdict.Danger, Verdict.Safe, Verdict.Warning, Verdict.Warning),
+            SenderCheckLabel.entries.map { it.verdict },
+        )
+        assertEquals(listOf(Verdict.Danger, Verdict.Warning), LinkFindingLabel.entries.map { it.verdict })
     }
 }

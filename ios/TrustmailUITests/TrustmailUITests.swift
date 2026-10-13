@@ -56,10 +56,15 @@ final class TrustmailUITests: XCTestCase {
         app.buttons["message-demo-2"].tap()
         XCTAssertTrue(app.staticTexts["Action required: verify your account"].waitForExistence(timeout: 10))
 
-        // The panel tab only appears once every link and the sender have been checked.
-        let tab = app.buttons["security-tab"]
-        XCTAssertTrue(tab.waitForExistence(timeout: 60), "scan never finished")
-        XCTAssertEqual(tab.label, "Security: This email looks dangerous")
+        // Once every link and the sender have been checked, the problems show in the header, unsafe ones first.
+        let findings = app.otherElements["security-findings"]
+        XCTAssertTrue(findings.waitForExistence(timeout: 60), "scan never finished")
+        XCTAssertEqual(findings.buttons.allElementsBoundByIndex.map(\.label).filter(titles.contains), [
+            "Sender verification failed", "Unsafe links", "First message from this sender", "Suspicious links",
+        ])
+        // Each one opens to explain itself in plain words.
+        findings.buttons["First message from this sender"].tap()
+        XCTAssertTrue(findings.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "This is the first email you get from this address.")).firstMatch.waitForExistence(timeout: 5))
         // The header marks the sender's domain like an unsafe link.
         XCTAssertTrue(app.descendants(matching: .any)["sender-warning"].exists)
         screenshot("message-scanned")
@@ -68,30 +73,30 @@ final class TrustmailUITests: XCTestCase {
         XCTAssertTrue(app.webViews.links["paypal.com/login"].exists)
         XCTAssertTrue(app.webViews.staticTexts["Scripts in this email are blocked."].exists)
 
-        tab.tap()
-        XCTAssertTrue(app.staticTexts["This email looks dangerous"].waitForExistence(timeout: 5))
-        screenshot("security-panel")
-        XCTAssertTrue(app.staticTexts["Sender verification failed"].exists)
-        XCTAssertTrue(app.staticTexts["First message from this sender"].exists)
-        // Three links, including the javascript: one, with JavaScript in emails off (the default).
-        XCTAssertTrue(app.staticTexts["3 links scanned"].exists)
-        XCTAssertEqual(app.staticTexts["security-explanation"].label, "This email failed the sender checks, so it may be forged and has 2 links that look unsafe. Don't open its links or reply with personal details. If it says it comes from someone you know, contact them another way.")
-        app.buttons["security-close"].tap()
-
         app.webViews.links["paypal.com/login"].tap()
         let alert = app.alerts["This link looks unsafe"]
         XCTAssertTrue(alert.waitForExistence(timeout: 5))
         let warning = alert.staticTexts.element(boundBy: 1).label
         XCTAssertTrue(warning.hasPrefix("Shown as: paypal.com/login\nGoes to: http://login.paypa1-secure.example.net/verify\n\n"))
-        XCTAssertTrue(warning.contains("Text shows paypal.com but the link goes to login.paypa1-secure.example.net."))
+        // Why, in plain words.
+        XCTAssertTrue(warning.contains("The link's text shows one website, but it takes you to another."))
         screenshot("link-warning")
         alert.buttons["Cancel"].tap()
         XCTAssertFalse(alert.exists)
     }
 
+    /// The titles of the problems the header can show.
+    private let titles: Set<String> = [
+        "Sender not verified", "Sender verification failed", "First message from this sender", "Sender history unknown",
+        "Unsafe links", "Suspicious links",
+    ]
+
     func testTheHeaderShrinksWhileReadingALongEmail() {
         app.buttons["message-demo-1"].tap()
         XCTAssertTrue(app.otherElements["message-header"].waitForExistence(timeout: 10))
+        // Wait for the check to finish: the header changes height then, and a swipe before the page is ready is lost.
+        let result = app.descendants(matching: .any).matching(NSPredicate(format: "identifier IN %@", ["security-safe", "security-findings"])).firstMatch
+        XCTAssertTrue(result.waitForExistence(timeout: 60), "scan never finished")
         app.webViews.firstMatch.swipeUp()
         XCTAssertTrue(app.otherElements["message-header-compact"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["Hello from the Trustmail team"].exists, "the subject stays in view")
@@ -104,15 +109,17 @@ final class TrustmailUITests: XCTestCase {
     func testPlainTextEmailFromKnownSender() {
         app.buttons["message-demo-1"].tap()
         XCTAssertTrue(app.staticTexts["Hello from the Trustmail team"].waitForExistence(timeout: 10))
-        let tab = app.buttons["security-tab"]
-        XCTAssertTrue(tab.waitForExistence(timeout: 60), "scan never finished")
-        // Plain text is linkified, and the verified known sender is not what makes this email risky.
+        // A verified, known sender: nothing about the sender in the header. (Its one link is checked over the real
+        // network, so whether the header is green or warns about the link depends on the network.)
+        let result = app.descendants(matching: .any).matching(NSPredicate(format: "identifier IN %@", ["security-safe", "security-findings"])).firstMatch
+        XCTAssertTrue(result.waitForExistence(timeout: 60), "scan never finished")
+        for title in titles where title.hasPrefix("Sender") || title.hasPrefix("First") {
+            XCTAssertFalse(app.buttons[title].exists, title)
+        }
+        // Plain text is linkified.
         XCTAssertTrue(app.webViews.links["https://example.com/how-it-works"].exists)
-        tab.tap()
-        XCTAssertTrue(app.staticTexts["Sender verified"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Known sender"].exists)
         XCTAssertFalse(app.descendants(matching: .any)["sender-warning"].exists)
-        screenshot("plain-text-panel")
+        screenshot("plain-text-scanned")
     }
 
     private func openSettings() {
@@ -139,14 +146,12 @@ final class TrustmailUITests: XCTestCase {
         app.navigationBars.buttons.element(boundBy: 0).tap()
 
         app.buttons["message-demo-2"].tap()
-        let tab = app.buttons["security-tab"]
-        XCTAssertTrue(tab.waitForExistence(timeout: 60), "scan never finished")
+        let findings = app.otherElements["security-findings"]
+        XCTAssertTrue(findings.waitForExistence(timeout: 60), "scan never finished")
         XCTAssertTrue(app.webViews.staticTexts["Scripts in this email are running."].exists)
+        // The links are judged the same with the email's scripts on.
+        XCTAssertTrue(findings.buttons["Unsafe links"].exists)
         screenshot("message-javascript-on")
-
-        tab.tap()
-        XCTAssertTrue(app.staticTexts["3 links scanned"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["This email looks dangerous"].exists)
     }
 
     func testSettingsHasSignOutThatReturnsToTheSignInScreen() {
@@ -184,8 +189,7 @@ final class TrustmailUITests: XCTestCase {
         for id in ["action-delete", "action-archive", "action-move", "action-reply"] {
             XCTAssertTrue(app.buttons[id].exists, id)
         }
-        XCTAssertTrue(app.buttons["security-tab"].waitForExistence(timeout: 60), "scan never finished")
-        screenshot("message-scanned")
+        XCTAssertTrue(app.otherElements["security-findings"].waitForExistence(timeout: 60), "scan never finished")
     }
 
     func testArchiveTakesTheEmailOutOfTheInbox() {
@@ -349,26 +353,19 @@ final class TrustmailUITests: XCTestCase {
         XCTAssertTrue(app.buttons["settings-button"].exists)
     }
 
-    // MARK: - The security tab while scanning
+    // MARK: - The header while the email is checked
 
-    func testTheTabShowsASpinnerWhileTheEmailIsScannedThenTheVerdict() {
-        openMessage("demo-1")
+    func testTheHeaderShowsThatTheEmailIsBeingCheckedThenTheResult() {
+        openMessage("demo-2")
 
-        // Right away: a tab with a spinner that doesn't open anything yet.
-        let scanning = app.buttons["security-scanning"]
-        XCTAssertTrue(scanning.waitForExistence(timeout: 5), "the tab should be there while scanning")
-        XCTAssertEqual(scanning.label, "Security: scanning links")
-        XCTAssertTrue(app.staticTexts["Scanning links…"].exists)
+        // Right away: a quiet row saying the email is being checked.
+        let scanning = app.descendants(matching: .any)["security-scanning"]
+        XCTAssertTrue(scanning.waitForExistence(timeout: 5), "the header should say the email is being checked")
+        XCTAssertTrue(app.staticTexts["Checking this email…"].exists)
         screenshot("security-scanning")
-        scanning.tap()
-        XCTAssertFalse(app.buttons["security-close"].exists, "the panel has nothing to show yet")
 
-        // Then the same tab turns into the verdict, and opens.
-        let done = app.buttons["security-tab"]
-        XCTAssertTrue(done.waitForExistence(timeout: 60), "scan never finished")
-        XCTAssertTrue(done.label.hasPrefix("Security: "))
-        XCTAssertFalse(app.buttons["security-scanning"].exists)
-        done.tap()
-        XCTAssertTrue(app.buttons["security-close"].waitForExistence(timeout: 5))
+        // Then the problems, in place of the row.
+        XCTAssertTrue(app.otherElements["security-findings"].waitForExistence(timeout: 60), "scan never finished")
+        XCTAssertFalse(scanning.exists)
     }
 }
