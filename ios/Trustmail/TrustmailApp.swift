@@ -40,7 +40,11 @@ struct TrustmailApp: App {
         if Demo.isEnabled { return Services(auth: Demo.Auth(), mail: Demo.Mail()) }
         #endif
         let auth = GoogleAuth()
-        return Services(auth: auth, mail: GmailClient { forceRefresh in try await auth.accessToken(forceRefresh: forceRefresh) })
+        return Services(
+            auth: auth,
+            mail: GmailClient { forceRefresh in try await auth.accessToken(forceRefresh: forceRefresh) },
+            senders: .file()
+        )
     }
 }
 

@@ -40,6 +40,8 @@ struct MessageDetail: Sendable, Equatable {
 struct MailLabel: Sendable, Equatable, Hashable, Identifiable {
     let id: String
     let name: String
+
+    static let spam = MailLabel(id: "SPAM", name: "Spam")
 }
 
 /// A message the user is writing.
@@ -104,7 +106,7 @@ struct UserProfile: Sendable, Equatable {
 protocol MailService: Sendable {
     func listInbox(maxResults: Int) async throws -> [MessageSummary]
     func getMessage(id: String) async throws -> MessageDetail
-    /// Whether the user has any other mail from or to `address` (spam and trash excluded).
+    /// Whether the user has any other mail from or to `address` (trash included, spam excluded).
     func hasCorrespondence(with address: String, excluding messageId: String) async throws -> Bool
     /// Moves the message to the trash (it can still be recovered there).
     func trash(id: String) async throws

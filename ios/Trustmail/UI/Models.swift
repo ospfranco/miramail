@@ -4,6 +4,14 @@ import Observation
 struct Services: Sendable {
     let auth: AuthService
     let mail: MailService
+    /// Senders seen in the inbox, so deleting their emails doesn't make them new again.
+    let senders: KnownSenders
+
+    init(auth: AuthService, mail: MailService, senders: KnownSenders = KnownSenders()) {
+        self.auth = auth
+        self.mail = mail
+        self.senders = senders
+    }
 }
 
 @MainActor
@@ -72,6 +80,7 @@ final class SessionModel {
         error = nil
         do {
             messages = try await services.mail.listInbox(maxResults: 20)
+            services.senders.record(messages)
             messagesAreSaved = false
             showsSavedInbox = false
             saveSnapshot()
@@ -94,11 +103,11 @@ final class SessionModel {
     /// Finds the inbox emails whose sender is new to you: the same lookup as the security panel's sender history,
     /// one per email. A lookup that fails marks nothing.
     func loadSenderHistory() async {
-        let mail = services.mail
+        let (mail, senders) = (services.mail, services.senders)
         let first = await withTaskGroup(of: String?.self) { group in
             for message in messages {
                 group.addTask {
-                    let known = try? await mail.hasCorrespondence(with: bareAddress(message.from), excluding: message.id)
+                    let known = try? await SenderChecks.isKnownSender(bareAddress(message.from), excluding: message.id, mail: mail, senders: senders)
                     return known == false ? message.id : nil
                 }
             }
@@ -130,8 +139,9 @@ final class SessionModel {
         firstMessages = []
         showsSavedInbox = false
         messagesAreSaved = false
-        // The saved inbox is private to the account that signed out.
+        // The saved inbox and the known senders are private to the account that signed out.
         snapshots.clear()
+        services.senders.clear()
     }
 }
 
@@ -165,7 +175,7 @@ final class MessageModel {
         guard let message, !isScanning else { return }
         isScanning = true
         async let scanned = SecurityScanner.scanLinks(found)
-        async let senderChecks = SenderChecks.checkSender(message, mail: services.mail)
+        async let senderChecks = SenderChecks.checkSender(message, mail: services.mail, senders: services.senders)
         let (scannedLinks, sender) = await (scanned, senderChecks)
         links = scannedLinks
         evaluation = SecurityScanner.evaluateEmail(senderChecks: sender, links: scannedLinks, ignoreFooterLinks: ignoreFooterLinks)
@@ -209,7 +219,10 @@ extension MessageModel {
             switch action {
             case .archive: try await services.mail.archive(id: id)
             case .trash: try await services.mail.trash(id: id)
-            case .move(let label): try await services.mail.move(id: id, to: label)
+            case .move(let label):
+                try await services.mail.move(id: id, to: label)
+                // Mail in Spam doesn't count as having heard from someone.
+                if label.id == MailLabel.spam.id, let message { services.senders.forget(message.fromAddress) }
             }
             return true
         } catch {

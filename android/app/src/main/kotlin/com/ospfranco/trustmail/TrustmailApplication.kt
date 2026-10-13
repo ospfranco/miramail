@@ -6,6 +6,7 @@ import android.content.IntentSender
 import com.ospfranco.trustmail.mail.ConsentLauncher
 import com.ospfranco.trustmail.mail.GmailClient
 import com.ospfranco.trustmail.mail.GoogleAuth
+import com.ospfranco.trustmail.mail.KnownSenders
 import com.ospfranco.trustmail.mail.Services
 import com.ospfranco.trustmail.security.KnownDomains
 import com.ospfranco.trustmail.security.PublicSuffixList
@@ -24,7 +25,7 @@ object ConsentBridge : ConsentLauncher {
 class TrustmailApplication : Application() {
     val liveServices: Services by lazy {
         val auth = GoogleAuth(this, ConsentBridge)
-        Services(auth, GmailClient { forceRefresh -> auth.accessToken(forceRefresh) })
+        Services(auth, GmailClient { forceRefresh -> auth.accessToken(forceRefresh) }, KnownSenders(filesDir))
     }
 
     val settings: AppSettings by lazy {

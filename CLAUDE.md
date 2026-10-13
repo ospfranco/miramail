@@ -43,6 +43,7 @@ The logic is ported line for line, so a change in one file has a twin in the oth
 | Google sign-in | `Mail/GoogleAuth.swift` | `mail/GoogleAuth.kt` |
 | Mail/auth interfaces and models | `Mail/MailModels.swift` | `mail/MailModels.kt` |
 | Saved inbox (offline snapshot) | `Mail/InboxSnapshot.swift` | `mail/InboxSnapshot.kt` |
+| Known senders (sender history that survives deleting mail) | `Mail/KnownSenders.swift`, `SenderChecks.isKnownSender` | `mail/KnownSenders.kt`, `SenderChecks.isKnownSender` |
 | Demo data (debug only) | `Mail/DemoMail.swift` | `mail/DemoMail.kt` |
 | Intro screen (shown once, before the first sign-in) | `UI/IntroView.swift`, `RootView` in `TrustmailApp.swift`, asset `IntroPreview` | `ui/IntroScreen.kt`, gating in `MainActivity.kt`, `res/drawable-nodpi/intro_preview.png` |
 | Floating action bar (delete / archive / move / reply) and notice banner | `UI/ActionBar.swift` | `ui/ActionBar.kt` |
@@ -79,7 +80,8 @@ The floating bar at the bottom of an email has four buttons. They behave the sam
 The sender is marked like a link in the body:
 
 - **Failed sender checks** (a sender check is `danger`, e.g. DMARC failed): the sender's address with its domain in red and the red ✕ marker after it (`FailedSenderLine`, accessibility id / test tag `sender-warning`). In the email header this follows the scan (`SecurityEvaluation.senderFailed`). In the inbox it is known right away: `listInbox` also asks Gmail for `Authentication-Results` (`metadataHeaders`), kept to Gmail's own like `getMessage` does, and `MessageSummary.senderFailed` runs the same `checkSenderDomain`. "Sender not verified" is a warning and is not marked.
-- **First message from this sender** (inbox only): after the inbox loads, the session looks up every email's sender history in the background (`loadSenderHistory`, the same `hasCorrespondence` call as the security panel, one per email) and rows in `firstMessages` get a yellow marker and "First message from this sender" (`FirstMessageLine`, `first-message`). A lookup that fails marks nothing.
+- **First message from this sender** (inbox only): after the inbox loads, the session looks up every email's sender history in the background (`loadSenderHistory`, the same `SenderChecks.isKnownSender` call as the security panel, one per email) and rows in `firstMessages` get a yellow marker and "First message from this sender" (`FirstMessageLine`, `first-message`). A lookup that fails marks nothing.
+- **Sender history** (`isKnownSender`) must survive the user deleting what they've read. A sender is known if (1) the device has seen another email from them in the inbox (`KnownSenders`: address → first email seen; that email itself doesn't count), or else (2) Gmail finds other mail from or to the address, Trash included (`includeSpamTrash=true`), Spam excluded (`-in:spam`). Senders that failed their checks (`senderFailed`) are never remembered, so a forged address can't make itself known; moving an email to Spam forgets its sender. Storage: iOS `Application Support/known-senders.json` (complete file protection, no backup), Android `filesDir/known_senders.json`; deleted on sign out. Tests and demo runs keep it in memory.
 
 ### The verdict's explanation (security panel)
 

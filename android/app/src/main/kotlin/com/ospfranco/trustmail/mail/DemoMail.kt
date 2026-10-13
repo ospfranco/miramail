@@ -92,7 +92,7 @@ object Demo {
             synchronized(gone) { gone.add(id) }
         }
 
-        override suspend fun moveTargets() = listOf(MailLabel("work", "Work"), MailLabel("receipts", "Receipts"), MailLabel("SPAM", "Spam"))
+        override suspend fun moveTargets() = listOf(MailLabel("work", "Work"), MailLabel("receipts", "Receipts"), MailLabel.Spam)
 
         override suspend fun send(message: OutgoingMessage) {
             synchronized(sent) { sent.add(message) }

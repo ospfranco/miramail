@@ -179,8 +179,10 @@ class GmailClientTest {
         assertFalse(client().hasCorrespondence("a+tag@x.com", "current"))
         // On the wire the "+" must be escaped, or Gmail would read it as a space.
         assertTrue(seen.first().path.orEmpty().contains("a%2Btag%40x.com"))
-        assertEquals("""{from:"a+tag@x.com" to:"a+tag@x.com"}""", seen.first().requestUrl!!.queryParameter("q"))
+        assertEquals("""{from:"a+tag@x.com" to:"a+tag@x.com"} -in:spam""", seen.first().requestUrl!!.queryParameter("q"))
         assertEquals("2", seen.first().requestUrl!!.queryParameter("maxResults"))
+        // Deleted mail still counts as history.
+        assertEquals("true", seen.first().requestUrl!!.queryParameter("includeSpamTrash"))
 
         serve { MockResponse().setBody("""{"messages":[{"id":"current"},{"id":"other"}]}""") }
         assertTrue(client().hasCorrespondence("a@x.com", "current"))

@@ -1,5 +1,6 @@
 package com.ospfranco.trustmail.security
 
+import com.ospfranco.trustmail.mail.KnownSenders
 import com.ospfranco.trustmail.mail.MailService
 import com.ospfranco.trustmail.mail.MessageDetail
 import com.ospfranco.trustmail.mail.MessageSummary
@@ -122,8 +123,15 @@ object SenderChecks {
         )
     }
 
-    suspend fun checkSenderHistory(message: MessageDetail, mail: MailService): SecurityCheck = try {
-        val known = mail.hasCorrespondence(message.fromAddress, message.id)
+    /**
+     * Whether you've had other mail from or to [address]: a sender already seen in the inbox counts even after
+     * their emails were deleted, otherwise Gmail's search decides.
+     */
+    suspend fun isKnownSender(address: String, excludingMessageId: String, mail: MailService, senders: KnownSenders): Boolean =
+        senders.knows(address, besides = excludingMessageId) || mail.hasCorrespondence(address, excludingMessageId)
+
+    suspend fun checkSenderHistory(message: MessageDetail, mail: MailService, senders: KnownSenders = KnownSenders()): SecurityCheck = try {
+        val known = isKnownSender(message.fromAddress, message.id, mail, senders)
         if (known) {
             SecurityCheck(SenderCheckLabel.Known.text, "You've exchanged email with this address before.", Verdict.Safe)
         } else {
@@ -135,8 +143,8 @@ object SenderChecks {
         SecurityCheck(SenderCheckLabel.HistoryUnknown.text, "Couldn't search your past email.", Verdict.Warning)
     }
 
-    suspend fun checkSender(message: MessageDetail, mail: MailService): List<SecurityCheck> =
-        listOf(checkSenderDomain(message), checkSenderHistory(message, mail))
+    suspend fun checkSender(message: MessageDetail, mail: MailService, senders: KnownSenders = KnownSenders()): List<SecurityCheck> =
+        listOf(checkSenderDomain(message), checkSenderHistory(message, mail, senders))
 }
 
 /** The sender failed Gmail's checks (the email may be forged), so the inbox marks it like an unsafe link. */

@@ -1,5 +1,6 @@
 package com.ospfranco.trustmail
 
+import com.ospfranco.trustmail.mail.KnownSenders
 import com.ospfranco.trustmail.mail.MessageSummary
 import com.ospfranco.trustmail.security.SecurityCheck
 import com.ospfranco.trustmail.security.SenderChecks
@@ -116,6 +117,17 @@ class SenderChecksTest {
             SecurityCheck("Sender history unknown", "Couldn't search your past email.", Verdict.Warning),
             SenderChecks.checkSenderHistory(message, FakeMail(failsHistory = true)),
         )
+    }
+
+    @Test
+    fun sendersSeenBeforeStayKnownAfterTheirEmailIsDeleted() = runTest {
+        val senders = KnownSenders()
+        senders.record(listOf(MessageSummary("old", "old", "GitHub <noreply@github.com>", "s", "", false)))
+        // Gmail no longer finds the old email, but the device remembers it.
+        val known = SenderChecks.checkSenderHistory(makeMessage(), FakeMail(known = false), senders)
+        assertEquals("Known sender", known.label)
+        val first = SenderChecks.checkSenderHistory(makeMessage(id = "old"), FakeMail(known = false), senders)
+        assertEquals("First message from this sender", first.label)
     }
 
     @Test

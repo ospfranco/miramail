@@ -84,6 +84,16 @@ struct SenderChecksTests {
         #expect(failed == SecurityCheck(label: "Sender history unknown", detail: "Couldn't search your past email.", verdict: .warning))
     }
 
+    @Test func sendersSeenBeforeStayKnownAfterTheirEmailIsDeleted() async {
+        let senders = KnownSenders()
+        senders.record([MessageSummary(id: "old", threadId: "old", from: "GitHub <noreply@github.com>", subject: "s", snippet: "", unread: false)])
+        // Gmail no longer finds the old email, but the device remembers it.
+        let known = await SenderChecks.checkSenderHistory(makeMessage(), mail: FakeMail(known: false), senders: senders)
+        #expect(known.label == "Known sender")
+        let first = await SenderChecks.checkSenderHistory(makeMessage(id: "old"), mail: FakeMail(known: false), senders: senders)
+        #expect(first.label == "First message from this sender")
+    }
+
     @Test func checkSenderReturnsDomainThenHistory() async {
         let checks = await SenderChecks.checkSender(makeMessage(), mail: FakeMail(known: true))
         #expect(checks.map(\.label) == ["Sender not verified", "Known sender"])

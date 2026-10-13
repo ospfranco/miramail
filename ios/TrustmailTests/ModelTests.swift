@@ -40,8 +40,22 @@ struct ModelTests {
         await session.loadSenderHistory()
         // Only the sender you've never written with; a lookup that fails marks nothing.
         #expect(session.firstMessages == ["2"])
+        // Inbox senders are remembered, so a later email from them is known even once this one is deleted.
+        #expect(session.services.senders.knows("new@x.com", besides: "4"))
         await session.signOut()
         #expect(session.firstMessages.isEmpty)
+        #expect(!session.services.senders.knows("new@x.com", besides: "4"))
+    }
+
+    @Test func movingToSpamForgetsTheSender() async {
+        let services = Services(auth: FakeAuth(), mail: FakeMail())
+        services.senders.record([MessageSummary(id: "old", threadId: "old", from: "noreply@github.com", subject: "s", snippet: "", unread: false)])
+        let model = MessageModel(id: "m1", services: services)
+        await model.load()
+        #expect(await model.perform(.move(MailLabel(id: "work", name: "Work"))))
+        #expect(services.senders.knows("noreply@github.com", besides: "m1"))
+        #expect(await model.perform(.move(.spam)))
+        #expect(!services.senders.knows("noreply@github.com", besides: "m1"))
     }
 
     @Test func restoreFailureIsShown() async {

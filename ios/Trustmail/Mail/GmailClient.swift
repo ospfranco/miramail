@@ -168,8 +168,9 @@ final class GmailClient: MailService {
     }
 
     func hasCorrespondence(with address: String, excluding messageId: String) async throws -> Bool {
-        let query = encodeURIComponent("{from:\"\(address)\" to:\"\(address)\"}")
-        let list: MessageList = try await fetch("/messages?q=\(query)&maxResults=2")
+        // Trash counts (people delete what they've read), Spam doesn't.
+        let query = encodeURIComponent("{from:\"\(address)\" to:\"\(address)\"} -in:spam")
+        let list: MessageList = try await fetch("/messages?q=\(query)&maxResults=2&includeSpamTrash=true")
         return (list.messages ?? []).contains { $0.id != messageId }
     }
 
@@ -191,7 +192,7 @@ final class GmailClient: MailService {
             .filter { $0.type == "user" }
             .map { MailLabel(id: $0.id, name: $0.name) }
             .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-        return own + [MailLabel(id: "SPAM", name: "Spam")]
+        return own + [.spam]
     }
 
     func send(_ message: OutgoingMessage) async throws {

@@ -110,6 +110,7 @@ class SessionViewModel(
         error = null
         try {
             messages = services.mail.listInbox(20)
+            services.senders.record(messages)
             messagesAreSaved = false
             showsSavedInbox = false
             saveSnapshot()
@@ -140,7 +141,7 @@ class SessionViewModel(
             messages.map { message ->
                 async {
                     val known = try {
-                        services.mail.hasCorrespondence(bareAddress(message.from), message.id)
+                        SenderChecks.isKnownSender(bareAddress(message.from), message.id, services.mail, services.senders)
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
@@ -177,8 +178,9 @@ class SessionViewModel(
             firstMessages = emptySet()
             showsSavedInbox = false
             messagesAreSaved = false
-            // The saved inbox is private to the account that signed out.
+            // The saved inbox and the known senders are private to the account that signed out.
             snapshots.clear()
+            services.senders.clear()
         }
     }
 }
@@ -215,7 +217,12 @@ class MessageViewModel(val id: String, private val services: Services) : ViewMod
             when (action) {
                 MessageAction.Archive -> services.mail.archive(id)
                 MessageAction.Trash -> services.mail.trash(id)
-                is MessageAction.Move -> services.mail.move(id, action.label)
+                is MessageAction.Move -> {
+                    services.mail.move(id, action.label)
+                    // Mail in Spam doesn't count as having heard from someone.
+                    val current = message
+                    if (action.label.id == MailLabel.Spam.id && current != null) services.senders.forget(current.fromAddress)
+                }
             }
             true
         } catch (e: CancellationException) {
@@ -247,7 +254,7 @@ class MessageViewModel(val id: String, private val services: Services) : ViewMod
         isScanning = true
         val (scanned, sender) = kotlinx.coroutines.coroutineScope {
             val scanned = async { SecurityScanner.scanLinks(found) }
-            val sender = async { SenderChecks.checkSender(current, services.mail) }
+            val sender = async { SenderChecks.checkSender(current, services.mail, services.senders) }
             scanned.await() to sender.await()
         }
         links = scanned

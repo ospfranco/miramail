@@ -93,7 +93,7 @@ enum Demo {
         func move(id: String, to label: MailLabel) async throws { gone.insert(id) }
 
         func moveTargets() async throws -> [MailLabel] {
-            [MailLabel(id: "work", name: "Work"), MailLabel(id: "receipts", name: "Receipts"), MailLabel(id: "SPAM", name: "Spam")]
+            [MailLabel(id: "work", name: "Work"), MailLabel(id: "receipts", name: "Receipts"), .spam]
         }
 
         func send(_ message: OutgoingMessage) async throws { sent.append(message) }

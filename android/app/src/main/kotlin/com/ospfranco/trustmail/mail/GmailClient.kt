@@ -168,7 +168,9 @@ class GmailClient(
     }
 
     override suspend fun hasCorrespondence(address: String, excludingMessageId: String): Boolean {
-        val list = fetch<MessageList>("messages", listOf("q" to "{from:\"$address\" to:\"$address\"}", "maxResults" to "2"))
+        // Trash counts (people delete what they've read), Spam doesn't.
+        val query = "{from:\"$address\" to:\"$address\"} -in:spam"
+        val list = fetch<MessageList>("messages", listOf("q" to query, "maxResults" to "2", "includeSpamTrash" to "true"))
         return list.messages.orEmpty().any { it.id != excludingMessageId }
     }
 
@@ -193,7 +195,7 @@ class GmailClient(
             .filter { it.type == "user" }
             .map { MailLabel(it.id, it.name) }
             .sortedBy { it.name.lowercase() }
-        return own + MailLabel("SPAM", "Spam")
+        return own + MailLabel.Spam
     }
 
     override suspend fun send(message: OutgoingMessage) {

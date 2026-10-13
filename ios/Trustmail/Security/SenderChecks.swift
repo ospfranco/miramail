@@ -123,9 +123,16 @@ enum SenderChecks {
         )
     }
 
-    static func checkSenderHistory(_ message: MessageDetail, mail: MailService) async -> SecurityCheck {
+    /// Whether you've had other mail from or to `address`: a sender already seen in the inbox counts even after
+    /// their emails were deleted, otherwise Gmail's search decides.
+    static func isKnownSender(_ address: String, excluding messageId: String, mail: MailService, senders: KnownSenders) async throws -> Bool {
+        if senders.knows(address, besides: messageId) { return true }
+        return try await mail.hasCorrespondence(with: address, excluding: messageId)
+    }
+
+    static func checkSenderHistory(_ message: MessageDetail, mail: MailService, senders: KnownSenders = KnownSenders()) async -> SecurityCheck {
         do {
-            let known = try await mail.hasCorrespondence(with: message.fromAddress, excluding: message.id)
+            let known = try await isKnownSender(message.fromAddress, excluding: message.id, mail: mail, senders: senders)
             return known
                 ? SecurityCheck(label: SenderCheckLabel.known.rawValue, detail: "You've exchanged email with this address before.", verdict: .safe)
                 : SecurityCheck(label: SenderCheckLabel.firstMessage.rawValue, detail: "You haven't exchanged email with this address before.", verdict: .warning)
@@ -134,8 +141,8 @@ enum SenderChecks {
         }
     }
 
-    static func checkSender(_ message: MessageDetail, mail: MailService) async -> [SecurityCheck] {
-        [checkSenderDomain(message), await checkSenderHistory(message, mail: mail)]
+    static func checkSender(_ message: MessageDetail, mail: MailService, senders: KnownSenders = KnownSenders()) async -> [SecurityCheck] {
+        [checkSenderDomain(message), await checkSenderHistory(message, mail: mail, senders: senders)]
     }
 }
 

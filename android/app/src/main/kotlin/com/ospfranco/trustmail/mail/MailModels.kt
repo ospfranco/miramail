@@ -56,7 +56,11 @@ data class MessageDetail(
 )
 
 /** A Gmail label. Gmail has labels where other mail apps have folders. */
-data class MailLabel(val id: String, val name: String)
+data class MailLabel(val id: String, val name: String) {
+    companion object {
+        val Spam = MailLabel("SPAM", "Spam")
+    }
+}
 
 /** A message the user is writing. */
 data class OutgoingMessage(
@@ -96,7 +100,7 @@ interface MailService {
 
     suspend fun getMessage(id: String): MessageDetail
 
-    /** Whether the user has any other mail from or to [address] (spam and trash excluded). */
+    /** Whether the user has any other mail from or to [address] (trash included, spam excluded). */
     suspend fun hasCorrespondence(address: String, excludingMessageId: String): Boolean
 
     /** Moves the message to the trash (it can still be recovered there). */
@@ -124,4 +128,9 @@ interface AuthService {
     suspend fun signOut()
 }
 
-data class Services(val auth: AuthService, val mail: MailService)
+data class Services(
+    val auth: AuthService,
+    val mail: MailService,
+    /** Senders seen in the inbox, so deleting their emails doesn't make them new again. */
+    val senders: KnownSenders = KnownSenders(),
+)

@@ -147,7 +147,7 @@ extension StubbedNetworkTests {
         }
         let known = try await client(tokens: seen).hasCorrespondence(with: "a+tag@x.com", excluding: "current")
         #expect(!known)
-        #expect(lock.withLock { queries }.first?.hasSuffix("/messages?q=%7Bfrom%3A%22a%2Btag%40x.com%22%20to%3A%22a%2Btag%40x.com%22%7D&maxResults=2") == true)
+        #expect(lock.withLock { queries }.first?.hasSuffix("/messages?q=%7Bfrom%3A%22a%2Btag%40x.com%22%20to%3A%22a%2Btag%40x.com%22%7D%20-in%3Aspam&maxResults=2&includeSpamTrash=true") == true)
 
         StubProtocol.set { _ in (200, #"{"messages":[{"id":"current"},{"id":"other"}]}"#) }
         #expect(try await client().hasCorrespondence(with: "a@x.com", excluding: "current"))

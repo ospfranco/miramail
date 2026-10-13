@@ -2,6 +2,7 @@ package com.ospfranco.trustmail
 
 import com.ospfranco.trustmail.mail.AuthService
 import com.ospfranco.trustmail.mail.GmailException
+import com.ospfranco.trustmail.mail.KnownSenders
 import com.ospfranco.trustmail.mail.MailLabel
 import com.ospfranco.trustmail.mail.MailService
 import com.ospfranco.trustmail.mail.MessageDetail
@@ -11,6 +12,7 @@ import com.ospfranco.trustmail.mail.Services
 import com.ospfranco.trustmail.mail.UserProfile
 import com.ospfranco.trustmail.security.FoundLink
 import com.ospfranco.trustmail.security.Verdict
+import com.ospfranco.trustmail.ui.MessageAction
 import com.ospfranco.trustmail.ui.MessageViewModel
 import com.ospfranco.trustmail.ui.SessionViewModel
 import kotlinx.coroutines.Dispatchers
@@ -82,7 +84,8 @@ class ViewModelTest {
     @After
     fun tearDown() = Dispatchers.resetMain()
 
-    private fun session(auth: AuthService, mail: MailService = FakeMail()) = SessionViewModel(Services(auth, mail))
+    private fun session(auth: AuthService, mail: MailService = FakeMail(), senders: KnownSenders = KnownSenders()) =
+        SessionViewModel(Services(auth, mail, senders))
 
     @Test
     fun signedOutStartShowsSignIn() = runTest {
@@ -105,13 +108,29 @@ class ViewModelTest {
 
     @Test
     fun inboxMarksEmailsFromNewSenders() = runTest {
-        val model = session(FakeAuth(restored = UserProfile("me@x.com")), HistoryInbox())
+        val senders = KnownSenders()
+        val model = session(FakeAuth(restored = UserProfile("me@x.com")), HistoryInbox(), senders)
         advanceUntilIdle()
         // Only the sender you've never written with; a lookup that fails marks nothing.
         assertEquals(setOf("2"), model.firstMessages)
+        // Inbox senders are remembered, so a later email from them is known even once this one is deleted.
+        assertTrue(senders.knows("new@x.com", besides = "4"))
         model.signOut()
         advanceUntilIdle()
         assertTrue(model.firstMessages.isEmpty())
+        assertFalse(senders.knows("new@x.com", besides = "4"))
+    }
+
+    @Test
+    fun movingToSpamForgetsTheSender() = runTest {
+        val services = Services(FakeAuth(), FakeMail())
+        services.senders.record(listOf(MessageSummary("old", "old", "noreply@github.com", "s", "", false)))
+        val model = MessageViewModel("m1", services)
+        advanceUntilIdle()
+        assertTrue(model.perform(MessageAction.Move(MailLabel("work", "Work"))))
+        assertTrue(services.senders.knows("noreply@github.com", besides = "m1"))
+        assertTrue(model.perform(MessageAction.Move(MailLabel.Spam)))
+        assertFalse(services.senders.knows("noreply@github.com", besides = "m1"))
     }
 
     @Test
