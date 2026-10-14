@@ -4,7 +4,7 @@ import SwiftUI
 struct IntroView: View {
     let onContinue: () -> Void
 
-    private let steps: [(title: String, text: String)] = [
+    private let steps: [(title: LocalizedStringKey, text: LocalizedStringKey)] = [
         ("Open an email", "Trustmail checks who really sent it and scans every link in it."),
         ("See the verdict", "A green, yellow or red mark sits next to each link, and anything wrong is explained at the top of the email."),
         ("Tap with confidence", "Risky links ask you to confirm before they open."),
@@ -40,7 +40,7 @@ struct IntroView: View {
                     VStack(alignment: .leading, spacing: Spacing.three) {
                         ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
                             HStack(alignment: .top, spacing: Spacing.three) {
-                                Text("\(index + 1)")
+                                Text(verbatim: "\(index + 1)")
                                     .font(.system(size: 14, weight: .bold))
                                     .foregroundStyle(.white)
                                     .frame(width: 28, height: 28)

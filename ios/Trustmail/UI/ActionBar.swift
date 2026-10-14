@@ -27,12 +27,12 @@ struct ActionBar: View {
         .disabled(isBusy)
     }
 
-    private func button(_ title: String, systemImage: String, id: String, action: @escaping () -> Void) -> some View {
+    private func button(_ title: LocalizedStringKey, systemImage: String, id: String, action: @escaping () -> Void) -> some View {
         Button(action: action) { label(title, systemImage: systemImage) }
             .accessibilityIdentifier(id)
     }
 
-    private func label(_ title: String, systemImage: String) -> some View {
+    private func label(_ title: LocalizedStringKey, systemImage: String) -> some View {
         VStack(spacing: Spacing.half) {
             Image(systemName: systemImage).font(.title3)
             Text(title).font(.caption2.weight(.medium))

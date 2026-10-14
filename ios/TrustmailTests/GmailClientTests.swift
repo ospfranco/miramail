@@ -65,7 +65,7 @@ extension StubbedNetworkTests {
         let messages = try await client().listInbox(maxResults: 20)
         #expect(messages == [
             MessageSummary(
-                id: "a", threadId: "ta", from: "Ann <ann@x.com>", subject: "(no subject)", snippet: "snip a", unread: true,
+                id: "a", threadId: "ta", from: "Ann <ann@x.com>", subject: "", snippet: "snip a", unread: true,
                 authenticationResults: ["mx.google.com; dmarc=fail"]
             ),
             MessageSummary(id: "b", threadId: "tb", from: "Ann <ann@x.com>", subject: "Hello", snippet: "snip b", unread: false),
@@ -112,7 +112,7 @@ extension StubbedNetworkTests {
         #expect(plain.body == "plain body")
         #expect(plain.bodyType == .text)
         #expect(plain.fromAddress == "bare@x.com")
-        #expect(plain.subject == "(no subject)")
+        #expect(plain.subject == "")
 
         StubProtocol.set { _ in (200, #"{"id":"m","threadId":"t","snippet":"just a snippet","payload":{"mimeType":"multipart/mixed","headers":[],"body":{"size":0}}}"#) }
         let empty = try await client().getMessage(id: "m")

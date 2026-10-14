@@ -78,7 +78,7 @@ struct ReplyTests {
     }
 
     @Test func handlesMissingSubjectAndReferences() {
-        let reply = message(subject: "(no subject)", references: "").makeReply()
+        let reply = message(subject: "", references: "").makeReply()
         #expect(reply.subject == "Re: ")
         #expect(reply.references == "<m2@x.com>")
         let bare = MessageDetail(id: "x", from: "a@b.com", fromAddress: "a@b.com", to: "", subject: "S", date: "", body: "", bodyType: .text, authenticationResults: [])

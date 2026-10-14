@@ -84,8 +84,7 @@ extension MessageDetail {
     /// The prefilled reply: to the Reply-To address (else the sender), "Re:" subject, same conversation.
     func makeReply() -> OutgoingMessage {
         let target = replyTo.trimmingCharacters(in: .whitespaces).isEmpty ? fromAddress : bareAddress(replyTo)
-        let original = subject == "(no subject)" ? "" : subject
-        let reSubject = original.range(of: #"^re:"#, options: [.regularExpression, .caseInsensitive]) != nil ? original : "Re: \(original)"
+        let reSubject = subject.range(of: #"^re:"#, options: [.regularExpression, .caseInsensitive]) != nil ? subject : "Re: \(subject)"
         let chain = [references, messageId].map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }.joined(separator: " ")
         return OutgoingMessage(
             to: target,

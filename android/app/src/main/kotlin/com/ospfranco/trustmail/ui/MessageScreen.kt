@@ -36,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.style.TextOverflow
@@ -51,6 +52,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
+import com.ospfranco.trustmail.R
+import com.ospfranco.trustmail.strings
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import com.ospfranco.trustmail.mail.MailLabel
@@ -79,6 +82,7 @@ private fun openLink(context: Context, url: String, onFailure: () -> Unit) {
 fun MessageScreen(model: MessageViewModel, settings: AppSettings, session: SessionViewModel, onBack: () -> Unit, onReply: () -> Unit) {
     val colors = Theme.colors
     val context = LocalContext.current
+    val strings = context.strings()
     var pendingLink by remember { mutableStateOf<ScannedLink?>(null) }
     var unopenableLink by remember { mutableStateOf<String?>(null) }
     /** The email body is scrolled down, so the header is compact. */
@@ -93,10 +97,10 @@ fun MessageScreen(model: MessageViewModel, settings: AppSettings, session: Sessi
     fun perform(action: MessageAction) {
         scope.launch {
             if (model.perform(action)) {
-                session.removeMessage(model.id, action.notice)
+                session.removeMessage(model.id, action.notice(strings))
                 onBack()
             } else {
-                session.showNotice(action.failureNotice)
+                session.showNotice(action.failureNotice(strings))
             }
         }
     }
@@ -108,7 +112,7 @@ fun MessageScreen(model: MessageViewModel, settings: AppSettings, session: Sessi
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                session.showNotice("Couldn't load your labels")
+                session.showNotice(strings.get(R.string.notice_labels_failed))
             }
         }
     }
@@ -124,7 +128,7 @@ fun MessageScreen(model: MessageViewModel, settings: AppSettings, session: Sessi
         TopAppBar(
             title = {},
             navigationIcon = {
-                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = colors.text) }
+                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back), tint = colors.text) }
             },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = colors.background),
         )
@@ -171,16 +175,16 @@ fun MessageScreen(model: MessageViewModel, settings: AppSettings, session: Sessi
     pendingLink?.let { link ->
         AlertDialog(
             onDismissRequest = { pendingLink = null },
-            title = { Text(if (link.verdict == Verdict.Danger) "This link looks unsafe" else "Be careful with this link") },
+            title = { Text(stringResource(if (link.verdict == Verdict.Danger) R.string.link_unsafe_title else R.string.link_careful_title)) },
             text = {
-                Text(SecurityScanner.linkWarning(link))
+                Text(SecurityScanner.linkWarning(link, strings))
             },
-            dismissButton = { TextButton(onClick = { pendingLink = null }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { pendingLink = null }) { Text(stringResource(R.string.cancel)) } },
             confirmButton = {
                 TextButton(onClick = {
                     pendingLink = null
                     open(link.url)
-                }) { Text("Open anyway", color = Verdict.Danger.color) }
+                }) { Text(stringResource(R.string.open_anyway), color = Verdict.Danger.color) }
             },
         )
     }
@@ -188,7 +192,7 @@ fun MessageScreen(model: MessageViewModel, settings: AppSettings, session: Sessi
     moveTargets?.let { targets ->
         AlertDialog(
             onDismissRequest = { moveTargets = null },
-            title = { Text("Move to") },
+            title = { Text(stringResource(R.string.move_to)) },
             text = {
                 Column(Modifier.verticalScroll(rememberScrollState())) {
                     for (label in targets) {
@@ -206,16 +210,16 @@ fun MessageScreen(model: MessageViewModel, settings: AppSettings, session: Sessi
                 }
             },
             confirmButton = {},
-            dismissButton = { TextButton(onClick = { moveTargets = null }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { moveTargets = null }) { Text(stringResource(R.string.cancel)) } },
         )
     }
 
     unopenableLink?.let { url ->
         AlertDialog(
             onDismissRequest = { unopenableLink = null },
-            title = { Text("Can't open this link") },
+            title = { Text(stringResource(R.string.link_unopenable)) },
             text = { Text(url) },
-            confirmButton = { TextButton(onClick = { unopenableLink = null }) { Text("OK") } },
+            confirmButton = { TextButton(onClick = { unopenableLink = null }) { Text(stringResource(R.string.ok)) } },
         )
     }
 }

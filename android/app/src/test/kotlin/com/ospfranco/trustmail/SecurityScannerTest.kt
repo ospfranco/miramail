@@ -110,7 +110,7 @@ class SecurityScannerTest {
 
             Don't open it unless you're sure where it goes, and never enter a password or personal details there.
             """.trimIndent(),
-            SecurityScanner.linkWarning(mismatch),
+            SecurityScanner.linkWarning(mismatch, TestStrings.english),
         )
 
         val shortener = ScannedLink(
@@ -119,7 +119,7 @@ class SecurityScannerTest {
         )
         assertEquals(
             "Goes to: https://bit.ly/abc\n\nThe link is shortened, so you can't see where it really goes before you open it.\n\nOnly open it if you trust where it goes.",
-            SecurityScanner.linkWarning(shortener),
+            SecurityScanner.linkWarning(shortener, TestStrings.english),
         )
     }
 
@@ -176,7 +176,7 @@ class SecurityScannerTest {
         // Links are only mentioned when some are a problem.
         val none = SecurityScanner.evaluateEmail(safeSender, emptyList())
         assertEquals(Verdict.Safe, none.verdict)
-        assertEquals("No problems found", none.summary)
+        assertEquals(R.string.summary_safe, none.summary)
         assertEquals(safeSender, none.checks)
         assertEquals(safeSender, SecurityScanner.evaluateEmail(safeSender, listOf(scanned(Verdict.Safe))).checks)
 
@@ -185,13 +185,13 @@ class SecurityScannerTest {
             listOf(scanned(Verdict.Safe), scanned(Verdict.Warning), scanned(Verdict.Danger), scanned(Verdict.Danger)),
         )
         assertEquals(Verdict.Danger, mixed.verdict)
-        assertEquals("This email looks dangerous", mixed.summary)
+        assertEquals(R.string.summary_danger, mixed.summary)
         assertEquals(safeSender + LinkFindingLabel.Unsafe.check + LinkFindingLabel.Suspicious.check, mixed.checks)
 
         val warnSender = listOf(SenderCheckLabel.FirstMessage.check)
         val warn = SecurityScanner.evaluateEmail(warnSender, listOf(scanned(Verdict.Safe)))
         assertEquals(Verdict.Warning, warn.verdict)
-        assertEquals("Be careful with this email", warn.summary)
+        assertEquals(R.string.summary_warning, warn.summary)
         assertFalse(warn.senderFailed)
         assertFalse("unsafe links alone don't mark the sender", mixed.senderFailed)
     }
@@ -232,7 +232,7 @@ class SecurityScannerTest {
 
         val ignored = SecurityScanner.evaluateEmail(safeSender, links, ignoreFooterLinks = true)
         assertEquals(Verdict.Safe, ignored.verdict)
-        assertEquals("No problems found", ignored.summary)
+        assertEquals(R.string.summary_safe, ignored.summary)
         assertEquals(safeSender, ignored.checks)
 
         // An unsafe footer link always counts.
@@ -248,6 +248,7 @@ class SecurityScannerTest {
     /** Every card in the security panel says, in plain words, what was found and what to do. */
     @Test
     fun describesEveryCheckInPlainWords() {
+        val strings = TestStrings.english
         assertEquals(
             listOf(
                 "Sender verified: Gmail confirmed that this email really comes from the address it shows.",
@@ -257,14 +258,14 @@ class SecurityScannerTest {
                 "First message from this sender: This is the first email you get from this address. If it asks you to do something or to share information, be careful before you continue.",
                 "Sender history unknown: Trustmail couldn't check whether this address has emailed you before, for example because you're offline. Be careful if it asks you to do something or to share information.",
             ),
-            SenderCheckLabel.entries.map { "${it.text}: ${it.description}" },
+            SenderCheckLabel.entries.map { "${strings.get(it.title)}: ${strings.get(it.description)}" },
         )
         assertEquals(
             listOf(
                 "Unsafe links: Some links in this email may lead to a fake or harmful website. Don't open the links marked with a red ✕.",
                 "Suspicious links: Some links in this email look unusual. Tap one marked with a yellow ! to see why before anything opens.",
             ),
-            LinkFindingLabel.entries.map { "${it.text}: ${it.description}" },
+            LinkFindingLabel.entries.map { "${strings.get(it.title)}: ${strings.get(it.description)}" },
         )
         assertEquals(
             listOf(Verdict.Safe, Verdict.Warning, Verdict.Danger, Verdict.Safe, Verdict.Warning, Verdict.Warning),

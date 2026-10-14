@@ -39,9 +39,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.ospfranco.trustmail.R
 import com.ospfranco.trustmail.mail.MessageSummary
 import com.ospfranco.trustmail.mail.bareAddress
 import com.ospfranco.trustmail.mail.senderName
@@ -69,14 +71,14 @@ fun InboxScreen(session: SessionViewModel, onOpenMessage: (String) -> Unit, onOp
                 title = {
                     if (email != null) {
                         Column {
-                            Text("Inbox")
+                            Text(stringResource(R.string.inbox_title))
                             Text(email, style = MaterialTheme.typography.bodySmall, color = Theme.colors.textSecondary, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         }
                     }
                 },
                 actions = {
                     IconButton(onClick = onOpenSettings, modifier = Modifier.testTag("settings-button")) {
-                        Icon(Icons.Filled.Settings, contentDescription = "Settings")
+                        Icon(Icons.Filled.Settings, contentDescription = stringResource(R.string.settings))
                     }
                 },
                 scrollBehavior = scrollBehavior,
@@ -88,7 +90,7 @@ fun InboxScreen(session: SessionViewModel, onOpenMessage: (String) -> Unit, onOp
                 ExtendedFloatingActionButton(
                     onClick = onNewMessage,
                     icon = { Icon(Icons.Filled.Edit, contentDescription = null) },
-                    text = { Text("New message") },
+                    text = { Text(stringResource(R.string.new_message)) },
                     modifier = Modifier.testTag("new-message"),
                 )
             }
@@ -113,7 +115,7 @@ private fun SignedOut(session: SessionViewModel) {
         Box(Modifier.size(96.dp).background(MaterialTheme.colorScheme.primaryContainer, CircleShape), contentAlignment = Alignment.Center) {
             Icon(Icons.Filled.Email, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimaryContainer, modifier = Modifier.size(48.dp))
         }
-        AppText("Trustmail", TextKind.Subtitle)
+        AppText(stringResource(R.string.app_name), TextKind.Subtitle)
         if (session.isLoading) {
             CircularProgressIndicator()
         } else {
@@ -121,7 +123,7 @@ private fun SignedOut(session: SessionViewModel) {
                 onClick = { session.signIn() },
                 contentPadding = PaddingValues(horizontal = Spacing.five, vertical = Spacing.three),
                 modifier = Modifier.testTag("sign-in"),
-            ) { Text("Sign in with Google") }
+            ) { Text(stringResource(R.string.sign_in_with_google)) }
         }
         session.error?.let { AppText(it, TextKind.Small, color = colors.textSecondary) }
     }
@@ -138,7 +140,7 @@ private fun SignedIn(session: SessionViewModel, onOpenMessage: (String) -> Unit)
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(CloudOffIcon, contentDescription = null, tint = Theme.colors.textSecondary, modifier = Modifier.size(18.dp))
-                AppText("Couldn't refresh your inbox. Showing the copy saved on this device.", TextKind.Small, color = Theme.colors.textSecondary)
+                AppText(stringResource(R.string.saved_inbox_note), TextKind.Small, color = Theme.colors.textSecondary)
             }
         } else {
             session.error?.let { AppText(it, TextKind.Small, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(horizontal = Spacing.three)) }
@@ -177,7 +179,7 @@ private fun MessageRow(message: MessageSummary, isFirstMessage: Boolean, onClick
             Column {
                 if (message.senderFailed) FailedSenderLine(bareAddress(message.from))
                 if (isFirstMessage) FirstMessageLine()
-                Text(message.subject, fontWeight = weight, color = Theme.colors.text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(displaySubject(message.subject), fontWeight = weight, color = Theme.colors.text, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(message.snippet, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
         },

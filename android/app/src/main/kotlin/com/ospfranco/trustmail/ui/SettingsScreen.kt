@@ -25,6 +25,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import com.ospfranco.trustmail.R
 import com.ospfranco.trustmail.settings.AppSettings
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -33,9 +35,9 @@ fun SettingsScreen(settings: AppSettings, session: SessionViewModel, onBack: () 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text(stringResource(R.string.settings)) },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back") }
+                    IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back)) }
                 },
             )
         },
@@ -43,15 +45,15 @@ fun SettingsScreen(settings: AppSettings, session: SessionViewModel, onBack: () 
         Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.TopCenter) {
             Column(modifier = Modifier.widthIn(max = Theme.maxContentWidth).fillMaxWidth().verticalScroll(rememberScrollState())) {
                 ToggleItem(
-                    title = "Allow JavaScript in emails",
-                    description = "Lets scripts inside an email run. Scripts can change what you see after Trustmail has scanned the links, so leave this off unless an email needs it. Applies the next time you open an email.",
+                    title = stringResource(R.string.settings_allow_javascript),
+                    description = stringResource(R.string.settings_allow_javascript_description),
                     checked = settings.allowEmailJavaScript,
                     onChange = settings::updateAllowEmailJavaScript,
                     tag = "javascript-toggle",
                 )
                 ToggleItem(
-                    title = "Ignore footer links",
-                    description = "Suspicious links in an email's footer (unsubscribe, privacy policy, social media) don't count toward the email's verdict. They still get a badge and a warning when you tap them, and an unsafe footer link still counts. Applies the next time you open an email.",
+                    title = stringResource(R.string.settings_ignore_footer_links),
+                    description = stringResource(R.string.settings_ignore_footer_links_description),
                     checked = settings.ignoreFooterLinks,
                     onChange = settings::updateIgnoreFooterLinks,
                     tag = "footer-links-toggle",
@@ -59,9 +61,9 @@ fun SettingsScreen(settings: AppSettings, session: SessionViewModel, onBack: () 
 
                 session.user?.email?.let { email ->
                     HorizontalDivider(Modifier.padding(vertical = Spacing.two))
-                    SectionHeader("Account")
+                    SectionHeader(stringResource(R.string.settings_account))
                     ListItem(
-                        headlineContent = { Text("Sign out", color = MaterialTheme.colorScheme.error) },
+                        headlineContent = { Text(stringResource(R.string.sign_out), color = MaterialTheme.colorScheme.error) },
                         supportingContent = { Text(email) },
                         modifier = Modifier
                             .clickable {

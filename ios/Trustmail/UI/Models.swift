@@ -190,17 +190,17 @@ enum MessageAction {
     /// What the user sees after it worked.
     var notice: String {
         switch self {
-        case .archive: "Archived"
-        case .trash: "Moved to Trash"
-        case .move(let label): "Moved to \(label.name)"
+        case .archive: String(localized: "Archived")
+        case .trash: String(localized: "Moved to Trash")
+        case .move(let label): String(localized: "Moved to \(label.name)")
         }
     }
 
     var failureNotice: String {
         switch self {
-        case .archive: "Couldn't archive the email"
-        case .trash: "Couldn't delete the email"
-        case .move: "Couldn't move the email"
+        case .archive: String(localized: "Couldn't archive the email")
+        case .trash: String(localized: "Couldn't delete the email")
+        case .move: String(localized: "Couldn't move the email")
         }
     }
 }

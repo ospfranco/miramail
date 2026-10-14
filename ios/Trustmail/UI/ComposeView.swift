@@ -20,7 +20,7 @@ struct ComposeView: View {
     var body: some View {
         VStack(spacing: 0) {
             row("To") {
-                TextField("", text: $model.to)
+                TextField(String(), text: $model.to)
                     .keyboardType(.emailAddress)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
@@ -29,7 +29,7 @@ struct ComposeView: View {
             }
             Divider()
             row("Subject") {
-                TextField("", text: $model.subject)
+                TextField(String(), text: $model.subject)
                     .focused($focus, equals: .subject)
                     .accessibilityIdentifier("compose-subject")
             }
@@ -46,7 +46,7 @@ struct ComposeView: View {
         .font(.system(size: 16, weight: .medium))
         .foregroundStyle(Theme.text)
         .background(Theme.background.ignoresSafeArea())
-        .navigationTitle(isReply ? "Reply" : "New message")
+        .navigationTitle(isReply ? Text("Reply") : Text("New message"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
@@ -62,7 +62,7 @@ struct ComposeView: View {
         .onAppear { focus = model.to.isEmpty ? .to : .body }
     }
 
-    private func row<Content: View>(_ title: String, @ViewBuilder content: () -> Content) -> some View {
+    private func row<Content: View>(_ title: LocalizedStringKey, @ViewBuilder content: () -> Content) -> some View {
         HStack(spacing: Spacing.two) {
             Text(title).textStyle(.small, color: Theme.textSecondary).frame(width: 60, alignment: .leading)
             content()
@@ -74,7 +74,7 @@ struct ComposeView: View {
     private func send() {
         Task {
             if await model.send() {
-                session.showNotice("Message sent")
+                session.showNotice(String(localized: "Message sent"))
                 dismiss()
             }
         }

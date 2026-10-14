@@ -126,12 +126,11 @@ final class GmailClient: MailService {
         }
 
         return full.map { message in
-            let subject = message.payload.header("Subject")
-            return MessageSummary(
+            MessageSummary(
                 id: message.id,
                 threadId: message.threadId,
                 from: message.payload.header("From"),
-                subject: subject.isEmpty ? "(no subject)" : subject,
+                subject: message.payload.header("Subject"),
                 snippet: message.snippet ?? "",
                 unread: message.labelIds?.contains("UNREAD") ?? false,
                 authenticationResults: message.payload.googleAuthenticationResults
@@ -147,14 +146,13 @@ final class GmailClient: MailService {
 
         let from = message.payload.header("From")
         let address = from.firstMatch(of: /<([^>]+)>/).map { String($0.1) } ?? from
-        let subject = message.payload.header("Subject")
 
         return MessageDetail(
             id: message.id,
             from: from,
             fromAddress: address.trimmingCharacters(in: .whitespacesAndNewlines).lowercased(),
             to: message.payload.header("To"),
-            subject: subject.isEmpty ? "(no subject)" : subject,
+            subject: message.payload.header("Subject"),
             date: message.payload.header("Date"),
             // Non-UTF-8 charsets (e.g. ISO-8859-1) will render garbled.
             body: part?.body?.data.map { utf8Decode(base64ToBytes($0)) } ?? message.snippet ?? "",

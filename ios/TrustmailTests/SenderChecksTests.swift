@@ -77,13 +77,13 @@ struct SenderChecksTests {
         senders.record([MessageSummary(id: "old", threadId: "old", from: "GitHub <noreply@github.com>", subject: "s", snippet: "", unread: false)])
         // Gmail no longer finds the old email, but the device remembers it.
         let known = await SenderChecks.checkSenderHistory(makeMessage(), mail: FakeMail(known: false), senders: senders)
-        #expect(known.label == "Known sender")
+        #expect(known == SecurityCheck(.known))
         let first = await SenderChecks.checkSenderHistory(makeMessage(id: "old"), mail: FakeMail(known: false), senders: senders)
-        #expect(first.label == "First message from this sender")
+        #expect(first == SecurityCheck(.firstMessage))
     }
 
     @Test func checkSenderReturnsDomainThenHistory() async {
         let checks = await SenderChecks.checkSender(makeMessage(), mail: FakeMail(known: true))
-        #expect(checks.map(\.label) == ["Sender not verified", "Known sender"])
+        #expect(checks == [SecurityCheck(.notVerified), SecurityCheck(.known)])
     }
 }

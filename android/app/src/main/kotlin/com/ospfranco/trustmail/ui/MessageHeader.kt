@@ -26,12 +26,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.ospfranco.trustmail.R
 import com.ospfranco.trustmail.mail.MessageDetail
 import com.ospfranco.trustmail.mail.senderName
 import com.ospfranco.trustmail.security.SecurityCheck
@@ -75,7 +77,7 @@ fun MessageHeader(message: MessageDetail, evaluation: SecurityEvaluation?, colla
             ) {
                 Avatar(message.from, 28.dp)
                 Column(Modifier.weight(1f)) {
-                    Text(message.subject, color = colors.text, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(displaySubject(message.subject), color = colors.text, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     if (senderFailed) {
                         FailedSenderLine(message.fromAddress)
                     } else {
@@ -83,7 +85,8 @@ fun MessageHeader(message: MessageDetail, evaluation: SecurityEvaluation?, colla
                     }
                 }
                 if (evaluation != null && evaluation.verdict != Verdict.Safe) {
-                    VerdictDot(evaluation.verdict, 22.dp, Modifier.semantics { contentDescription = evaluation.summary })
+                    val summary = stringResource(evaluation.summary)
+                    VerdictDot(evaluation.verdict, 22.dp, Modifier.semantics { contentDescription = summary })
                 }
             }
         } else {
@@ -91,7 +94,7 @@ fun MessageHeader(message: MessageDetail, evaluation: SecurityEvaluation?, colla
                 modifier = Modifier.padding(Spacing.three).testTag("message-header"),
                 verticalArrangement = Arrangement.spacedBy(Spacing.three),
             ) {
-                Text(message.subject, color = colors.text, style = MaterialTheme.typography.headlineSmall)
+                Text(displaySubject(message.subject), color = colors.text, style = MaterialTheme.typography.headlineSmall)
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.three)) {
                     Avatar(message.from)
                     Column {
@@ -121,7 +124,7 @@ private fun Findings(evaluation: SecurityEvaluation?) {
             horizontalArrangement = Arrangement.spacedBy(Spacing.two),
         ) {
             CircularProgressIndicator(Modifier.size(14.dp), strokeWidth = 2.dp)
-            AppText("Checking this email…", TextKind.Small, color = colors.textSecondary)
+            AppText(stringResource(R.string.checking_email), TextKind.Small, color = colors.textSecondary)
         }
         evaluation.findings.isEmpty() -> Row(
             modifier = Modifier.testTag("security-safe"),
@@ -129,7 +132,7 @@ private fun Findings(evaluation: SecurityEvaluation?) {
             horizontalArrangement = Arrangement.spacedBy(Spacing.one),
         ) {
             VerdictDot(Verdict.Safe, 14.dp)
-            AppText(evaluation.summary, TextKind.Small, color = Verdict.Safe.color)
+            AppText(stringResource(evaluation.summary), TextKind.Small, color = Verdict.Safe.color)
         }
         else -> Column(Modifier.testTag("security-findings"), verticalArrangement = Arrangement.spacedBy(Spacing.two)) {
             for (check in evaluation.findings) FindingCard(check)
@@ -150,20 +153,20 @@ private fun FindingCard(check: SecurityCheck) {
             .fillMaxWidth()
             .clip(RoundedCornerShape(Spacing.three))
             .background(check.verdict.color)
-            .clickable(onClickLabel = if (expanded) "Hide the explanation" else "Explain this warning") { expanded = !expanded }
+            .clickable(onClickLabel = stringResource(if (expanded) R.string.hide_explanation else R.string.explain_warning)) { expanded = !expanded }
             .padding(horizontal = Spacing.three, vertical = Spacing.two)
             .animateContentSize(),
         verticalArrangement = Arrangement.spacedBy(Spacing.one),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.two)) {
             Text(check.verdict.glyph, color = content, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Black, modifier = Modifier.clearAndSetSemantics {})
-            Text(check.label, color = content, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+            Text(stringResource(check.label), color = content, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
             Icon(
                 if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
                 contentDescription = null,
                 tint = content,
             )
         }
-        if (expanded) Text(check.detail, color = content, style = MaterialTheme.typography.bodySmall)
+        if (expanded) Text(stringResource(check.detail), color = content, style = MaterialTheme.typography.bodySmall)
     }
 }

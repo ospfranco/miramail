@@ -58,6 +58,7 @@ enum LinkCheckKind: String, Sendable, CaseIterable {
     case certificateHostname = "certificate-hostname"
     case certificateIssuer = "certificate-issuer"
 
+    /// Technical, only used in tests and debugging, so it isn't translated.
     var label: String {
         switch self {
         case .linkFormat: "Link format"
@@ -78,31 +79,32 @@ enum LinkCheckKind: String, Sendable, CaseIterable {
     var reason: String {
         switch self {
         case .linkFormat:
-            "The link is written in an unusual way that real companies rarely use, a common trick to hide what it does or where it goes."
+            String(localized: "The link is written in an unusual way that real companies rarely use, a common trick to hide what it does or where it goes.")
         case .displayText:
-            "The link's text shows one website, but it takes you to another. Fake emails do this to look trustworthy."
+            String(localized: "The link's text shows one website, but it takes you to another. Fake emails do this to look trustworthy.")
         case .encryption:
-            "The connection to this website isn't secure, so anything you type there, like a password, could be seen by others."
+            String(localized: "The connection to this website isn't secure, so anything you type there, like a password, could be seen by others.")
         case .lookalikeDomain:
-            "The website's name imitates a well-known one with a small change, a trick fake websites use."
+            String(localized: "The website's name imitates a well-known one with a small change, a trick fake websites use.")
         case .shortener:
-            "The link is shortened, so you can't see where it really goes before you open it."
+            String(localized: "The link is shortened, so you can't see where it really goes before you open it.")
         case .dnsSpoofing:
-            "Your network sends this link somewhere other than where it should go. Someone may be redirecting you to a fake website."
+            String(localized: "Your network sends this link somewhere other than where it should go. Someone may be redirecting you to a fake website.")
         case .tlsConnection:
-            "Trustmail couldn't make a secure connection to this website, so it can't confirm the website is real."
+            String(localized: "Trustmail couldn't make a secure connection to this website, so it can't confirm the website is real.")
         case .domainAge:
-            "This website was created very recently. Fake websites are often only a few days or weeks old."
+            String(localized: "This website was created very recently. Fake websites are often only a few days or weeks old.")
         case .subdomainCertificate:
-            "This part of the website was set up very recently, which can mean someone else just added it."
+            String(localized: "This part of the website was set up very recently, which can mean someone else just added it.")
         case .certificateHostname:
-            "The website's security certificate is for a different name, so it may not be the website it claims to be."
+            String(localized: "The website's security certificate is for a different name, so it may not be the website it claims to be.")
         case .certificateIssuer:
-            "The website's security certificate comes from an unusual provider, which is rare for real companies."
+            String(localized: "The website's security certificate comes from an unusual provider, which is rare for real companies.")
         }
     }
 }
 
+/// `detail` is technical, for tests and debugging; it isn't shown, so it isn't translated.
 struct LinkCheck: Sendable, Equatable {
     let kind: LinkCheckKind
     let verdict: Verdict

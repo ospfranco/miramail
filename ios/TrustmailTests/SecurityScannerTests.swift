@@ -192,7 +192,7 @@ struct SecurityScannerTests {
 
     /// Every card in the security panel says, in plain words, what was found and what to do.
     @Test func describesEveryCheckInPlainWords() {
-        #expect(SenderCheckLabel.allCases.map { "\($0.rawValue): \($0.description)" } == [
+        #expect(SenderCheckLabel.allCases.map { "\($0.title): \($0.description)" } == [
             "Sender verified: Gmail confirmed that this email really comes from the address it shows.",
             "Sender not verified: Gmail couldn't confirm that this email really comes from the address it shows. That's often harmless, but someone could be pretending to be this sender. Be careful if it asks you to do something or to share information.",
             "Sender verification failed: This email pretends to come from an address that didn't send it, so it's probably a fake. Don't open its links or reply with personal details. If it claims to be from someone you know, contact them another way.",
@@ -200,7 +200,7 @@ struct SecurityScannerTests {
             "First message from this sender: This is the first email you get from this address. If it asks you to do something or to share information, be careful before you continue.",
             "Sender history unknown: Trustmail couldn't check whether this address has emailed you before, for example because you're offline. Be careful if it asks you to do something or to share information.",
         ])
-        #expect(LinkFindingLabel.allCases.map { "\($0.rawValue): \($0.description)" } == [
+        #expect(LinkFindingLabel.allCases.map { "\($0.title): \($0.description)" } == [
             "Unsafe links: Some links in this email may lead to a fake or harmful website. Don't open the links marked with a red ✕.",
             "Suspicious links: Some links in this email look unusual. Tap one marked with a yellow ! to see why before anything opens.",
         ])

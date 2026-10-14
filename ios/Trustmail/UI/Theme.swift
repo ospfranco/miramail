@@ -152,9 +152,14 @@ struct FirstMessageLine: View {
     var body: some View {
         HStack(spacing: Spacing.one) {
             VerdictDot(verdict: .warning, size: 14)
-            Text(SenderCheckLabel.firstMessage.rawValue).textStyle(.small, color: Theme.textSecondary).lineLimit(1)
+            Text(SenderCheckLabel.firstMessage.title).textStyle(.small, color: Theme.textSecondary).lineLimit(1)
         }
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("first-message")
     }
+}
+
+/// An email's subject, or "(no subject)" in the user's language when it has none.
+func displaySubject(_ subject: String) -> String {
+    subject.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? String(localized: "(no subject)") : subject
 }

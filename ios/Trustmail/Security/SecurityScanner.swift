@@ -40,9 +40,16 @@ struct SecurityEvaluation: Sendable, Equatable {
 }
 
 /// The finding about the email's links, only there when some look unsafe or suspicious.
-enum LinkFindingLabel: String, CaseIterable {
-    case unsafe = "Unsafe links"
-    case suspicious = "Suspicious links"
+enum LinkFindingLabel: CaseIterable {
+    case unsafe
+    case suspicious
+
+    var title: String {
+        switch self {
+        case .unsafe: String(localized: "Unsafe links")
+        case .suspicious: String(localized: "Suspicious links")
+        }
+    }
 
     var verdict: Verdict {
         switch self {
@@ -54,16 +61,16 @@ enum LinkFindingLabel: String, CaseIterable {
     var description: String {
         switch self {
         case .unsafe:
-            "Some links in this email may lead to a fake or harmful website. Don't open the links marked with a red ✕."
+            String(localized: "Some links in this email may lead to a fake or harmful website. Don't open the links marked with a red ✕.")
         case .suspicious:
-            "Some links in this email look unusual. Tap one marked with a yellow ! to see why before anything opens."
+            String(localized: "Some links in this email look unusual. Tap one marked with a yellow ! to see why before anything opens.")
         }
     }
 }
 
 extension SecurityCheck {
     init(_ label: LinkFindingLabel) {
-        self.init(label: label.rawValue, detail: label.description, verdict: label.verdict)
+        self.init(label: label.title, detail: label.description, verdict: label.verdict)
     }
 }
 
@@ -103,14 +110,14 @@ enum SecurityScanner {
     /// (when it looks like a link), where the link really goes, then why it's risky in plain words (unsafe problems
     /// first, one sentence per kind) and what to do.
     static func linkWarning(_ link: ScannedLink) -> String {
-        let shown = hostInText(link.text) != nil ? "Shown as: \(cleanUrl(link.text))" : nil
-        let target = "Goes to: \(cleanUrl(link.url))"
+        let shown = hostInText(link.text) != nil ? String(localized: "Shown as: \(cleanUrl(link.text))") : nil
+        let target = String(localized: "Goes to: \(cleanUrl(link.url))")
         let problems = link.checks.filter { $0.verdict == .danger } + link.checks.filter { $0.verdict == .warning }
         var reasons: [String] = []
         for check in problems where !reasons.contains(check.kind.reason) { reasons.append(check.kind.reason) }
         let advice = link.verdict == .danger
-            ? "Don't open it unless you're sure where it goes, and never enter a password or personal details there."
-            : "Only open it if you trust where it goes."
+            ? String(localized: "Don't open it unless you're sure where it goes, and never enter a password or personal details there.")
+            : String(localized: "Only open it if you trust where it goes.")
         return ([[shown, target].compactMap { $0 }.joined(separator: "\n")] + reasons + [advice]).joined(separator: "\n\n")
     }
 
@@ -206,9 +213,9 @@ enum SecurityScanner {
         let checks = senderChecks + (bad > 0 ? [SecurityCheck(.unsafe)] : []) + (suspicious > 0 ? [SecurityCheck(.suspicious)] : [])
         let verdict = Verdict.worst(of: checks.map(\.verdict))
         let summary = switch verdict {
-        case .safe: "No problems found"
-        case .warning: "Be careful with this email"
-        case .danger: "This email looks dangerous"
+        case .safe: String(localized: "No problems found")
+        case .warning: String(localized: "Be careful with this email")
+        case .danger: String(localized: "This email looks dangerous")
         }
         return SecurityEvaluation(
             verdict: verdict,

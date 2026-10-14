@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -37,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.foundation.layout.size
+import com.ospfranco.trustmail.R
 import com.ospfranco.trustmail.mail.SenderAvatar
 import com.ospfranco.trustmail.security.SenderCheckLabel
 import com.ospfranco.trustmail.security.Verdict
@@ -203,10 +205,11 @@ fun VerdictDot(verdict: Verdict, size: Dp = 18.dp, modifier: Modifier = Modifier
 @Composable
 fun FailedSenderLine(address: String) {
     val at = address.lastIndexOf('@') + 1
+    val description = stringResource(R.string.sender_failed_a11y, address)
     Row(
         // One element for accessibility; the tag is set inside, since clearing the semantics would drop it.
         modifier = Modifier.clearAndSetSemantics {
-            contentDescription = "$address, sender verification failed"
+            contentDescription = description
             testTag = "sender-warning"
         },
         verticalAlignment = Alignment.CenterVertically,
@@ -236,6 +239,10 @@ fun FirstMessageLine() {
         horizontalArrangement = Arrangement.spacedBy(Spacing.one),
     ) {
         VerdictDot(Verdict.Warning, 14.dp)
-        AppText(SenderCheckLabel.FirstMessage.text, TextKind.Small, color = Theme.colors.textSecondary, maxLines = 1)
+        AppText(stringResource(SenderCheckLabel.FirstMessage.title), TextKind.Small, color = Theme.colors.textSecondary, maxLines = 1)
     }
 }
+
+/** An email's subject, or "(no subject)" in the user's language when it has none. */
+@Composable
+fun displaySubject(subject: String): String = subject.ifBlank { stringResource(R.string.no_subject) }

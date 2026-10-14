@@ -1,5 +1,8 @@
 package com.ospfranco.trustmail.security
 
+import androidx.annotation.StringRes
+import com.ospfranco.trustmail.R
+import com.ospfranco.trustmail.Strings
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -16,12 +19,13 @@ data class ScannedLink(
     val inFooter: Boolean = false,
 )
 
-data class SecurityCheck(val label: String, val detail: String, val verdict: Verdict)
+/** [label] and [detail] are string resources (see [SenderCheckLabel] and [LinkFindingLabel]). */
+data class SecurityCheck(@StringRes val label: Int, @StringRes val detail: Int, val verdict: Verdict)
 
-/** [senderFailed]: a sender check failed (the email may be forged), so the header marks the sender's domain like an unsafe link. */
+/** [summary] is a string resource. [senderFailed]: a sender check failed (the email may be forged), so the header marks the sender's domain like an unsafe link. */
 data class SecurityEvaluation(
     val verdict: Verdict,
-    val summary: String,
+    @StringRes val summary: Int,
     val checks: List<SecurityCheck>,
     val senderFailed: Boolean = false,
 ) {
@@ -31,20 +35,12 @@ data class SecurityEvaluation(
 }
 
 /** The finding about the email's links, only there when some look unsafe or suspicious. */
-enum class LinkFindingLabel(val text: String, val verdict: Verdict, val description: String) {
-    Unsafe(
-        "Unsafe links",
-        Verdict.Danger,
-        "Some links in this email may lead to a fake or harmful website. Don't open the links marked with a red ✕.",
-    ),
-    Suspicious(
-        "Suspicious links",
-        Verdict.Warning,
-        "Some links in this email look unusual. Tap one marked with a yellow ! to see why before anything opens.",
-    ),
+enum class LinkFindingLabel(@StringRes val title: Int, val verdict: Verdict, @StringRes val description: Int) {
+    Unsafe(R.string.links_unsafe, Verdict.Danger, R.string.links_unsafe_description),
+    Suspicious(R.string.links_suspicious, Verdict.Warning, R.string.links_suspicious_description),
     ;
 
-    val check: SecurityCheck get() = SecurityCheck(text, description, verdict)
+    val check: SecurityCheck get() = SecurityCheck(title, description, verdict)
 }
 
 data class ParsedUrl(val scheme: String, val host: String, val hasUserInfo: Boolean)
@@ -82,16 +78,12 @@ object SecurityScanner {
      * (when it looks like a link), where the link really goes, then why it's risky in plain words (unsafe problems
      * first, one sentence per kind) and what to do.
      */
-    fun linkWarning(link: ScannedLink): String {
-        val shown = if (hostInText(link.text) != null) "Shown as: ${cleanUrl(link.text)}" else null
-        val target = "Goes to: ${cleanUrl(link.url)}"
+    fun linkWarning(link: ScannedLink, strings: Strings): String {
+        val shown = if (hostInText(link.text) != null) strings.get(R.string.link_shown_as, cleanUrl(link.text)) else null
+        val target = strings.get(R.string.link_goes_to, cleanUrl(link.url))
         val problems = link.checks.filter { it.verdict == Verdict.Danger } + link.checks.filter { it.verdict == Verdict.Warning }
-        val reasons = problems.map { it.kind.reason }.distinct()
-        val advice = if (link.verdict == Verdict.Danger) {
-            "Don't open it unless you're sure where it goes, and never enter a password or personal details there."
-        } else {
-            "Only open it if you trust where it goes."
-        }
+        val reasons = problems.map { it.kind.reason }.distinct().map { strings.get(it) }
+        val advice = strings.get(if (link.verdict == Verdict.Danger) R.string.link_advice_danger else R.string.link_advice_warning)
         return (listOf(listOfNotNull(shown, target).joinToString("\n")) + reasons + advice).joinToString("\n\n")
     }
 
@@ -175,9 +167,9 @@ object SecurityScanner {
         )
         val verdict = Verdict.worst(checks.map { it.verdict })
         val summary = when (verdict) {
-            Verdict.Safe -> "No problems found"
-            Verdict.Warning -> "Be careful with this email"
-            Verdict.Danger -> "This email looks dangerous"
+            Verdict.Safe -> R.string.summary_safe
+            Verdict.Warning -> R.string.summary_warning
+            Verdict.Danger -> R.string.summary_danger
         }
         return SecurityEvaluation(
             verdict,

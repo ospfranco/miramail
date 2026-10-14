@@ -138,7 +138,7 @@ class ReplyTest {
 
     @Test
     fun handlesMissingSubjectAndReferences() {
-        val reply = message(subject = "(no subject)", references = "").makeReply()
+        val reply = message(subject = "", references = "").makeReply()
         assertEquals("Re: ", reply.subject)
         assertEquals("<m2@x.com>", reply.references)
         val bare = MessageDetail("x", "a@b.com", "a@b.com", "", "S", "", "", BodyType.Text, emptyList())
@@ -326,12 +326,13 @@ class MailActionModelTest {
 
     @Test
     fun actionNotices() {
-        assertEquals("Archived", MessageAction.Archive.notice)
-        assertEquals("Moved to Trash", MessageAction.Trash.notice)
-        assertEquals("Moved to Work", MessageAction.Move(MailLabel("w", "Work")).notice)
-        assertEquals("Couldn't archive the email", MessageAction.Archive.failureNotice)
-        assertEquals("Couldn't delete the email", MessageAction.Trash.failureNotice)
-        assertEquals("Couldn't move the email", MessageAction.Move(MailLabel("w", "Work")).failureNotice)
+        val strings = TestStrings.english
+        assertEquals("Archived", MessageAction.Archive.notice(strings))
+        assertEquals("Moved to Trash", MessageAction.Trash.notice(strings))
+        assertEquals("Moved to Work", MessageAction.Move(MailLabel("w", "Work")).notice(strings))
+        assertEquals("Couldn't archive the email", MessageAction.Archive.failureNotice(strings))
+        assertEquals("Couldn't delete the email", MessageAction.Trash.failureNotice(strings))
+        assertEquals("Couldn't move the email", MessageAction.Move(MailLabel("w", "Work")).failureNotice(strings))
     }
 
     @Test

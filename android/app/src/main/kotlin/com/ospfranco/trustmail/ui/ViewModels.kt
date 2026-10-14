@@ -5,6 +5,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.ospfranco.trustmail.R
+import com.ospfranco.trustmail.Strings
 import com.ospfranco.trustmail.mail.InboxSnapshot
 import com.ospfranco.trustmail.mail.InboxSnapshotStore
 import com.ospfranco.trustmail.mail.MailLabel
@@ -270,19 +272,17 @@ sealed interface MessageAction {
     data class Move(val label: MailLabel) : MessageAction
 
     /** What the user sees after it worked. */
-    val notice: String
-        get() = when (this) {
-            Archive -> "Archived"
-            Trash -> "Moved to Trash"
-            is Move -> "Moved to ${label.name}"
-        }
+    fun notice(strings: Strings): String = when (this) {
+        Archive -> strings.get(R.string.notice_archived)
+        Trash -> strings.get(R.string.notice_trashed)
+        is Move -> strings.get(R.string.notice_moved, label.name)
+    }
 
-    val failureNotice: String
-        get() = when (this) {
-            Archive -> "Couldn't archive the email"
-            Trash -> "Couldn't delete the email"
-            is Move -> "Couldn't move the email"
-        }
+    fun failureNotice(strings: Strings): String = when (this) {
+        Archive -> strings.get(R.string.notice_archive_failed)
+        Trash -> strings.get(R.string.notice_trash_failed)
+        is Move -> strings.get(R.string.notice_move_failed)
+    }
 }
 
 class ComposeViewModel(private val original: OutgoingMessage, private val services: Services) : ViewModel() {

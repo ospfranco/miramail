@@ -73,7 +73,7 @@ class GmailClientTest {
         }
         assertEquals(
             listOf(
-                MessageSummary("a", "ta", "Ann <ann@x.com>", "(no subject)", "snip a", true, listOf("mx.google.com; dmarc=fail")),
+                MessageSummary("a", "ta", "Ann <ann@x.com>", "", "snip a", true, listOf("mx.google.com; dmarc=fail")),
                 MessageSummary("b", "tb", "Ann <ann@x.com>", "Hello", "snip b", false),
             ),
             client().listInbox(20),
@@ -143,7 +143,7 @@ class GmailClientTest {
         assertEquals("plain body", plain.body)
         assertEquals(BodyType.Text, plain.bodyType)
         assertEquals("bare@x.com", plain.fromAddress)
-        assertEquals("(no subject)", plain.subject)
+        assertEquals("", plain.subject)
 
         serve { MockResponse().setBody("""{"id":"m","threadId":"t","snippet":"just a snippet","payload":{"mimeType":"multipart/mixed","headers":[],"body":{"size":0}}}""") }
         val empty = client().getMessage("m")

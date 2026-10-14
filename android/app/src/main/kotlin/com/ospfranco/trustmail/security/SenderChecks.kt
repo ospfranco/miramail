@@ -1,5 +1,7 @@
 package com.ospfranco.trustmail.security
 
+import androidx.annotation.StringRes
+import com.ospfranco.trustmail.R
 import com.ospfranco.trustmail.mail.KnownSenders
 import com.ospfranco.trustmail.mail.MailService
 import com.ospfranco.trustmail.mail.MessageDetail
@@ -13,38 +15,18 @@ private enum class AuthMethod(val value: String) { Dmarc("dmarc"), Dkim("dkim"),
 
 /**
  * The sender checks, so the evaluation can tell which one raised a problem. Each has a fixed verdict and a plain
- * description for the email header, written for someone who doesn't know how email works.
+ * description for the email header, written for someone who doesn't know how email works (string resources).
  */
-enum class SenderCheckLabel(val text: String, val verdict: Verdict, val description: String) {
-    Verified("Sender verified", Verdict.Safe, "Gmail confirmed that this email really comes from the address it shows."),
-    NotVerified(
-        "Sender not verified",
-        Verdict.Warning,
-        "Gmail couldn't confirm that this email really comes from the address it shows. That's often harmless, " +
-            "but someone could be pretending to be this sender. Be careful if it asks you to do something or to share information.",
-    ),
-    Failed(
-        "Sender verification failed",
-        Verdict.Danger,
-        "This email pretends to come from an address that didn't send it, so it's probably a fake. Don't open its links " +
-            "or reply with personal details. If it claims to be from someone you know, contact them another way.",
-    ),
-    Known("Known sender", Verdict.Safe, "You've exchanged emails with this address before."),
-    FirstMessage(
-        "First message from this sender",
-        Verdict.Warning,
-        "This is the first email you get from this address. If it asks you to do something or to share information, " +
-            "be careful before you continue.",
-    ),
-    HistoryUnknown(
-        "Sender history unknown",
-        Verdict.Warning,
-        "Trustmail couldn't check whether this address has emailed you before, for example because you're offline. " +
-            "Be careful if it asks you to do something or to share information.",
-    ),
+enum class SenderCheckLabel(@StringRes val title: Int, val verdict: Verdict, @StringRes val description: Int) {
+    Verified(R.string.sender_verified, Verdict.Safe, R.string.sender_verified_description),
+    NotVerified(R.string.sender_not_verified, Verdict.Warning, R.string.sender_not_verified_description),
+    Failed(R.string.sender_failed, Verdict.Danger, R.string.sender_failed_description),
+    Known(R.string.sender_known, Verdict.Safe, R.string.sender_known_description),
+    FirstMessage(R.string.sender_first_message, Verdict.Warning, R.string.sender_first_message_description),
+    HistoryUnknown(R.string.sender_history_unknown, Verdict.Warning, R.string.sender_history_unknown_description),
     ;
 
-    val check: SecurityCheck get() = SecurityCheck(text, description, verdict)
+    val check: SecurityCheck get() = SecurityCheck(title, description, verdict)
 }
 
 data class MethodResult(val method: String, val result: String, val properties: Map<String, String>)

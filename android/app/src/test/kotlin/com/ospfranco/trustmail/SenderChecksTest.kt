@@ -102,14 +102,14 @@ class SenderChecksTest {
         senders.record(listOf(MessageSummary("old", "old", "GitHub <noreply@github.com>", "s", "", false)))
         // Gmail no longer finds the old email, but the device remembers it.
         val known = SenderChecks.checkSenderHistory(makeMessage(), FakeMail(known = false), senders)
-        assertEquals("Known sender", known.label)
+        assertEquals(SenderCheckLabel.Known.check, known)
         val first = SenderChecks.checkSenderHistory(makeMessage(id = "old"), FakeMail(known = false), senders)
-        assertEquals("First message from this sender", first.label)
+        assertEquals(SenderCheckLabel.FirstMessage.check, first)
     }
 
     @Test
     fun checkSenderReturnsDomainThenHistory() = runTest {
         val checks = SenderChecks.checkSender(makeMessage(), FakeMail(known = true))
-        assertEquals(listOf("Sender not verified", "Known sender"), checks.map { it.label })
+        assertEquals(listOf(SenderCheckLabel.NotVerified.check, SenderCheckLabel.Known.check), checks)
     }
 }

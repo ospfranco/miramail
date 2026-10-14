@@ -79,8 +79,7 @@ fun bareAddress(header: String): String =
 /** The prefilled reply: to the Reply-To address (else the sender), "Re:" subject, same conversation. */
 fun MessageDetail.makeReply(): OutgoingMessage {
     val target = if (replyTo.isBlank()) fromAddress else bareAddress(replyTo)
-    val original = if (subject == "(no subject)") "" else subject
-    val reSubject = if (Regex("^re:", RegexOption.IGNORE_CASE).containsMatchIn(original)) original else "Re: $original"
+    val reSubject = if (Regex("^re:", RegexOption.IGNORE_CASE).containsMatchIn(subject)) subject else "Re: $subject"
     val chain = listOf(references, messageId).map { it.trim() }.filter { it.isNotEmpty() }.joinToString(" ")
     return OutgoingMessage(
         to = target,

@@ -65,6 +65,14 @@ android {
         }
     }
 
+    androidResources {
+        // The languages the app is translated into (scripts/strings.json). Library strings in other languages are
+        // dropped, so a French phone gets the app all in English rather than mixed. Also lists them in the system's
+        // per-app language setting (Android 13+); res/resources.properties names the default language.
+        localeFilters += listOf("en", "de")
+        generateLocaleConfig = true
+    }
+
     buildFeatures {
         compose = true
         buildConfig = true

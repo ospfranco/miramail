@@ -32,9 +32,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import com.ospfranco.trustmail.R
 import com.ospfranco.trustmail.security.Verdict
 import kotlinx.coroutines.launch
 
@@ -50,12 +52,13 @@ fun ComposeScreen(model: ComposeViewModel, session: SessionViewModel, onBack: ()
     val bodyFocus = remember { FocusRequester() }
     val toFocus = remember { FocusRequester() }
     LaunchedEffect(Unit) { (if (model.to.isEmpty()) toFocus else bodyFocus).requestFocus() }
+    val sentNotice = stringResource(R.string.notice_sent)
 
     Column(modifier = Modifier.fillMaxSize().background(colors.background).windowInsetsPadding(WindowInsets.safeDrawing).imePadding()) {
         TopAppBar(
-            title = { Text(if (model.isReply) "Reply" else "New message", color = colors.text) },
+            title = { Text(stringResource(if (model.isReply) R.string.action_reply else R.string.new_message), color = colors.text) },
             navigationIcon = {
-                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back", tint = colors.text) }
+                IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.back), tint = colors.text) }
             },
             actions = {
                 if (model.isSending) {
@@ -66,21 +69,21 @@ fun ComposeScreen(model: ComposeViewModel, session: SessionViewModel, onBack: ()
                         onClick = {
                             scope.launch {
                                 if (model.send()) {
-                                    session.showNotice("Message sent")
+                                    session.showNotice(sentNotice)
                                     onBack()
                                 }
                             }
                         },
                         modifier = Modifier.testTag("compose-send"),
-                    ) { Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "Send") }
+                    ) { Icon(Icons.AutoMirrored.Filled.Send, contentDescription = stringResource(R.string.send)) }
                 }
             },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = colors.background),
         )
 
-        Field("To", model.to, { model.to = it }, "compose-to", toFocus, KeyboardOptions(keyboardType = KeyboardType.Email, capitalization = KeyboardCapitalization.None))
+        Field(stringResource(R.string.compose_to), model.to, { model.to = it }, "compose-to", toFocus, KeyboardOptions(keyboardType = KeyboardType.Email, capitalization = KeyboardCapitalization.None))
         HorizontalDivider(color = colors.backgroundSelected)
-        Field("Subject", model.subject, { model.subject = it }, "compose-subject", null, KeyboardOptions.Default)
+        Field(stringResource(R.string.compose_subject), model.subject, { model.subject = it }, "compose-subject", null, KeyboardOptions.Default)
         HorizontalDivider(color = colors.backgroundSelected)
         TextField(
             value = model.body,

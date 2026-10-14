@@ -18,7 +18,7 @@ struct InboxView: View {
             .frame(maxWidth: Theme.maxContentWidth)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Theme.background.ignoresSafeArea())
-            .navigationTitle(session.user == nil ? "" : "Inbox")
+            .navigationTitle(session.user == nil ? Text(verbatim: "") : Text("Inbox"))
             .toolbar { toolbar }
             .navigationDestination(for: Route.self) { route in
                 switch route {
@@ -67,7 +67,7 @@ struct InboxView: View {
                 .font(.system(size: 64))
                 .foregroundStyle(Theme.brand.gradient)
                 .accessibilityHidden(true)
-            Text("Trustmail").textStyle(.subtitle)
+            Text(verbatim: "Trustmail").textStyle(.subtitle)
             if session.isLoading {
                 ProgressView()
             } else {
@@ -134,7 +134,7 @@ private struct MessageRow: View {
                 if isFirstMessage {
                     FirstMessageLine()
                 }
-                Text(message.subject)
+                Text(displaySubject(message.subject))
                     .font(.subheadline.weight(message.unread ? .semibold : .regular))
                     .foregroundStyle(Theme.text)
                     .lineLimit(1)

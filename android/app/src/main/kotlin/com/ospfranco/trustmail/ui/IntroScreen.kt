@@ -33,6 +33,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -42,9 +43,9 @@ import androidx.compose.ui.unit.sp
 import com.ospfranco.trustmail.R
 
 private val steps = listOf(
-    "Open an email" to "Trustmail checks who really sent it and scans every link in it.",
-    "See the verdict" to "A green, yellow or red mark sits next to each link, and anything wrong is explained at the top of the email.",
-    "Tap with confidence" to "Risky links ask you to confirm before they open.",
+    R.string.intro_step_open_title to R.string.intro_step_open_text,
+    R.string.intro_step_verdict_title to R.string.intro_step_verdict_text,
+    R.string.intro_step_tap_title to R.string.intro_step_tap_text,
 )
 
 /** Shown once, before the first sign-in: what Trustmail does, and that Google sign-in comes next. */
@@ -62,9 +63,9 @@ fun IntroScreen(onContinue: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(Spacing.four),
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Spacing.two)) {
-                    Text("Welcome to Trustmail", color = colors.text, style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
+                    Text(stringResource(R.string.intro_welcome), color = colors.text, style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
                     AppText(
-                        "Trustmail checks every email for phishing before you act on it.",
+                        stringResource(R.string.intro_tagline),
                         TextKind.Regular,
                         color = colors.textSecondary,
                         textAlign = TextAlign.Center,
@@ -74,7 +75,7 @@ fun IntroScreen(onContinue: () -> Unit) {
 
                 Image(
                     painter = painterResource(R.drawable.intro_preview),
-                    contentDescription = "Preview: an email with a safety mark next to each link and a warning at the top",
+                    contentDescription = stringResource(R.string.intro_preview_description),
                     contentScale = ContentScale.Fit,
                     modifier = Modifier
                         .heightIn(max = 220.dp)
@@ -93,15 +94,15 @@ fun IntroScreen(onContinue: () -> Unit) {
                                 Text("${index + 1}", color = MaterialTheme.colorScheme.onPrimary, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                             }
                             Column(verticalArrangement = Arrangement.spacedBy(Spacing.half)) {
-                                AppText(title, TextKind.SmallBold)
-                                AppText(text, TextKind.Small, color = colors.textSecondary)
+                                AppText(stringResource(title), TextKind.SmallBold)
+                                AppText(stringResource(text), TextKind.Small, color = colors.textSecondary)
                             }
                         }
                     }
                 }
 
                 AppText(
-                    "On the next step you'll sign in with your Google account, so Trustmail can read your Gmail.",
+                    stringResource(R.string.intro_google_note),
                     TextKind.Small,
                     color = colors.textSecondary,
                     textAlign = TextAlign.Center,
@@ -120,6 +121,6 @@ fun IntroScreen(onContinue: () -> Unit) {
                 .widthIn(max = Theme.maxContentWidth)
                 .fillMaxWidth()
                 .testTag("intro-continue"),
-        ) { Text("Continue", style = MaterialTheme.typography.titleMedium) }
+        ) { Text(stringResource(R.string.intro_continue), style = MaterialTheme.typography.titleMedium) }
     }
 }

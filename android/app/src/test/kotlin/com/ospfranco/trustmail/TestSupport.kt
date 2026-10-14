@@ -10,11 +10,14 @@ import com.ospfranco.trustmail.mail.OutgoingMessage
 import com.ospfranco.trustmail.security.Certificate
 import com.ospfranco.trustmail.security.KnownDomains
 import com.ospfranco.trustmail.security.PublicSuffixList
+import java.util.Locale
+import javax.xml.parsers.DocumentBuilderFactory
 import org.junit.rules.TestWatcher
 import org.junit.runner.Description
 import java.io.File
 import java.time.Instant
 import java.util.concurrent.CopyOnWriteArrayList
+import org.w3c.dom.Element
 
 object Fixture {
     fun text(name: String): String =
@@ -26,6 +29,37 @@ class PublicSuffixRule : TestWatcher() {
     override fun starting(description: Description) {
         PublicSuffixList.shared = PublicSuffixList(File("src/main/assets/public_suffix_list.dat").readText())
         KnownDomains.shared = KnownDomains(File("src/main/assets/known_domains.txt").readText())
+    }
+}
+
+/**
+ * The app's strings read straight from strings.xml (English, or German in values-de), since JVM tests have no Android resources.
+ * Resource ids are matched to names through the generated R class.
+ */
+class TestStrings private constructor(folder: String) : Strings {
+    val byName: Map<String, String> = run {
+        val document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(File("src/main/res/$folder/strings.xml"))
+        val elements = document.getElementsByTagName("string")
+        (0 until elements.length).associate { index ->
+            val element = elements.item(index) as Element
+            element.getAttribute("name") to unescape(element.textContent)
+        }
+    }
+
+    override fun get(id: Int, vararg args: Any): String {
+        val name = checkNotNull(names[id]) { "no string resource with id $id" }
+        val text = checkNotNull(byName[name]) { "no string $name" }
+        return if (args.isEmpty()) text else String.format(Locale.ROOT, text, *args)
+    }
+
+    companion object {
+        val english = TestStrings("values")
+        val german = TestStrings("values-de")
+
+        private val names: Map<Int, String> = R.string::class.java.fields.associate { it.getInt(null) to it.name }
+
+        /** Undoes the escapes aapt reads (\', \", \n, \\, and a leading \@ or \?). */
+        private fun unescape(text: String): String = Regex("""\\(.)""").replace(text) { if (it.groupValues[1] == "n") "\n" else it.groupValues[1] }
     }
 }
 

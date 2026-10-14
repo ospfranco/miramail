@@ -49,7 +49,7 @@ struct MessageView: View {
         .task { await model.load() }
         .fullScreenCover(item: $browser) { SafariView(url: $0.url).ignoresSafeArea() }
         .alert(
-            pendingLink?.verdict == .danger ? "This link looks unsafe" : "Be careful with this link",
+            pendingLink?.verdict == .danger ? Text("This link looks unsafe") : Text("Be careful with this link"),
             isPresented: Binding(get: { pendingLink != nil }, set: { if !$0 { pendingLink = nil } }),
             presenting: pendingLink
         ) { link in
@@ -125,7 +125,7 @@ struct MessageView: View {
                 moveTargets = try await model.loadMoveTargets()
                 showMoveChooser = true
             } catch {
-                session.showNotice("Couldn't load your labels")
+                session.showNotice(String(localized: "Couldn't load your labels"))
             }
         }
     }

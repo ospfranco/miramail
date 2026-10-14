@@ -1,0 +1,826 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@, sender verification failed" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, Absenderprüfung fehlgeschlagen"
+          }
+        }
+      }
+    },
+    "(no subject)" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "(kein Betreff)"
+          }
+        }
+      }
+    },
+    "A green, yellow or red mark sits next to each link, and anything wrong is explained at the top of the email." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neben jedem Link steht eine grüne, gelbe oder rote Markierung, und was nicht stimmt, wird oben in der E-Mail erklärt."
+          }
+        }
+      }
+    },
+    "Account" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Konto"
+          }
+        }
+      }
+    },
+    "Allow JavaScript in emails" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "JavaScript in E-Mails erlauben"
+          }
+        }
+      }
+    },
+    "Archive" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Archivieren"
+          }
+        }
+      }
+    },
+    "Archived" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Archiviert"
+          }
+        }
+      }
+    },
+    "Be careful with this email" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vorsicht bei dieser E-Mail"
+          }
+        }
+      }
+    },
+    "Be careful with this link" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vorsicht bei diesem Link"
+          }
+        }
+      }
+    },
+    "Can't open this link" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieser Link kann nicht geöffnet werden"
+          }
+        }
+      }
+    },
+    "Cancel" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abbrechen"
+          }
+        }
+      }
+    },
+    "Checking this email…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E-Mail wird geprüft …"
+          }
+        }
+      }
+    },
+    "Continue" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weiter"
+          }
+        }
+      }
+    },
+    "Couldn't archive the email" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die E-Mail konnte nicht archiviert werden"
+          }
+        }
+      }
+    },
+    "Couldn't delete the email" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die E-Mail konnte nicht gelöscht werden"
+          }
+        }
+      }
+    },
+    "Couldn't load your labels" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Labels konnten nicht geladen werden"
+          }
+        }
+      }
+    },
+    "Couldn't move the email" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die E-Mail konnte nicht verschoben werden"
+          }
+        }
+      }
+    },
+    "Couldn't refresh your inbox. Showing the copy saved on this device." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Posteingang konnte nicht aktualisiert werden. Angezeigt wird die auf diesem Gerät gespeicherte Kopie."
+          }
+        }
+      }
+    },
+    "Delete" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Löschen"
+          }
+        }
+      }
+    },
+    "Don't open it unless you're sure where it goes, and never enter a password or personal details there." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffne ihn nur, wenn du sicher weißt, wohin er führt, und gib dort nie ein Passwort oder persönliche Daten ein."
+          }
+        }
+      }
+    },
+    "Explains this warning" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erklärt diese Warnung"
+          }
+        }
+      }
+    },
+    "First message from this sender" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erste E-Mail von diesem Absender"
+          }
+        }
+      }
+    },
+    "Gmail confirmed that this email really comes from the address it shows." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gmail hat bestätigt, dass diese E-Mail wirklich von der angezeigten Adresse stammt."
+          }
+        }
+      }
+    },
+    "Gmail couldn't confirm that this email really comes from the address it shows. That's often harmless, but someone could be pretending to be this sender. Be careful if it asks you to do something or to share information." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gmail konnte nicht bestätigen, dass diese E-Mail wirklich von der angezeigten Adresse stammt. Das ist oft harmlos, aber jemand könnte sich als dieser Absender ausgeben. Sei vorsichtig, wenn du etwas tun oder Informationen teilen sollst."
+          }
+        }
+      }
+    },
+    "Goes to: %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Führt zu: %@"
+          }
+        }
+      }
+    },
+    "Ignore footer links" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Links in der Fußzeile ignorieren"
+          }
+        }
+      }
+    },
+    "Inbox" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Posteingang"
+          }
+        }
+      }
+    },
+    "Known sender" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bekannter Absender"
+          }
+        }
+      }
+    },
+    "Lets scripts inside an email run. Scripts can change what you see after Trustmail has scanned the links, so leave this off unless an email needs it. Applies the next time you open an email." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lässt Skripte in einer E-Mail laufen. Skripte können ändern, was du siehst, nachdem Trustmail die Links geprüft hat. Lass das also aus, außer eine E-Mail braucht es. Gilt ab der nächsten E-Mail, die du öffnest."
+          }
+        }
+      }
+    },
+    "Message sent" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E-Mail gesendet"
+          }
+        }
+      }
+    },
+    "Move" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verschieben"
+          }
+        }
+      }
+    },
+    "Move to" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verschieben nach"
+          }
+        }
+      }
+    },
+    "Moved to %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nach %@ verschoben"
+          }
+        }
+      }
+    },
+    "Moved to Trash" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In den Papierkorb verschoben"
+          }
+        }
+      }
+    },
+    "New message" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neue E-Mail"
+          }
+        }
+      }
+    },
+    "No problems found" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine Probleme gefunden"
+          }
+        }
+      }
+    },
+    "OK" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        }
+      }
+    },
+    "On the next step you'll sign in with your Google account, so Trustmail can read your Gmail." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Im nächsten Schritt meldest du dich mit deinem Google-Konto an, damit Trustmail dein Gmail lesen kann."
+          }
+        }
+      }
+    },
+    "Only open it if you trust where it goes." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffne ihn nur, wenn du dem Ziel vertraust."
+          }
+        }
+      }
+    },
+    "Open an email" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E-Mail öffnen"
+          }
+        }
+      }
+    },
+    "Open anyway" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trotzdem öffnen"
+          }
+        }
+      }
+    },
+    "Preview: an email with a safety mark next to each link and a warning at the top" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vorschau: eine E-Mail mit einer Sicherheitsmarkierung neben jedem Link und einer Warnung oben"
+          }
+        }
+      }
+    },
+    "Reply" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Antworten"
+          }
+        }
+      }
+    },
+    "Risky links ask you to confirm before they open." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Riskante Links öffnen sich erst, wenn du es bestätigst."
+          }
+        }
+      }
+    },
+    "See the verdict" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ergebnis ansehen"
+          }
+        }
+      }
+    },
+    "Send" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senden"
+          }
+        }
+      }
+    },
+    "Sender history unknown" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Absenderverlauf unbekannt"
+          }
+        }
+      }
+    },
+    "Sender not verified" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Absender nicht bestätigt"
+          }
+        }
+      }
+    },
+    "Sender verification failed" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Absenderprüfung fehlgeschlagen"
+          }
+        }
+      }
+    },
+    "Sender verified" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Absender bestätigt"
+          }
+        }
+      }
+    },
+    "Settings" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einstellungen"
+          }
+        }
+      }
+    },
+    "Shown as: %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Angezeigt als: %@"
+          }
+        }
+      }
+    },
+    "Sign in with Google" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mit Google anmelden"
+          }
+        }
+      }
+    },
+    "Sign out" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abmelden"
+          }
+        }
+      }
+    },
+    "Some links in this email look unusual. Tap one marked with a yellow ! to see why before anything opens." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einige Links in dieser E-Mail wirken ungewöhnlich. Tippe auf einen mit einem gelben !, um zu sehen, warum, bevor sich etwas öffnet."
+          }
+        }
+      }
+    },
+    "Some links in this email may lead to a fake or harmful website. Don't open the links marked with a red ✕." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einige Links in dieser E-Mail führen vielleicht zu einer gefälschten oder schädlichen Website. Öffne die Links mit einem roten ✕ nicht."
+          }
+        }
+      }
+    },
+    "Subject" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Betreff"
+          }
+        }
+      }
+    },
+    "Suspicious links" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verdächtige Links"
+          }
+        }
+      }
+    },
+    "Suspicious links in an email's footer (unsubscribe, privacy policy, social media) don't count toward the email's verdict. They still get a badge and a warning when you tap them, and an unsafe footer link still counts. Applies the next time you open an email." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verdächtige Links in der Fußzeile einer E-Mail (Abmelden, Datenschutz, soziale Medien) zählen nicht für die Bewertung der E-Mail. Sie werden trotzdem markiert und warnen dich, wenn du sie antippst, und ein unsicherer Link in der Fußzeile zählt weiterhin. Gilt ab der nächsten E-Mail, die du öffnest."
+          }
+        }
+      }
+    },
+    "Tap with confidence" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mit gutem Gefühl tippen"
+          }
+        }
+      }
+    },
+    "The connection to this website isn't secure, so anything you type there, like a password, could be seen by others." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Verbindung zu dieser Website ist nicht sicher. Alles, was du dort eingibst, etwa ein Passwort, könnten andere sehen."
+          }
+        }
+      }
+    },
+    "The link is shortened, so you can't see where it really goes before you open it." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Link ist gekürzt, daher siehst du nicht, wohin er wirklich führt, bevor du ihn öffnest."
+          }
+        }
+      }
+    },
+    "The link is written in an unusual way that real companies rarely use, a common trick to hide what it does or where it goes." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Link ist auf eine ungewöhnliche Art geschrieben, die echte Unternehmen kaum verwenden – ein gängiger Trick, um zu verbergen, was er tut oder wohin er führt."
+          }
+        }
+      }
+    },
+    "The link's text shows one website, but it takes you to another. Fake emails do this to look trustworthy." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Text des Links zeigt eine Website, aber der Link führt zu einer anderen. Gefälschte E-Mails machen das, um vertrauenswürdig zu wirken."
+          }
+        }
+      }
+    },
+    "The website's name imitates a well-known one with a small change, a trick fake websites use." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Name der Website ahmt einen bekannten Namen mit einer kleinen Änderung nach – ein Trick gefälschter Websites."
+          }
+        }
+      }
+    },
+    "The website's security certificate comes from an unusual provider, which is rare for real companies." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Sicherheitszertifikat der Website stammt von einem ungewöhnlichen Anbieter, was bei echten Unternehmen selten ist."
+          }
+        }
+      }
+    },
+    "The website's security certificate is for a different name, so it may not be the website it claims to be." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Sicherheitszertifikat der Website gilt für einen anderen Namen. Vielleicht ist sie nicht die Website, die sie vorgibt zu sein."
+          }
+        }
+      }
+    },
+    "This email looks dangerous" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese E-Mail wirkt gefährlich"
+          }
+        }
+      }
+    },
+    "This email pretends to come from an address that didn't send it, so it's probably a fake. Don't open its links or reply with personal details. If it claims to be from someone you know, contact them another way." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese E-Mail gibt vor, von einer Adresse zu stammen, die sie nicht gesendet hat, und ist daher wahrscheinlich gefälscht. Öffne ihre Links nicht und antworte nicht mit persönlichen Daten. Wenn sie angeblich von jemandem kommt, den du kennst, melde dich auf einem anderen Weg bei dieser Person."
+          }
+        }
+      }
+    },
+    "This is the first email you get from this address. If it asks you to do something or to share information, be careful before you continue." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das ist die erste E-Mail, die du von dieser Adresse bekommst. Wenn du etwas tun oder Informationen teilen sollst, sei vorsichtig, bevor du weitermachst."
+          }
+        }
+      }
+    },
+    "This link looks unsafe" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieser Link wirkt unsicher"
+          }
+        }
+      }
+    },
+    "This part of the website was set up very recently, which can mean someone else just added it." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieser Teil der Website wurde erst vor Kurzem eingerichtet. Das kann bedeuten, dass ihn gerade jemand anderes hinzugefügt hat."
+          }
+        }
+      }
+    },
+    "This website was created very recently. Fake websites are often only a few days or weeks old." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese Website wurde erst vor Kurzem erstellt. Gefälschte Websites sind oft nur wenige Tage oder Wochen alt."
+          }
+        }
+      }
+    },
+    "To" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "An"
+          }
+        }
+      }
+    },
+    "Trustmail checks every email for phishing before you act on it." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trustmail prüft jede E-Mail auf Phishing, bevor du darauf reagierst."
+          }
+        }
+      }
+    },
+    "Trustmail checks who really sent it and scans every link in it." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trustmail prüft, wer sie wirklich gesendet hat, und untersucht jeden Link darin."
+          }
+        }
+      }
+    },
+    "Trustmail couldn't check whether this address has emailed you before, for example because you're offline. Be careful if it asks you to do something or to share information." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trustmail konnte nicht prüfen, ob dir diese Adresse schon einmal geschrieben hat, zum Beispiel weil du offline bist. Sei vorsichtig, wenn du etwas tun oder Informationen teilen sollst."
+          }
+        }
+      }
+    },
+    "Trustmail couldn't make a secure connection to this website, so it can't confirm the website is real." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trustmail konnte keine sichere Verbindung zu dieser Website herstellen und kann daher nicht bestätigen, dass sie echt ist."
+          }
+        }
+      }
+    },
+    "Unsafe links" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unsichere Links"
+          }
+        }
+      }
+    },
+    "Welcome to Trustmail" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Willkommen bei Trustmail"
+          }
+        }
+      }
+    },
+    "You've exchanged emails with this address before." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du hast mit dieser Adresse schon E-Mails ausgetauscht."
+          }
+        }
+      }
+    },
+    "Your network sends this link somewhere other than where it should go. Someone may be redirecting you to a fake website." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Netzwerk schickt diesen Link an ein anderes Ziel als vorgesehen. Vielleicht leitet dich jemand auf eine gefälschte Website um."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

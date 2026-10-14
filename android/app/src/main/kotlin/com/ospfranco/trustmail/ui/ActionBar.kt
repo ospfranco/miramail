@@ -23,7 +23,9 @@ import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.addPathNodes
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.ospfranco.trustmail.R
 
 /** Material icon outlines, built from path data so no icon library is needed. */
 internal fun icon(name: String, path: String, evenOdd: Boolean = false): ImageVector =
@@ -73,10 +75,10 @@ fun ActionBar(
         shadowElevation = 6.dp,
     ) {
         Row(modifier = Modifier.padding(horizontal = Spacing.two, vertical = Spacing.one), horizontalArrangement = Arrangement.SpaceEvenly) {
-            Item("Delete", DeleteIcon, "action-delete", isBusy, onDelete)
-            Item("Archive", ArchiveIcon, "action-archive", isBusy, onArchive)
-            Item("Move", MoveIcon, "action-move", isBusy, onMove)
-            Item("Reply", ReplyIcon, "action-reply", isBusy, onReply)
+            Item(stringResource(R.string.action_delete), DeleteIcon, "action-delete", isBusy, onDelete)
+            Item(stringResource(R.string.action_archive), ArchiveIcon, "action-archive", isBusy, onArchive)
+            Item(stringResource(R.string.action_move), MoveIcon, "action-move", isBusy, onMove)
+            Item(stringResource(R.string.action_reply), ReplyIcon, "action-reply", isBusy, onReply)
         }
     }
 }

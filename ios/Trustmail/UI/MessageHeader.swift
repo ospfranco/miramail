@@ -36,7 +36,7 @@ struct MessageHeader: View {
 
     private var full: some View {
         VStack(alignment: .leading, spacing: Spacing.three) {
-            Text(message.subject)
+            Text(displaySubject(message.subject))
                 .font(.title2.weight(.bold))
                 .foregroundStyle(Theme.text)
                 .fixedSize(horizontal: false, vertical: true)
@@ -63,7 +63,7 @@ struct MessageHeader: View {
         HStack(spacing: Spacing.two) {
             AvatarView(from: message.from, size: 28)
             VStack(alignment: .leading, spacing: 0) {
-                Text(message.subject).font(.subheadline.weight(.semibold)).foregroundStyle(Theme.text).lineLimit(1)
+                Text(displaySubject(message.subject)).font(.subheadline.weight(.semibold)).foregroundStyle(Theme.text).lineLimit(1)
                 if senderFailed {
                     FailedSenderLine(address: message.fromAddress)
                 } else {
@@ -134,6 +134,6 @@ private struct FindingCard: View {
             .background(check.verdict.color, in: RoundedRectangle(cornerRadius: Spacing.three))
         }
         .buttonStyle(.plain)
-        .accessibilityHint(expanded ? "" : "Explains this warning")
+        .accessibilityHint(expanded ? Text(verbatim: "") : Text("Explains this warning"))
     }
 }

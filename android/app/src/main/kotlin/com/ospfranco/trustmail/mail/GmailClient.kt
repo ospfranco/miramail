@@ -132,7 +132,7 @@ class GmailClient(
                 id = message.id,
                 threadId = message.threadId,
                 from = message.payload.header("From"),
-                subject = message.payload.header("Subject").ifEmpty { "(no subject)" },
+                subject = message.payload.header("Subject"),
                 snippet = message.snippet.orEmpty(),
                 unread = message.labelIds?.contains("UNREAD") ?: false,
                 authenticationResults = message.payload.googleAuthenticationResults,
@@ -154,7 +154,7 @@ class GmailClient(
             from = from,
             fromAddress = address.trim().lowercase(),
             to = message.payload.header("To"),
-            subject = message.payload.header("Subject").ifEmpty { "(no subject)" },
+            subject = message.payload.header("Subject"),
             date = message.payload.header("Date"),
             // Non-UTF-8 charsets (e.g. ISO-8859-1) will render garbled.
             body = part?.body?.data?.let { utf8Decode(base64ToBytes(it)) } ?: message.snippet.orEmpty(),

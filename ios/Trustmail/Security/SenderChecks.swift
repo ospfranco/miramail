@@ -11,13 +11,24 @@ private enum AuthMethod: String {
 
 /// The sender checks, so the evaluation can tell which one raised a problem. Each has a fixed verdict and a plain
 /// description for the email header, written for someone who doesn't know how email works.
-enum SenderCheckLabel: String, CaseIterable {
-    case verified = "Sender verified"
-    case notVerified = "Sender not verified"
-    case failed = "Sender verification failed"
-    case known = "Known sender"
-    case firstMessage = "First message from this sender"
-    case historyUnknown = "Sender history unknown"
+enum SenderCheckLabel: CaseIterable {
+    case verified
+    case notVerified
+    case failed
+    case known
+    case firstMessage
+    case historyUnknown
+
+    var title: String {
+        switch self {
+        case .verified: String(localized: "Sender verified")
+        case .notVerified: String(localized: "Sender not verified")
+        case .failed: String(localized: "Sender verification failed")
+        case .known: String(localized: "Known sender")
+        case .firstMessage: String(localized: "First message from this sender")
+        case .historyUnknown: String(localized: "Sender history unknown")
+        }
+    }
 
     var verdict: Verdict {
         switch self {
@@ -30,28 +41,24 @@ enum SenderCheckLabel: String, CaseIterable {
     var description: String {
         switch self {
         case .verified:
-            "Gmail confirmed that this email really comes from the address it shows."
+            String(localized: "Gmail confirmed that this email really comes from the address it shows.")
         case .notVerified:
-            "Gmail couldn't confirm that this email really comes from the address it shows. That's often harmless, "
-                + "but someone could be pretending to be this sender. Be careful if it asks you to do something or to share information."
+            String(localized: "Gmail couldn't confirm that this email really comes from the address it shows. That's often harmless, but someone could be pretending to be this sender. Be careful if it asks you to do something or to share information.")
         case .failed:
-            "This email pretends to come from an address that didn't send it, so it's probably a fake. Don't open its links "
-                + "or reply with personal details. If it claims to be from someone you know, contact them another way."
+            String(localized: "This email pretends to come from an address that didn't send it, so it's probably a fake. Don't open its links or reply with personal details. If it claims to be from someone you know, contact them another way.")
         case .known:
-            "You've exchanged emails with this address before."
+            String(localized: "You've exchanged emails with this address before.")
         case .firstMessage:
-            "This is the first email you get from this address. If it asks you to do something or to share information, "
-                + "be careful before you continue."
+            String(localized: "This is the first email you get from this address. If it asks you to do something or to share information, be careful before you continue.")
         case .historyUnknown:
-            "Trustmail couldn't check whether this address has emailed you before, for example because you're offline. "
-                + "Be careful if it asks you to do something or to share information."
+            String(localized: "Trustmail couldn't check whether this address has emailed you before, for example because you're offline. Be careful if it asks you to do something or to share information.")
         }
     }
 }
 
 extension SecurityCheck {
     init(_ label: SenderCheckLabel) {
-        self.init(label: label.rawValue, detail: label.description, verdict: label.verdict)
+        self.init(label: label.title, detail: label.description, verdict: label.verdict)
     }
 }
 
