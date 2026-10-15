@@ -1,8 +1,12 @@
 # Trustmail
 
-Trustmail is a mail client that checks every email for phishing before the user acts on it: sender authentication (SPF/DKIM/DMARC as reported by Gmail), and per-link checks (look-alike domains, mismatched link text, DNS tampering, TLS certificate, domain age).
+## What this app is for
 
-It ships as two **native** apps. Native iOS and Android only; there is no web target.
+Trustmail is a companion for people who are afraid of phishing. They use email like everyone else, but the fear of falling for a fake email makes them hesitate at exactly the moment a real email asks them to act. Trustmail is **not** a phishing filter and does not try to catch every attack. Its job is the opposite direction: when an email asks the user to do something (click a link, confirm, open an attachment), Trustmail tells them, calmly and in plain words, whether that email is genuine and the action is probably safe, so they can go ahead.
+
+### Who it is for
+
+The user is overwhelmed by the many processes that now happen online and is deeply unsure of themselves. They know phishing exists, but they can't tell a real email from a fake one. They read mail on a phone, often with weak eyesight, and they can read a link's text but not the address behind it. Because they are afraid of being tricked, they often **abandon valid processes**. It ships as two **native** apps. Native iOS and Android only; there is no web target.
 
 | Folder | App | Stack |
 |---|---|---|
