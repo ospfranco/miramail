@@ -148,7 +148,7 @@ class TrustmailUiTest {
         )
         // Each one opens to explain itself in plain words.
         compose.onNodeWithText("First message from this sender").performClick()
-        compose.onNodeWithText("This is the first email you get from this address.", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("You haven't exchanged email with this address before.", substring = true).assertIsDisplayed()
         // The header marks the sender's domain like an unsafe link.
         compose.onNodeWithTag("sender-warning").assertExists()
         screenshot("message-scanned")
@@ -161,7 +161,7 @@ class TrustmailUiTest {
         val link = device.wait(Until.findObject(By.text("paypal.com/login")), 10_000)
         assertNotNull("link not found in the email", link)
         link.click()
-        compose.waitUntil(5_000) { compose.onAllNodesWithTagOrText("This link looks unsafe") }
+        compose.waitUntil(5_000) { compose.onAllNodesWithTagOrText("This link looks really unsafe. Only open it if you know that their request is valid.") }
         compose.onNode(
             hasText("Shown as: paypal.com/login\nGoes to: http://login.paypa1-secure.example.net/verify\n\n", substring = true) and hasAnyAncestor(isDialog()),
         ).assertIsDisplayed()

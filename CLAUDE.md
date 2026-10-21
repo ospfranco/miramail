@@ -92,7 +92,7 @@ The sender is marked like a link in the body:
 There is no separate security screen: the result of the scan sits in the email header, under the sender and date.
 
 - While the email is checked: a quiet row with a spinner, "Checking this email…" (`security-scanning`).
-- Nothing wrong: one small green line, "No problems found" (`security-safe`).
+- Nothing wrong: one small green line, "Nothing suspicious here" (`security-safe`).
 - Otherwise one bright card per problem (`security-findings`), red for unsafe and amber for suspicious, unsafe ones first (`SecurityEvaluation.findings`). A card shows its title; tapping it opens a plain-words explanation of what it means and what to do. Safe checks ("Sender verified", "Known sender") are not shown. Links never get one card each: there is at most an "Unsafe links" and a "Suspicious links" card (`LinkFindingLabel`), since each link already carries its own mark in the email.
 - The compact header keeps a dot in the verdict's color when something is wrong.
 - Every title, verdict and explanation lives in an enum (`SenderCheckLabel`, `LinkFindingLabel`), pinned word for word by `describesEveryCheckInPlainWords` on both platforms. A new sender check needs a case there.

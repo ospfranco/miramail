@@ -49,9 +49,9 @@ enum SenderCheckLabel: CaseIterable {
         case .known:
             String(localized: "You've exchanged emails with this address before.")
         case .firstMessage:
-            String(localized: "This is the first email you get from this address. If it asks you to do something or to share information, be careful before you continue.")
+            String(localized: "You haven't exchanged email with this address before. If you did not expect this email, pay very close attention to it.")
         case .historyUnknown:
-            String(localized: "Trustmail couldn't check whether this address has emailed you before, for example because you're offline. Be careful if it asks you to do something or to share information.")
+            String(localized: "Couldn't search your past email in order to verify if you have exchanged email with this address before.")
         }
     }
 }

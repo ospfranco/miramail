@@ -134,19 +134,19 @@ struct SecurityScannerTests {
         // Links are only mentioned when some are a problem.
         let none = SecurityScanner.evaluateEmail(senderChecks: safeSender, links: [])
         #expect(none.verdict == .safe)
-        #expect(none.summary == "No problems found")
+        #expect(none.summary == "Nothing suspicious here")
         #expect(none.checks == safeSender)
         #expect(SecurityScanner.evaluateEmail(senderChecks: safeSender, links: [scanned(.safe)]).checks == safeSender)
 
         let mixed = SecurityScanner.evaluateEmail(senderChecks: safeSender, links: [scanned(.safe), scanned(.warning), scanned(.danger), scanned(.danger)])
         #expect(mixed.verdict == .danger)
-        #expect(mixed.summary == "This email looks dangerous")
+        #expect(mixed.summary == "Please pay close attention to this email")
         #expect(mixed.checks == safeSender + [SecurityCheck(.unsafe), SecurityCheck(.suspicious)])
 
         let warnSender = [SecurityCheck(.firstMessage)]
         let warn = SecurityScanner.evaluateEmail(senderChecks: warnSender, links: [scanned(.safe)])
         #expect(warn.verdict == .warning)
-        #expect(warn.summary == "Be careful with this email")
+        #expect(warn.summary == "This email has some suspicious elements")
         #expect(!warn.senderFailed)
         #expect(!mixed.senderFailed, "unsafe links alone don't mark the sender")
     }
@@ -181,7 +181,7 @@ struct SecurityScannerTests {
 
         let ignored = SecurityScanner.evaluateEmail(senderChecks: safeSender, links: links, ignoreFooterLinks: true)
         #expect(ignored.verdict == .safe)
-        #expect(ignored.summary == "No problems found")
+        #expect(ignored.summary == "Nothing suspicious here")
         #expect(ignored.checks == safeSender)
 
         // An unsafe footer link always counts.
@@ -197,8 +197,8 @@ struct SecurityScannerTests {
             "Sender not verified: Gmail couldn't confirm that this email really comes from the address it shows. That's often harmless, but someone could be pretending to be this sender. Be careful if it asks you to do something or to share information.",
             "Sender verification failed: This email pretends to come from an address that didn't send it, so it's probably a fake. Don't open its links or reply with personal details. If it claims to be from someone you know, contact them another way.",
             "Known sender: You've exchanged emails with this address before.",
-            "First message from this sender: This is the first email you get from this address. If it asks you to do something or to share information, be careful before you continue.",
-            "Sender history unknown: Trustmail couldn't check whether this address has emailed you before, for example because you're offline. Be careful if it asks you to do something or to share information.",
+            "First message from this sender: You haven't exchanged email with this address before. If you did not expect this email, pay very close attention to it.",
+            "Sender history unknown: Couldn't search your past email in order to verify if you have exchanged email with this address before.",
         ])
         #expect(LinkFindingLabel.allCases.map { "\($0.title): \($0.description)" } == [
             "Unsafe links: Some links in this email may lead to a fake or harmful website. Don't open the links marked with a red ✕.",

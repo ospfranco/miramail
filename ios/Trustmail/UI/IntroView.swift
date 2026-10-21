@@ -22,7 +22,7 @@ struct IntroView: View {
                             .font(.largeTitle.bold())
                             .foregroundStyle(Theme.text)
                             .accessibilityAddTraits(.isHeader)
-                        Text("Trustmail checks every email for phishing before you act on it.")
+                        Text("We are your tech-friend, reviewing your emails to ensure you can respond to email inquiries with confidence.")
                             .textStyle(.regular, color: Theme.textSecondary)
                     }
                     .multilineTextAlignment(.center)

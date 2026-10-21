@@ -68,7 +68,7 @@ final class TrustmailUITests: XCTestCase {
         ])
         // Each one opens to explain itself in plain words.
         findings.buttons["First message from this sender"].tap()
-        XCTAssertTrue(findings.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "This is the first email you get from this address.")).firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(findings.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "You haven't exchanged email with this address before.")).firstMatch.waitForExistence(timeout: 5))
         // The header marks the sender's domain like an unsafe link.
         XCTAssertTrue(app.descendants(matching: .any)["sender-warning"].exists)
         screenshot("message-scanned")
@@ -78,7 +78,7 @@ final class TrustmailUITests: XCTestCase {
         XCTAssertTrue(app.webViews.staticTexts["Scripts in this email are blocked."].exists)
 
         app.webViews.links["paypal.com/login"].tap()
-        let alert = app.alerts["This link looks unsafe"]
+        let alert = app.alerts["This link looks really unsafe. Only open it if you know that their request is valid."]
         XCTAssertTrue(alert.waitForExistence(timeout: 5))
         let warning = alert.staticTexts.element(boundBy: 1).label
         XCTAssertTrue(warning.hasPrefix("Shown as: paypal.com/login\nGoes to: http://login.paypa1-secure.example.net/verify\n\n"))
