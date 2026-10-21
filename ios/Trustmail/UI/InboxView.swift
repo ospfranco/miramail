@@ -108,7 +108,8 @@ struct InboxView: View {
 }
 
 /// One email in the inbox, laid out like Mail: unread dot, avatar, sender, subject and a two-line preview.
-/// Under the sender: the domain in red when the sender failed Gmail's checks, and a yellow marker when they are new to you.
+/// Under the sender: the domain in red when the sender failed Gmail's checks, then a small tag for each problem with the
+/// sender that the email's header would show (failed or unverified, new to you).
 private struct MessageRow: View {
     let message: MessageSummary
     /// You've never exchanged email with the sender.
@@ -131,8 +132,9 @@ private struct MessageRow: View {
                 if message.senderFailed {
                     FailedSenderLine(address: bareAddress(message.from))
                 }
-                if isFirstMessage {
-                    FirstMessageLine()
+                let tags = message.senderTags(isFirstMessage: isFirstMessage)
+                if !tags.isEmpty {
+                    SenderTags(labels: tags)
                 }
                 Text(displaySubject(message.subject))
                     .font(.subheadline.weight(message.unread ? .semibold : .regular))

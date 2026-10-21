@@ -70,14 +70,18 @@ object SenderChecks {
 
     fun checkSenderDomain(message: MessageDetail): SecurityCheck = checkSenderDomain(message.fromAddress, message.authenticationResults)
 
-    fun checkSenderDomain(fromAddress: String, authenticationResults: List<String>): SecurityCheck {
+    fun checkSenderDomain(fromAddress: String, authenticationResults: List<String>): SecurityCheck =
+        senderDomainLabel(fromAddress, authenticationResults).check
+
+    /** What Gmail's checks say about the sender: verified, not verified or failed. */
+    fun senderDomainLabel(fromAddress: String, authenticationResults: List<String>): SenderCheckLabel {
         val fromDomain = domainOf(fromAddress) ?: "unknown"
         val results = authenticationResults.flatMap(::parseAuthenticationResults)
-        if (results.isEmpty()) return SenderCheckLabel.NotVerified.check
+        if (results.isEmpty()) return SenderCheckLabel.NotVerified
 
         val dmarc = results.firstOrNull { it.method == AuthMethod.Dmarc.value }
-        if (dmarc?.result == AuthResult.Pass.value) return SenderCheckLabel.Verified.check
-        if (dmarc?.result == AuthResult.Fail.value) return SenderCheckLabel.Failed.check
+        if (dmarc?.result == AuthResult.Pass.value) return SenderCheckLabel.Verified
+        if (dmarc?.result == AuthResult.Fail.value) return SenderCheckLabel.Failed
 
         // No conclusive DMARC (the domain has no policy, or a lookup error): judge SPF/DKIM directly.
         val alignedDkim = results.any {
@@ -87,12 +91,12 @@ object SenderChecks {
         val alignedSpf = results.any {
             it.method == AuthMethod.Spf.value && it.result == AuthResult.Pass.value && aligned(domainOf(it.properties["smtp.mailfrom"]), fromDomain)
         }
-        if (alignedDkim || alignedSpf) return SenderCheckLabel.Verified.check
+        if (alignedDkim || alignedSpf) return SenderCheckLabel.Verified
 
         val failed = results.any {
             (it.method == AuthMethod.Dkim.value || it.method == AuthMethod.Spf.value) && it.result == AuthResult.Fail.value
         }
-        return if (failed) SenderCheckLabel.Failed.check else SenderCheckLabel.NotVerified.check
+        return if (failed) SenderCheckLabel.Failed else SenderCheckLabel.NotVerified
     }
 
     /**
@@ -116,4 +120,13 @@ object SenderChecks {
 
 /** The sender failed Gmail's checks (the email may be forged), so the inbox marks it like an unsafe link. */
 val MessageSummary.senderFailed: Boolean
-    get() = SenderChecks.checkSenderDomain(bareAddress(from), authenticationResults).verdict == Verdict.Danger
+    get() = SenderChecks.senderDomainLabel(bareAddress(from), authenticationResults).verdict == Verdict.Danger
+
+/**
+ * The small tags on the email's inbox row: the sender findings its header would show, unsafe first. Gmail's checks
+ * come with the inbox list; [isFirstMessage] comes from the sender history lookup (a lookup that fails tags nothing).
+ */
+fun MessageSummary.senderTags(isFirstMessage: Boolean): List<SenderCheckLabel> {
+    val domain = SenderChecks.senderDomainLabel(bareAddress(from), authenticationResults)
+    return listOfNotNull(domain.takeIf { it.verdict != Verdict.Safe }, SenderCheckLabel.FirstMessage.takeIf { isFirstMessage })
+}

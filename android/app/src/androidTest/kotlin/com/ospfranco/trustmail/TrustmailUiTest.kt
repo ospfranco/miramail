@@ -71,7 +71,7 @@ class TrustmailUiTest {
         waitForTag("saved-inbox", 10_000)
         compose.onNodeWithTag("message-demo-1").assertExists()
         // The saved copy keeps its markers.
-        compose.onNode(hasTestTag("first-message") and hasAnyAncestor(hasTestTag("message-demo-2")), useUnmergedTree = true).assertExists()
+        compose.onNode(hasText("First message from this sender") and hasAnyAncestor(hasTestTag("message-demo-2")), useUnmergedTree = true).assertExists()
         screenshot("inbox-saved")
     }
 
@@ -127,12 +127,15 @@ class TrustmailUiTest {
     fun phishingEmailIsFlaggedAndRiskyLinksAskForConfirmation() {
         launch()
         waitForTag("message-demo-2", 10_000)
-        // In the inbox: the forged sender's domain is marked, and so is a sender you've never written with.
+        // In the inbox: the forged sender's domain is marked, and the row has a tag for each problem with the sender,
+        // in the header's words.
         fun inRow(id: String, tag: String) = hasTestTag(tag) and hasAnyAncestor(hasTestTag("message-$id"))
-        compose.waitUntil(10_000) { compose.onAllNodes(inRow("demo-2", "first-message"), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+        fun tagInRow(id: String, text: String) = hasText(text) and hasAnyAncestor(hasTestTag("sender-tags")) and hasAnyAncestor(hasTestTag("message-$id"))
+        compose.waitUntil(10_000) { compose.onAllNodes(tagInRow("demo-2", "First message from this sender"), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(tagInRow("demo-2", "Sender verification failed"), useUnmergedTree = true).assertExists()
         compose.onNode(inRow("demo-2", "sender-warning"), useUnmergedTree = true).assertExists()
         compose.onNode(inRow("demo-1", "sender-warning"), useUnmergedTree = true).assertDoesNotExist()
-        compose.onNode(inRow("demo-1", "first-message"), useUnmergedTree = true).assertDoesNotExist()
+        compose.onNode(inRow("demo-1", "sender-tags"), useUnmergedTree = true).assertDoesNotExist()
         screenshot("inbox-warnings")
 
         compose.onNodeWithTag("message-demo-2").performClick()

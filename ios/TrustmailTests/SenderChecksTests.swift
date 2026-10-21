@@ -15,6 +15,19 @@ struct SenderChecksTests {
         #expect(!summary([]).senderFailed, "unverified is a warning, not a failure")
     }
 
+    @Test func inboxTagsShowTheSenderFindingsOfTheHeader() {
+        func summary(_ auth: [String]) -> MessageSummary {
+            MessageSummary(id: "1", threadId: "t", from: "PayPal <support@paypa1.example.net>", subject: "s", snippet: "", unread: false, authenticationResults: auth)
+        }
+        let failed = summary(["mx.google.com; dmarc=fail header.from=paypa1.example.net"])
+        let verified = summary(["mx.google.com; dmarc=pass header.from=paypa1.example.net"])
+        #expect(failed.senderTags(isFirstMessage: true) == [.failed, .firstMessage])
+        #expect(failed.senderTags(isFirstMessage: false) == [.failed])
+        #expect(summary([]).senderTags(isFirstMessage: true) == [.notVerified, .firstMessage])
+        #expect(verified.senderTags(isFirstMessage: true) == [.firstMessage])
+        #expect(verified.senderTags(isFirstMessage: false) == [], "a verified, known sender gets no tag")
+    }
+
     @Test func parsesAuthenticationResults() {
         let parsed = SenderChecks.parseAuthenticationResults(
             "mx.google.com; dkim=pass (test (nested) comment) header.i=@github.com header.s=pf2023; spf=pass smtp.mailfrom=bounce@github.com; dmarc=pass (p=REJECT) header.from=github.com"

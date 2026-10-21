@@ -4,6 +4,8 @@ import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
@@ -230,16 +232,28 @@ fun FailedSenderLine(address: String) {
     }
 }
 
-/** A yellow marker for an email from someone you've never exchanged email with. */
+/** The sender findings as small tags on an inbox row, in the words and colors of the email header's cards. They wrap when they don't fit. */
 @Composable
-fun FirstMessageLine() {
-    Row(
-        modifier = Modifier.testTag("first-message"),
-        verticalAlignment = Alignment.CenterVertically,
+fun SenderTags(labels: List<SenderCheckLabel>) {
+    FlowRow(
+        modifier = Modifier.padding(vertical = Spacing.half).testTag("sender-tags"),
         horizontalArrangement = Arrangement.spacedBy(Spacing.one),
+        verticalArrangement = Arrangement.spacedBy(Spacing.half),
     ) {
-        VerdictDot(Verdict.Warning, 14.dp)
-        AppText(stringResource(SenderCheckLabel.FirstMessage.title), TextKind.Small, color = Theme.colors.textSecondary, maxLines = 1)
+        for (label in labels) SenderTag(label)
+    }
+}
+
+@Composable
+private fun SenderTag(label: SenderCheckLabel) {
+    val content = label.verdict.contentColor
+    Row(
+        modifier = Modifier.background(label.verdict.color, CircleShape).padding(horizontal = Spacing.two, vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.half),
+    ) {
+        Text(label.verdict.glyph, color = content, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Black, modifier = Modifier.clearAndSetSemantics {})
+        Text(stringResource(label.title), color = content, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 

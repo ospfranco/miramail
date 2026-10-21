@@ -43,13 +43,17 @@ final class TrustmailUITests: XCTestCase {
     }
 
     func testPhishingEmailIsFlaggedAndRiskyLinksAskForConfirmation() {
-        // In the inbox: the forged sender's domain is marked, and so is a sender you've never written with.
+        // In the inbox: the forged sender's domain is marked, and the row has a tag for each problem with the sender,
+        // in the header's words.
         func row(_ id: String, mentioning text: String) -> XCUIElement {
             app.buttons.matching(identifier: "message-\(id)").element(matching: NSPredicate(format: "label CONTAINS %@", text))
         }
         XCTAssertTrue(row("demo-2", mentioning: "sender verification failed").waitForExistence(timeout: 10))
         XCTAssertTrue(row("demo-2", mentioning: "First message from this sender").waitForExistence(timeout: 10))
+        XCTAssertTrue(row("demo-2", mentioning: "Sender verification failed").exists)
         XCTAssertFalse(row("demo-1", mentioning: "sender verification failed").exists)
+        XCTAssertFalse(row("demo-1", mentioning: "Sender verification failed").exists)
+        XCTAssertFalse(row("demo-1", mentioning: "Sender not verified").exists)
         XCTAssertFalse(row("demo-1", mentioning: "First message from this sender").exists)
         screenshot("inbox-warnings")
 

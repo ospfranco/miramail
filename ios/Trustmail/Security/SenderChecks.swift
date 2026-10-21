@@ -111,13 +111,18 @@ enum SenderChecks {
     }
 
     static func checkSenderDomain(fromAddress: String, authenticationResults: [String]) -> SecurityCheck {
+        SecurityCheck(senderDomainLabel(fromAddress: fromAddress, authenticationResults: authenticationResults))
+    }
+
+    /// What Gmail's checks say about the sender: verified, not verified or failed.
+    static func senderDomainLabel(fromAddress: String, authenticationResults: [String]) -> SenderCheckLabel {
         let fromDomain = domainOf(fromAddress) ?? "unknown"
         let results = authenticationResults.flatMap(parseAuthenticationResults)
-        if results.isEmpty { return SecurityCheck(.notVerified) }
+        if results.isEmpty { return .notVerified }
 
         let dmarc = results.first { $0.method == AuthMethod.dmarc.rawValue }
-        if dmarc?.result == AuthResult.pass.rawValue { return SecurityCheck(.verified) }
-        if dmarc?.result == AuthResult.fail.rawValue { return SecurityCheck(.failed) }
+        if dmarc?.result == AuthResult.pass.rawValue { return .verified }
+        if dmarc?.result == AuthResult.fail.rawValue { return .failed }
 
         // No conclusive DMARC (the domain has no policy, or a lookup error): judge SPF/DKIM directly.
         let alignedDkim = results.contains {
@@ -127,12 +132,12 @@ enum SenderChecks {
         let alignedSpf = results.contains {
             $0.method == AuthMethod.spf.rawValue && $0.result == AuthResult.pass.rawValue && aligned(domainOf($0.properties["smtp.mailfrom"]), fromDomain)
         }
-        if alignedDkim || alignedSpf { return SecurityCheck(.verified) }
+        if alignedDkim || alignedSpf { return .verified }
 
         let failed = results.contains {
             ($0.method == AuthMethod.dkim.rawValue || $0.method == AuthMethod.spf.rawValue) && $0.result == AuthResult.fail.rawValue
         }
-        return SecurityCheck(failed ? .failed : .notVerified)
+        return failed ? .failed : .notVerified
     }
 
     /// Whether you've had other mail from or to `address`: a sender already seen in the inbox counts even after
@@ -159,6 +164,13 @@ enum SenderChecks {
 extension MessageSummary {
     /// The sender failed Gmail's checks (the email may be forged), so the inbox marks it like an unsafe link.
     var senderFailed: Bool {
-        SenderChecks.checkSenderDomain(fromAddress: bareAddress(from), authenticationResults: authenticationResults).verdict == .danger
+        SenderChecks.senderDomainLabel(fromAddress: bareAddress(from), authenticationResults: authenticationResults).verdict == .danger
+    }
+
+    /// The small tags on the email's inbox row: the sender findings its header would show, unsafe first. Gmail's checks
+    /// come with the inbox list; `isFirstMessage` comes from the sender history lookup (a lookup that fails tags nothing).
+    func senderTags(isFirstMessage: Bool) -> [SenderCheckLabel] {
+        let domain = SenderChecks.senderDomainLabel(fromAddress: bareAddress(from), authenticationResults: authenticationResults)
+        return (domain.verdict == .safe ? [] : [domain]) + (isFirstMessage ? [.firstMessage] : [])
     }
 }
