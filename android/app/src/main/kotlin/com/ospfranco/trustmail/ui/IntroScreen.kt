@@ -48,7 +48,7 @@ private val steps = listOf(
     R.string.intro_step_tap_title to R.string.intro_step_tap_text,
 )
 
-/** Shown once, before the first sign-in: what Trustmail does, and that Google sign-in comes next. */
+/** Shown once, before the first sign-in: what Miramail does, and that Google sign-in comes next. */
 @Composable
 fun IntroScreen(onContinue: () -> Unit) {
     val colors = Theme.colors

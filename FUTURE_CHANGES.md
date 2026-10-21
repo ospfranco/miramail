@@ -1,6 +1,6 @@
 # Future changes
 
-Known changes Trustmail needs that are deferred for now. Most depend on having a backend, which we don't have yet. Code that needs to change is marked with `TODO(backend)`.
+Known changes Miramail needs that are deferred for now. Most depend on having a backend, which we don't have yet. Code that needs to change is marked with `TODO(backend)`.
 
 ## As use I want to actively request the scanning
 

@@ -51,7 +51,7 @@
     <string name="reason_lookalike_domain">Der Name der Website ahmt einen bekannten Namen mit einer kleinen Änderung nach – ein Trick gefälschter Websites.</string>
     <string name="reason_shortener">Der Link ist gekürzt, daher siehst du nicht, wohin er wirklich führt, bevor du ihn öffnest.</string>
     <string name="reason_dns_spoofing">Dein Netzwerk schickt diesen Link an ein anderes Ziel als vorgesehen. Vielleicht leitet dich jemand auf eine gefälschte Website um.</string>
-    <string name="reason_tls_connection">Trustmail konnte keine sichere Verbindung zu dieser Website herstellen und kann daher nicht bestätigen, dass sie echt ist.</string>
+    <string name="reason_tls_connection">Miramail konnte keine sichere Verbindung zu dieser Website herstellen und kann daher nicht bestätigen, dass sie echt ist.</string>
     <string name="reason_domain_age">Diese Website wurde erst vor Kurzem erstellt. Gefälschte Websites sind oft nur wenige Tage oder Wochen alt.</string>
     <string name="reason_subdomain_certificate">Dieser Teil der Website wurde erst vor Kurzem eingerichtet. Das kann bedeuten, dass ihn gerade jemand anderes hinzugefügt hat.</string>
     <string name="reason_certificate_hostname">Das Sicherheitszertifikat der Website gilt für einen anderen Namen. Vielleicht ist sie nicht die Website, die sie vorgibt zu sein.</string>
@@ -69,20 +69,20 @@
     <string name="sender_history_unknown">Absenderverlauf unbekannt</string>
     <string name="sender_history_unknown_description">Deine bisherigen E-Mails konnten nicht durchsucht werden, um zu prüfen, ob du mit dieser Adresse schon E-Mails ausgetauscht hast.</string>
     <string name="settings_allow_javascript">JavaScript in E-Mails erlauben</string>
-    <string name="settings_allow_javascript_description">Lässt Skripte in einer E-Mail laufen. Skripte können ändern, was du siehst, nachdem Trustmail die Links geprüft hat. Lass das also aus, außer eine E-Mail braucht es. Gilt ab der nächsten E-Mail, die du öffnest.</string>
+    <string name="settings_allow_javascript_description">Lässt Skripte in einer E-Mail laufen. Skripte können ändern, was du siehst, nachdem Miramail die Links geprüft hat. Lass das also aus, außer eine E-Mail braucht es. Gilt ab der nächsten E-Mail, die du öffnest.</string>
     <string name="settings_ignore_footer_links">Links in der Fußzeile ignorieren</string>
     <string name="settings_ignore_footer_links_description">Verdächtige Links in der Fußzeile einer E-Mail (Abmelden, Datenschutz, soziale Medien) zählen nicht für die Bewertung der E-Mail. Sie werden trotzdem markiert und warnen dich, wenn du sie antippst, und ein unsicherer Link in der Fußzeile zählt weiterhin. Gilt ab der nächsten E-Mail, die du öffnest.</string>
     <string name="settings_account">Konto</string>
     <string name="sign_out">Abmelden</string>
-    <string name="intro_welcome">Willkommen bei Trustmail</string>
+    <string name="intro_welcome">Willkommen bei Miramail</string>
     <string name="intro_tagline">Wir sind dein Technik-Freund und prüfen deine E-Mails, damit du auf Anfragen per E-Mail mit gutem Gefühl antworten kannst.</string>
     <string name="intro_preview_description">Vorschau: eine E-Mail mit einer Sicherheitsmarkierung neben jedem Link und einer Warnung oben</string>
     <string name="intro_step_open_title">E-Mail öffnen</string>
-    <string name="intro_step_open_text">Trustmail prüft, wer sie wirklich gesendet hat, und untersucht jeden Link darin.</string>
+    <string name="intro_step_open_text">Miramail prüft, wer sie wirklich gesendet hat, und untersucht jeden Link darin.</string>
     <string name="intro_step_verdict_title">Ergebnis ansehen</string>
     <string name="intro_step_verdict_text">Neben jedem Link steht eine grüne, gelbe oder rote Markierung, und was nicht stimmt, wird oben in der E-Mail erklärt.</string>
     <string name="intro_step_tap_title">Mit gutem Gefühl tippen</string>
     <string name="intro_step_tap_text">Riskante Links öffnen sich erst, wenn du es bestätigst.</string>
-    <string name="intro_google_note">Im nächsten Schritt meldest du dich mit deinem Google-Konto an, damit Trustmail dein Gmail lesen kann.</string>
+    <string name="intro_google_note">Im nächsten Schritt meldest du dich mit deinem Google-Konto an, damit Miramail dein Gmail lesen kann.</string>
     <string name="intro_continue">Weiter</string>
 </resources>

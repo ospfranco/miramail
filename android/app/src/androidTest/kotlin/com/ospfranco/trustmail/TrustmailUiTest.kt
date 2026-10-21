@@ -202,7 +202,7 @@ class TrustmailUiTest {
         val x = device.displayWidth / 2
         device.swipe(x, device.displayHeight * 3 / 4, x, device.displayHeight / 3, 20)
         waitForTag("message-header-compact", 5_000)
-        compose.onNodeWithText("Hello from the Trustmail team").assertExists()
+        compose.onNodeWithText("Hello from the Miramail team").assertExists()
         screenshot("message-header-compact")
         repeat(2) { device.swipe(x, device.displayHeight / 3, x, device.displayHeight * 3 / 4, 20) }
         waitForTag("message-header", 5_000)
@@ -351,7 +351,7 @@ class TrustmailUiTest {
         waitForTag("compose-to", 5_000)
         compose.onNodeWithText("Reply").assertIsDisplayed()
         compose.onNodeWithTag("compose-to").assertTextContains("hello@example.com")
-        compose.onNodeWithTag("compose-subject").assertTextContains("Re: Hello from the Trustmail team")
+        compose.onNodeWithTag("compose-subject").assertTextContains("Re: Hello from the Miramail team")
 
         compose.onNodeWithTag("compose-body").performTextInput("Thanks for the welcome!")
         screenshot("compose")
@@ -385,7 +385,7 @@ class TrustmailUiTest {
     fun firstLaunchShowsTheIntroBeforeSignIn() {
         launch(signedOut = true)
         waitForTag("intro-continue", 10_000)
-        compose.onNodeWithText("Welcome to Trustmail").assertIsDisplayed()
+        compose.onNodeWithText("Welcome to Miramail").assertIsDisplayed()
         compose.onNodeWithTag("intro-preview").assertIsDisplayed()
         compose.onNodeWithText("Open an email").assertIsDisplayed()
         compose.onNodeWithText("See the verdict").assertIsDisplayed()
@@ -397,7 +397,7 @@ class TrustmailUiTest {
 
         compose.onNodeWithTag("intro-continue").performClick()
         waitForTag("sign-in", 5_000)
-        assert(compose.onAllNodesWithText("Welcome to Trustmail").fetchSemanticsNodes().isEmpty())
+        assert(compose.onAllNodesWithText("Welcome to Miramail").fetchSemanticsNodes().isEmpty())
 
         compose.onNodeWithTag("sign-in").performClick()
         waitForTag("message-demo-1", 5_000)
@@ -407,13 +407,13 @@ class TrustmailUiTest {
     fun signedInUsersNeverSeeTheIntro() {
         launch()
         waitForTag("message-demo-1", 10_000)
-        assert(compose.onAllNodesWithText("Welcome to Trustmail").fetchSemanticsNodes().isEmpty())
+        assert(compose.onAllNodesWithText("Welcome to Miramail").fetchSemanticsNodes().isEmpty())
         // ...even after signing out.
         compose.onNodeWithTag("settings-button").performClick()
         waitForTag("settings-sign-out", 5_000)
         compose.onNodeWithTag("settings-sign-out").performClick()
         waitForTag("sign-in", 5_000)
-        assert(compose.onAllNodesWithText("Welcome to Trustmail").fetchSemanticsNodes().isEmpty())
+        assert(compose.onAllNodesWithText("Welcome to Miramail").fetchSemanticsNodes().isEmpty())
     }
 
     // The pencil: a new email

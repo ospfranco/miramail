@@ -271,12 +271,12 @@
         }
       }
     },
-    "Lets scripts inside an email run. Scripts can change what you see after Trustmail has scanned the links, so leave this off unless an email needs it. Applies the next time you open an email." : {
+    "Lets scripts inside an email run. Scripts can change what you see after Miramail has scanned the links, so leave this off unless an email needs it. Applies the next time you open an email." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Lässt Skripte in einer E-Mail laufen. Skripte können ändern, was du siehst, nachdem Trustmail die Links geprüft hat. Lass das also aus, außer eine E-Mail braucht es. Gilt ab der nächsten E-Mail, die du öffnest."
+            "value" : "Lässt Skripte in einer E-Mail laufen. Skripte können ändern, was du siehst, nachdem Miramail die Links geprüft hat. Lass das also aus, außer eine E-Mail braucht es. Gilt ab der nächsten E-Mail, die du öffnest."
           }
         }
       }
@@ -287,6 +287,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "E-Mail gesendet"
+          }
+        }
+      }
+    },
+    "Miramail checks who really sent it and scans every link in it." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Miramail prüft, wer sie wirklich gesendet hat, und untersucht jeden Link darin."
+          }
+        }
+      }
+    },
+    "Miramail couldn't make a secure connection to this website, so it can't confirm the website is real." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Miramail konnte keine sichere Verbindung zu dieser Website herstellen und kann daher nicht bestätigen, dass sie echt ist."
           }
         }
       }
@@ -361,12 +381,12 @@
         }
       }
     },
-    "On the next step you'll sign in with your Google account, so Trustmail can read your Gmail." : {
+    "On the next step you'll sign in with your Google account, so Miramail can read your Gmail." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Im nächsten Schritt meldest du dich mit deinem Google-Konto an, damit Trustmail dein Gmail lesen kann."
+            "value" : "Im nächsten Schritt meldest du dich mit deinem Google-Konto an, damit Miramail dein Gmail lesen kann."
           }
         }
       }
@@ -731,26 +751,6 @@
         }
       }
     },
-    "Trustmail checks who really sent it and scans every link in it." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trustmail prüft, wer sie wirklich gesendet hat, und untersucht jeden Link darin."
-          }
-        }
-      }
-    },
-    "Trustmail couldn't make a secure connection to this website, so it can't confirm the website is real." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trustmail konnte keine sichere Verbindung zu dieser Website herstellen und kann daher nicht bestätigen, dass sie echt ist."
-          }
-        }
-      }
-    },
     "Unsafe links" : {
       "localizations" : {
         "de" : {
@@ -781,12 +781,12 @@
         }
       }
     },
-    "Welcome to Trustmail" : {
+    "Welcome to Miramail" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Willkommen bei Trustmail"
+            "value" : "Willkommen bei Miramail"
           }
         }
       }

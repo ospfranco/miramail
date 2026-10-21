@@ -1,7 +1,7 @@
 {
   "_readme": "Every user-facing string of both apps, in English and German. Run python3 scripts/update-strings.py after editing: it writes ios/Trustmail/Resources/Localizable.xcstrings and android/app/src/main/res/values{,-de}/strings.xml. Placeholders are {name}. 'platforms' limits a string to one app (accessibility wording that follows each platform's conventions). German uses the informal 'du'.",
   "strings": [
-    { "name": "app_name", "en": "Trustmail", "translatable": false, "platforms": ["android"] },
+    { "name": "app_name", "en": "Miramail", "translatable": false, "platforms": ["android"] },
 
     { "name": "inbox_title", "en": "Inbox", "de": "Posteingang" },
     { "name": "settings", "en": "Settings", "de": "Einstellungen" },
@@ -62,7 +62,7 @@
     { "name": "reason_lookalike_domain", "en": "The website's name imitates a well-known one with a small change, a trick fake websites use.", "de": "Der Name der Website ahmt einen bekannten Namen mit einer kleinen Änderung nach – ein Trick gefälschter Websites." },
     { "name": "reason_shortener", "en": "The link is shortened, so you can't see where it really goes before you open it.", "de": "Der Link ist gekürzt, daher siehst du nicht, wohin er wirklich führt, bevor du ihn öffnest." },
     { "name": "reason_dns_spoofing", "en": "Your network sends this link somewhere other than where it should go. Someone may be redirecting you to a fake website.", "de": "Dein Netzwerk schickt diesen Link an ein anderes Ziel als vorgesehen. Vielleicht leitet dich jemand auf eine gefälschte Website um." },
-    { "name": "reason_tls_connection", "en": "Trustmail couldn't make a secure connection to this website, so it can't confirm the website is real.", "de": "Trustmail konnte keine sichere Verbindung zu dieser Website herstellen und kann daher nicht bestätigen, dass sie echt ist." },
+    { "name": "reason_tls_connection", "en": "Miramail couldn't make a secure connection to this website, so it can't confirm the website is real.", "de": "Miramail konnte keine sichere Verbindung zu dieser Website herstellen und kann daher nicht bestätigen, dass sie echt ist." },
     { "name": "reason_domain_age", "en": "This website was created very recently. Fake websites are often only a few days or weeks old.", "de": "Diese Website wurde erst vor Kurzem erstellt. Gefälschte Websites sind oft nur wenige Tage oder Wochen alt." },
     { "name": "reason_subdomain_certificate", "en": "This part of the website was set up very recently, which can mean someone else just added it.", "de": "Dieser Teil der Website wurde erst vor Kurzem eingerichtet. Das kann bedeuten, dass ihn gerade jemand anderes hinzugefügt hat." },
     { "name": "reason_certificate_hostname", "en": "The website's security certificate is for a different name, so it may not be the website it claims to be.", "de": "Das Sicherheitszertifikat der Website gilt für einen anderen Namen. Vielleicht ist sie nicht die Website, die sie vorgibt zu sein." },
@@ -82,22 +82,22 @@
     { "name": "sender_history_unknown_description", "en": "Couldn't search your past email in order to verify if you have exchanged email with this address before.", "de": "Deine bisherigen E-Mails konnten nicht durchsucht werden, um zu prüfen, ob du mit dieser Adresse schon E-Mails ausgetauscht hast." },
 
     { "name": "settings_allow_javascript", "en": "Allow JavaScript in emails", "de": "JavaScript in E-Mails erlauben" },
-    { "name": "settings_allow_javascript_description", "en": "Lets scripts inside an email run. Scripts can change what you see after Trustmail has scanned the links, so leave this off unless an email needs it. Applies the next time you open an email.", "de": "Lässt Skripte in einer E-Mail laufen. Skripte können ändern, was du siehst, nachdem Trustmail die Links geprüft hat. Lass das also aus, außer eine E-Mail braucht es. Gilt ab der nächsten E-Mail, die du öffnest." },
+    { "name": "settings_allow_javascript_description", "en": "Lets scripts inside an email run. Scripts can change what you see after Miramail has scanned the links, so leave this off unless an email needs it. Applies the next time you open an email.", "de": "Lässt Skripte in einer E-Mail laufen. Skripte können ändern, was du siehst, nachdem Miramail die Links geprüft hat. Lass das also aus, außer eine E-Mail braucht es. Gilt ab der nächsten E-Mail, die du öffnest." },
     { "name": "settings_ignore_footer_links", "en": "Ignore footer links", "de": "Links in der Fußzeile ignorieren" },
     { "name": "settings_ignore_footer_links_description", "en": "Suspicious links in an email's footer (unsubscribe, privacy policy, social media) don't count toward the email's verdict. They still get a badge and a warning when you tap them, and an unsafe footer link still counts. Applies the next time you open an email.", "de": "Verdächtige Links in der Fußzeile einer E-Mail (Abmelden, Datenschutz, soziale Medien) zählen nicht für die Bewertung der E-Mail. Sie werden trotzdem markiert und warnen dich, wenn du sie antippst, und ein unsicherer Link in der Fußzeile zählt weiterhin. Gilt ab der nächsten E-Mail, die du öffnest." },
     { "name": "settings_account", "en": "Account", "de": "Konto" },
     { "name": "sign_out", "en": "Sign out", "de": "Abmelden" },
 
-    { "name": "intro_welcome", "en": "Welcome to Trustmail", "de": "Willkommen bei Trustmail" },
+    { "name": "intro_welcome", "en": "Welcome to Miramail", "de": "Willkommen bei Miramail" },
     { "name": "intro_tagline", "en": "We are your tech-friend, reviewing your emails to ensure you can respond to email inquiries with confidence.", "de": "Wir sind dein Technik-Freund und prüfen deine E-Mails, damit du auf Anfragen per E-Mail mit gutem Gefühl antworten kannst." },
     { "name": "intro_preview_description", "en": "Preview: an email with a safety mark next to each link and a warning at the top", "de": "Vorschau: eine E-Mail mit einer Sicherheitsmarkierung neben jedem Link und einer Warnung oben" },
     { "name": "intro_step_open_title", "en": "Open an email", "de": "E-Mail öffnen" },
-    { "name": "intro_step_open_text", "en": "Trustmail checks who really sent it and scans every link in it.", "de": "Trustmail prüft, wer sie wirklich gesendet hat, und untersucht jeden Link darin." },
+    { "name": "intro_step_open_text", "en": "Miramail checks who really sent it and scans every link in it.", "de": "Miramail prüft, wer sie wirklich gesendet hat, und untersucht jeden Link darin." },
     { "name": "intro_step_verdict_title", "en": "See the verdict", "de": "Ergebnis ansehen" },
     { "name": "intro_step_verdict_text", "en": "A green, yellow or red mark sits next to each link, and anything wrong is explained at the top of the email.", "de": "Neben jedem Link steht eine grüne, gelbe oder rote Markierung, und was nicht stimmt, wird oben in der E-Mail erklärt." },
     { "name": "intro_step_tap_title", "en": "Tap with confidence", "de": "Mit gutem Gefühl tippen" },
     { "name": "intro_step_tap_text", "en": "Risky links ask you to confirm before they open.", "de": "Riskante Links öffnen sich erst, wenn du es bestätigst." },
-    { "name": "intro_google_note", "en": "On the next step you'll sign in with your Google account, so Trustmail can read your Gmail.", "de": "Im nächsten Schritt meldest du dich mit deinem Google-Konto an, damit Trustmail dein Gmail lesen kann." },
+    { "name": "intro_google_note", "en": "On the next step you'll sign in with your Google account, so Miramail can read your Gmail.", "de": "Im nächsten Schritt meldest du dich mit deinem Google-Konto an, damit Miramail dein Gmail lesen kann." },
     { "name": "intro_continue", "en": "Continue", "de": "Weiter" }
   ]
 }

@@ -1,4 +1,4 @@
-# Releasing Trustmail
+# Releasing Miramail
 
 How to get the apps to **TestFlight** (iOS) and **Google Play testing** (Android). Once the one-time setup below
 is done, a release is one command (it uses [fastlane](https://fastlane.tools)):
@@ -16,15 +16,15 @@ Google Play, builds both apps, and uploads them. Steps that need your Apple and 
 1. **You:** join the **Apple Developer Program** (paid, https://developer.apple.com/programs/). TestFlight needs it; a
    free personal team can't distribute. The project is set to team `24CMR7378R` (`DEVELOPMENT_TEAM`, and
    `ios/ExportOptions.plist`): if that is not your paid team's ID, change it in both.
-2. **You:** in App Store Connect → Apps → **+** → New App: platform iOS, bundle ID `com.ospfranco.trustmail`
+2. **You:** in App Store Connect → Apps → **+** → New App: platform iOS, bundle ID `com.miramail`
    (register it under Certificates, Identifiers & Profiles if it isn't listed), SKU anything. App names are unique
-   across the App Store: if "Trustmail" is taken, pick another name (it can differ from the name under the icon).
+   across the App Store: if "Miramail" is taken, pick another name (it can differ from the name under the icon).
 3. **You:** make sure Xcode is signed in to that Apple account (Xcode → Settings → Accounts). Xcode then creates the
    distribution certificate and provisioning profile itself (signing is automatic).
 
 ### Google Play
 1. **You:** create a **Google Play Console** developer account (one-time fee, https://play.google.com/console).
-2. **You:** Create app → name, default language, App, Free. The package name `com.ospfranco.trustmail` is fixed by the
+2. **You:** Create app → name, default language, App, Free. The package name `com.miramail` is fixed by the
    first upload and can never change.
 3. Keep **Play App Signing** on (the default). You sign uploads with the *upload key*; Google re-signs what it
    distributes with its own key. The upload key was created for you: `~/.trustmail/trustmail-upload.jks`, with its
@@ -35,7 +35,7 @@ Google Play, builds both apps, and uploads them. Steps that need your Apple and 
 ### Google Cloud (so Google sign-in works for testers). Important.
 Sign-in only works when the app's signing key is registered with the Google OAuth client.
 - **The OAuth clients** live in Google Cloud Console → APIs & Services → Credentials, all for
-  `com.ospfranco.trustmail` (when the app was renamed from safemail, the existing clients were edited to the new bundle
+  `com.miramail` (the app was renamed from safemail, then trustmail; when the ID changes, edit the existing clients to the new bundle
   ID and package, which keeps their client IDs):
   - **iOS:** its client ID is `clientID` in `ios/Trustmail/Mail/GoogleAuth.swift`, and its reversed form
     (`com.googleusercontent.apps.<the part before .apps.googleusercontent.com>`) is the URL scheme in `ios/Info.plist`.
@@ -45,7 +45,7 @@ Sign-in only works when the app's signing key is registered with the Google OAut
 - **Android from Google Play** is signed by **Google's** key, not yours, so the debug key already registered does
   *not* cover it. After your first upload: Play Console → your app → **Test and release → App integrity → Play app
   signing** → copy the **App signing key certificate SHA-1**. Then Google Cloud Console → APIs & Services →
-  Credentials → **Create credentials → OAuth client ID → Android**, package `com.ospfranco.trustmail`, paste that
+  Credentials → **Create credentials → OAuth client ID → Android**, package `com.miramail`, paste that
   SHA-1. (You can add the upload key's SHA-1 the same way, see below, for builds you install straight from the
   `.aab`.) The sideload APK for friends keeps using the debug key and its existing client.
 - **The consent screen decides who can sign in.** While it is in **Testing**, only the Gmail addresses you list under

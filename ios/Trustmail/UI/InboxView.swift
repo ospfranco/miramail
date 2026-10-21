@@ -67,7 +67,7 @@ struct InboxView: View {
                 .font(.system(size: 64))
                 .foregroundStyle(Theme.brand.gradient)
                 .accessibilityHidden(true)
-            Text(verbatim: "Trustmail").textStyle(.subtitle)
+            Text(verbatim: "Miramail").textStyle(.subtitle)
             if session.isLoading {
                 ProgressView()
             } else {

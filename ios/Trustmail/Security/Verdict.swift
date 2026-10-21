@@ -91,7 +91,7 @@ enum LinkCheckKind: String, Sendable, CaseIterable {
         case .dnsSpoofing:
             String(localized: "Your network sends this link somewhere other than where it should go. Someone may be redirecting you to a fake website.")
         case .tlsConnection:
-            String(localized: "Trustmail couldn't make a secure connection to this website, so it can't confirm the website is real.")
+            String(localized: "Miramail couldn't make a secure connection to this website, so it can't confirm the website is real.")
         case .domainAge:
             String(localized: "This website was created very recently. Fake websites are often only a few days or weeks old.")
         case .subdomainCertificate:

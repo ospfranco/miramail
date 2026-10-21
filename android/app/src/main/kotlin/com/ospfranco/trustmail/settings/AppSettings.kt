@@ -38,7 +38,7 @@ class AppSettings(private val store: SettingsStore) {
 
     /**
      * Whether scripts inside an email may run. Off by default: a script can change what the reader
-     * sees after the links were scanned. Trustmail's own scanning script runs either way.
+     * sees after the links were scanned. Miramail's own scanning script runs either way.
      */
     var allowEmailJavaScript by mutableStateOf(store.getBoolean(ALLOW_EMAIL_JAVASCRIPT, false))
         private set

@@ -14,7 +14,7 @@ final class AppSettings {
     private let defaults: UserDefaults
 
     /// Whether scripts inside an email may run. Off by default: a script can change what the reader
-    /// sees after the links were scanned. Trustmail's own scanning script runs either way.
+    /// sees after the links were scanned. Miramail's own scanning script runs either way.
     var allowEmailJavaScript: Bool {
         didSet { defaults.set(allowEmailJavaScript, forKey: Key.allowEmailJavaScript) }
     }

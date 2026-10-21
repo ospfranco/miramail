@@ -1,8 +1,8 @@
-# Trustmail
+# Miramail
 
 ## What this app is for
 
-Trustmail is a companion for people who are afraid of phishing. They use email like everyone else, but the fear of falling for a fake email makes them hesitate at exactly the moment a real email asks them to act. Trustmail is **not** a phishing filter and does not try to catch every attack. Its job is the opposite direction: when an email asks the user to do something (click a link, confirm, open an attachment), Trustmail tells them, calmly and in plain words, whether that email is genuine and the action is probably safe, so they can go ahead.
+Miramail is a companion for people who are afraid of phishing. They use email like everyone else, but the fear of falling for a fake email makes them hesitate at exactly the moment a real email asks them to act. Miramail is **not** a phishing filter and does not try to catch every attack. Its job is the opposite direction: when an email asks the user to do something (click a link, confirm, open an attachment), Miramail tells them, calmly and in plain words, whether that email is genuine and the action is probably safe, so they can go ahead.
 
 ### Who it is for
 
@@ -14,7 +14,7 @@ The user is overwhelmed by the many processes that now happen online and is deep
 | `android/` | Android app | Kotlin 2.4, Jetpack Compose, AGP 9.4, Gradle 9.8, minSdk 26 / target 37, Play Services Auth |
 | `scripts/` | Shared tooling | |
 
-Both apps use the bundle / package id `com.ospfranco.trustmail`.
+The app is called **Miramail**. Both apps use the bundle / package id `com.miramail` (Android `applicationId`). The code keeps its old internal names: the Xcode project, target and scheme `Trustmail`, the Kotlin package and Gradle `namespace` `com.ospfranco.trustmail`, and type names like `TrustmailApp`. Users never see them.
 
 ## The rule: every change goes into both apps, and is tested on both
 
@@ -57,8 +57,8 @@ The logic is ported line for line, so a change in one file has a twin in the oth
 | Email header (full, and compact once the body is scrolled; `HeaderCollapse` decides) and the scan's findings in it | `UI/MessageHeader.swift` | `ui/MessageHeader.kt` |
 | Email web view (CSP, link scan script, badges) | `UI/EmailBody.swift` | `ui/EmailBody.kt` |
 | Settings (store + screen; the screen also has Sign out, shown only when signed in) | `Settings/AppSettings.swift`, `UI/SettingsView.swift` | `settings/AppSettings.kt`, `ui/SettingsScreen.kt` |
-| Splash screen (the word "Trustmail" on the app background, light/dark) | `LaunchScreen.storyboard` | `res/drawable/splash_icon.xml` (+ `splash_*` colors, `Theme.Trustmail.Starting`) |
-| App icon (a smiley on an envelope) | `Assets.xcassets/AppIcon.appiconset/icon-1024.png` | `res/drawable-nodpi/ic_launcher_{foreground,monochrome}.png`, `res/mipmap-anydpi-v26/ic_launcher.xml`, color `ic_launcher_background` |
+| Splash screen (the logo in a 192pt/dp lavender circle on the app background, light/dark) | `LaunchScreen.storyboard`, asset `SplashLogo` | `res/drawable-nodpi/splash_logo.png` (+ `splash_background` color, `Theme.Trustmail.Starting`) |
+| App icon (a face with curly hair and round glasses, source `store/app-icon-source.png`) | `Assets.xcassets/AppIcon.appiconset/icon-1024.png` | `res/drawable-nodpi/ic_launcher_{foreground,monochrome}.png`, `res/mipmap-anydpi-v26/ic_launcher.xml`, color `ic_launcher_background` |
 | Link scan when email JavaScript is off | `UI/LinkInspector.swift` (iOS only, see below) | not needed |
 | View models | `UI/Models.swift` | `ui/ViewModels.kt` |
 | Theme / text styles / spacing, sender avatar (`AvatarView` / `Avatar`) | `UI/Theme.swift` | `ui/Theme.kt` |
@@ -67,7 +67,7 @@ The logic is ported line for line, so a change in one file has a twin in the oth
 
 Tests mirror each other too: `ios/TrustmailTests/*Tests.swift` and `android/app/src/test/kotlin/com/ospfranco/trustmail/*Test.kt` cover the same cases with the same expected strings. UI tests: `ios/TrustmailUITests/` and `android/app/src/androidTest/`.
 
-The Android splash is a vector converted from the glyph outlines of Roboto SemiBold (the font and weight of the sign-in title), centered in the 288dp box the system uses for splash icons. If the title style changes, regenerate it with `fontTools` from the Roboto file on an emulator (`/system/fonts/Roboto-Regular.ttf`), and update the iOS storyboard label to match.
+Both splash images are made by `scripts/generate-app-icon.py` from the app icon source (see Shared data): iOS gets the circle alone, and Android gets it centered in the 288dp box the system uses for splash icons, where only the middle 192dp circle shows.
 
 ### Email actions and reply
 
@@ -120,7 +120,7 @@ Shown once, before anyone has signed in: a preview image, three steps, and a not
 
 The inbox has a settings button (gear, top right) opening a settings screen with this toggle. Both platforms behave the same:
 
-- **Off (default):** scripts inside an email never run. **On:** inline and https scripts in the email may run. Trustmail's own scanning script runs either way. The change applies the next time an email is opened.
+- **Off (default):** scripts inside an email never run. **On:** inline and https scripts in the email may run. Miramail's own scanning script runs either way. The change applies the next time an email is opened.
 - The CSP follows the setting on both platforms (`EmailHtml.csp(allowScripts:)`: `script-src 'unsafe-inline' https:` is added only when on).
 - **iOS** also sets `WKWebpagePreferences.allowsContentJavaScript` from the setting. **Android** can't switch page JavaScript off while still running our own scan script, so its WebView keeps JavaScript enabled and relies on the CSP.
 - **Every link is reported the same way in both modes**, including `javascript:` links. This needs extra work on iOS: with scripting off, WebKit deletes the `href` of `javascript:` links while parsing, so the visible web view cannot see them. `LinkInspector` therefore loads the email in a hidden web view (scripting on, CSP `default-src 'none'` so nothing runs or loads) and the scan uses its link list. The one visible difference left: on iOS with the setting off, a `javascript:` link has no badge and can't be tapped, while Android shows a badge and the unsafe-link warning.
@@ -142,14 +142,14 @@ The apps follow the system language (or the per-app language in the system setti
 - **Android:** enums and results carry `@StringRes` ids (`SenderCheckLabel.title`, `SecurityCheck.label`, `SecurityEvaluation.summary`, `LinkCheckKind.reason`); Compose resolves them with `stringResource`. Logic that builds text (`SecurityScanner.linkWarning`, `MessageAction.notice`) takes a `Strings` (`context.strings()` in the app, `TestStrings.english` / `.german` in JVM tests, which read `strings.xml`). `localeFilters` keeps only en/de, and `generateLocaleConfig` lists them for the per-app language setting.
 - Not translated: `LinkCheck.detail` and `LinkCheckKind.label` (technical, never shown), Gmail/network error messages, the email date (shown as Gmail sends it), and the demo emails.
 - An empty subject is kept empty in the models; the UI shows "(no subject)" through `displaySubject` (`Theme`).
-- Tests: `LocalizationTests` (iOS) / `LocalizationTest` (Android) check that every string has a German translation with the same placeholders and pin some German text. The other tests run in English. To look at German: iOS `xcrun simctl launch <device> com.ospfranco.trustmail -demo -AppleLanguages "(de)"`; Android `adb shell cmd locale set-app-locales com.ospfranco.trustmail --locales de-DE` (reset with `--locales ""`).
+- Tests: `LocalizationTests` (iOS) / `LocalizationTest` (Android) check that every string has a German translation with the same placeholders and pin some German text. The other tests run in English. To look at German: iOS `xcrun simctl launch <device> com.miramail -demo -AppleLanguages "(de)"`; Android `adb shell cmd locale set-app-locales com.miramail --locales de-DE` (reset with `--locales ""`).
 
 ### Shared data (must stay identical)
 
 - **Public Suffix List**: `ios/Trustmail/Resources/public_suffix_list.dat` and `android/app/src/main/assets/public_suffix_list.dat` are generated by `scripts/update-public-suffix-list.sh`. Never edit them by hand; re-run the script and commit both.
 - **Intro preview image**: `ios/.../IntroPreview.imageset/intro-preview.png` and `android/.../drawable-nodpi/intro_preview.png` are crops of the `message-scanned` UI-test screenshots (`ios-message-scanned.png`, `android-message-scanned.png`), made by `scripts/generate-intro-preview.py IOS.png ANDROID.png` (needs Pillow). Re-run it when the email screen changes.
 - **Well-known domains**: `scripts/known-domains.txt` is the source of truth (about 900 big names, with extra depth for Germany, Austria and Switzerland); `scripts/update-known-domains.py` validates it and writes `ios/Trustmail/Resources/known_domains.txt` and `android/app/src/main/assets/known_domains.txt`. Never edit those two by hand. For a listed domain (or anything under it) the apps skip the domain-age check *and* its Certificate Transparency request, and show "<domain> is a well-known domain, so its age isn't checked." as a green check. Matching is exact on the registrable domain, so look-alikes never match. **Never list a domain where outsiders can host content or get a subdomain** (blogspot.com, github.io, herokuapp.com, amazonaws.com, sharepoint.com, ...) or a URL shortener; the script refuses them. Run `python3 scripts/update-known-domains.py --check-dns` after editing: an entry that no longer resolves may be retired and re-registrable by an attacker, so remove it.
-- **App icon**: all icon images are generated from one design by `scripts/generate-app-icon.py` (needs Pillow). Change the design there and re-run it; never edit the PNGs by hand. Keep `BACKGROUND` in the script equal to the `ic_launcher_background` color.
+- **App icon**: all icon images are generated from one source image, `store/app-icon-source.png`, by `scripts/generate-app-icon.py` (needs Pillow and numpy). To change the icon, replace that image and re-run the script; never edit the PNGs by hand. It also makes both splash images. Keep `BACKGROUND` in the script equal to the `ic_launcher_background` color.
 - **Test fixtures**: `domains.jsonl`, `leaf.der.b64`, `cn.der.b64` exist in both `ios/TrustmailTests/Fixtures/` and `android/app/src/test/resources/`. Change both or neither. (`domains.jsonl` holds `tldts` reference answers from the original app; the certificates were generated with `openssl`.)
 - **Strings**: `scripts/strings.json` generates both apps' strings (see Languages).
 - **Colors, copy, thresholds**: verdict colors, check strings and constants such as `NEW_DOMAIN_DAYS` are duplicated by design. Grep for the other platform's twin before changing one.
@@ -199,8 +199,8 @@ Versions live in `android/gradle/libs.versions.toml`.
 
 Debug builds can run against canned mail, which is what the UI tests use:
 
-- iOS: launch with the `-demo` argument (`xcrun simctl launch <device> com.ospfranco.trustmail -demo`). Add `-demo-signed-out` to start signed out (to see the intro and the sign-in screen), or `-demo-offline` to start with a saved inbox and Gmail out of reach.
-- Android: `adb shell am start -n com.ospfranco.trustmail/.MainActivity --ez demo true`. Add `--ez demo_signed_out true` to start signed out, or `--ez demo_offline true` to start offline with a saved inbox.
+- iOS: launch with the `-demo` argument (`xcrun simctl launch <device> com.miramail -demo`). Add `-demo-signed-out` to start signed out (to see the intro and the sign-in screen), or `-demo-offline` to start with a saved inbox and Gmail out of reach.
+- Android: `adb shell am start -n com.miramail/com.ospfranco.trustmail.MainActivity --ez demo true`. Add `--ez demo_signed_out true` to start signed out, or `--ez demo_offline true` to start offline with a saved inbox.
 
 The demo mailbox pauses 1.5 seconds in every scan (in the sender-history lookup), so the header's "Checking this email…" row stays up long enough for UI tests to see it (accessibility id / test tag `security-scanning`; once the scan is done it becomes `security-findings` or `security-safe`). It also remembers what you do: archived, deleted or moved emails leave the inbox, and sent emails are kept. Notices stay up for 8 seconds in demo runs (2.5 otherwise) so UI tests can find them.
 
@@ -224,5 +224,5 @@ The demo inbox has a plain-text email from a known, verified sender and an HTML 
 How to publish to TestFlight and Google Play (accounts, Google OAuth, store forms, commands) is in **`RELEASING.md`**. Releases run through fastlane (`fastlane/Fastfile`): `bundle exec fastlane beta` tests, builds and uploads both apps, taking the next build numbers from TestFlight and Google Play (Android reads `-PversionCode`). Credentials live in the git-ignored `fastlane/.env` and `~/.trustmail`; never commit them, and never run an upload lane unless the user asks.
 
 - **Android build types.** `release` is the APK to sideload to friends: signed with the standard React Native debug keystore at `android/app/debug.keystore` (SHA-1 `5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25`) on purpose, because that is the SHA-1 registered with the Google OAuth client, so Google sign-in works. That key is public: never put that build on a store. `play` is the Google Play build (`./gradlew :app:bundlePlay`), signed with the private upload key from `android/keystore.properties` (git-ignored; key file in `~/.trustmail`, never committed). Google re-signs Play builds with its own key, so Google sign-in from Play needs *that* key's SHA-1 registered too (see `RELEASING.md`).
-- **iOS** uses automatic signing with the team set in the Xcode project. Google Sign-In uses an iOS OAuth client tied to the bundle ID plus its reversed URL scheme in `ios/Info.plist`. The OAuth clients (iOS, and Android with the debug and Play signing SHA-1s) are registered for `com.ospfranco.trustmail` in Google Cloud.
+- **iOS** uses automatic signing with the team set in the Xcode project. Google Sign-In uses an iOS OAuth client tied to the bundle ID plus its reversed URL scheme in `ios/Info.plist`. The OAuth clients (iOS, and Android with the debug and Play signing SHA-1s) are registered for `com.miramail` in Google Cloud.
 - Build numbers must increase with every store upload (`CURRENT_PROJECT_VERSION` on iOS, `versionCode` on Android).

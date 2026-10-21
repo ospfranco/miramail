@@ -11,7 +11,7 @@ struct SettingsView: View {
                 Toggle("Allow JavaScript in emails", isOn: $settings.allowEmailJavaScript)
                     .accessibilityIdentifier("javascript-toggle")
             } footer: {
-                Text("Lets scripts inside an email run. Scripts can change what you see after Trustmail has scanned the links, so leave this off unless an email needs it. Applies the next time you open an email.")
+                Text("Lets scripts inside an email run. Scripts can change what you see after Miramail has scanned the links, so leave this off unless an email needs it. Applies the next time you open an email.")
             }
 
             Section {

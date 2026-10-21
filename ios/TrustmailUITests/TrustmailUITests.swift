@@ -103,7 +103,7 @@ final class TrustmailUITests: XCTestCase {
         XCTAssertTrue(result.waitForExistence(timeout: 60), "scan never finished")
         app.webViews.firstMatch.swipeUp()
         XCTAssertTrue(app.otherElements["message-header-compact"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Hello from the Trustmail team"].exists, "the subject stays in view")
+        XCTAssertTrue(app.staticTexts["Hello from the Miramail team"].exists, "the subject stays in view")
         screenshot("message-header-compact")
         app.webViews.firstMatch.swipeDown()
         app.webViews.firstMatch.swipeDown()
@@ -112,7 +112,7 @@ final class TrustmailUITests: XCTestCase {
 
     func testPlainTextEmailFromKnownSender() {
         app.buttons["message-demo-1"].tap()
-        XCTAssertTrue(app.staticTexts["Hello from the Trustmail team"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Hello from the Miramail team"].waitForExistence(timeout: 10))
         // A verified, known sender: nothing about the sender in the header. (Its one link is checked over the real
         // network, so whether the header is green or warns about the link depends on the network.)
         let result = app.descendants(matching: .any).matching(NSPredicate(format: "identifier IN %@", ["security-safe", "security-findings"])).firstMatch
@@ -237,7 +237,7 @@ final class TrustmailUITests: XCTestCase {
         app.buttons["action-reply"].tap()
         XCTAssertTrue(app.navigationBars["Reply"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.textFields["compose-to"].value as? String, "hello@example.com")
-        XCTAssertEqual(app.textFields["compose-subject"].value as? String, "Re: Hello from the Trustmail team")
+        XCTAssertEqual(app.textFields["compose-subject"].value as? String, "Re: Hello from the Miramail team")
 
         app.textViews["compose-body"].tap()
         app.textViews["compose-body"].typeText("Thanks for the welcome!")
@@ -294,7 +294,7 @@ final class TrustmailUITests: XCTestCase {
 
     func testFirstLaunchShowsTheIntroBeforeSignIn() {
         relaunchSignedOut()
-        XCTAssertTrue(app.staticTexts["Welcome to Trustmail"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Welcome to Miramail"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.images["intro-preview"].exists)
         XCTAssertTrue(app.staticTexts["Open an email"].exists)
         XCTAssertTrue(app.staticTexts["See the verdict"].exists)
@@ -306,7 +306,7 @@ final class TrustmailUITests: XCTestCase {
 
         app.buttons["intro-continue"].tap()
         XCTAssertTrue(app.buttons["sign-in"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.staticTexts["Welcome to Trustmail"].exists)
+        XCTAssertFalse(app.staticTexts["Welcome to Miramail"].exists)
 
         app.buttons["sign-in"].tap()
         XCTAssertTrue(app.staticTexts["demo@example.com"].waitForExistence(timeout: 5))
@@ -314,13 +314,13 @@ final class TrustmailUITests: XCTestCase {
 
     func testSignedInUsersNeverSeeTheIntro() {
         XCTAssertTrue(app.staticTexts["demo@example.com"].waitForExistence(timeout: 10))
-        XCTAssertFalse(app.staticTexts["Welcome to Trustmail"].exists)
+        XCTAssertFalse(app.staticTexts["Welcome to Miramail"].exists)
         // ...even after signing out.
         app.buttons["settings-button"].tap()
         XCTAssertTrue(app.buttons["settings-sign-out"].waitForExistence(timeout: 5))
         app.buttons["settings-sign-out"].tap()
         XCTAssertTrue(app.buttons["sign-in"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.staticTexts["Welcome to Trustmail"].exists)
+        XCTAssertFalse(app.staticTexts["Welcome to Miramail"].exists)
     }
 
     // MARK: - The pencil: a new email

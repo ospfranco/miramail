@@ -1,11 +1,11 @@
 import SwiftUI
 
-/// Shown once, before the first sign-in: what Trustmail does, and that Google sign-in comes next.
+/// Shown once, before the first sign-in: what Miramail does, and that Google sign-in comes next.
 struct IntroView: View {
     let onContinue: () -> Void
 
     private let steps: [(title: LocalizedStringKey, text: LocalizedStringKey)] = [
-        ("Open an email", "Trustmail checks who really sent it and scans every link in it."),
+        ("Open an email", "Miramail checks who really sent it and scans every link in it."),
         ("See the verdict", "A green, yellow or red mark sits next to each link, and anything wrong is explained at the top of the email."),
         ("Tap with confidence", "Risky links ask you to confirm before they open."),
     ]
@@ -18,7 +18,7 @@ struct IntroView: View {
             ScrollView {
                 VStack(spacing: Spacing.four) {
                     VStack(spacing: Spacing.two) {
-                        Text("Welcome to Trustmail")
+                        Text("Welcome to Miramail")
                             .font(.largeTitle.bold())
                             .foregroundStyle(Theme.text)
                             .accessibilityAddTraits(.isHeader)
@@ -55,7 +55,7 @@ struct IntroView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
 
-                    Text("On the next step you'll sign in with your Google account, so Trustmail can read your Gmail.")
+                    Text("On the next step you'll sign in with your Google account, so Miramail can read your Gmail.")
                         .textStyle(.small, color: Theme.textSecondary)
                         .multilineTextAlignment(.center)
                         .accessibilityIdentifier("intro-google-note")
