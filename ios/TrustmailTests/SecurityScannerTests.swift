@@ -79,14 +79,14 @@ struct SecurityScannerTests {
 
         The connection to this website isn't secure, so anything you type there, like a password, could be seen by others.
 
-        Don't open it unless you're sure where it goes, and never enter a password or personal details there.
+        Only open it if you know that their request is valid, and never enter a password or personal details there.
         """)
 
         let shortener = ScannedLink(
             url: "https://bit.ly/abc?x=1", text: "Fix my account", host: "bit.ly", verdict: .warning,
             checks: [LinkCheck(kind: .shortener, verdict: .warning, detail: "Shortened link hides the final destination.")]
         )
-        #expect(SecurityScanner.linkWarning(shortener) == "Goes to: https://bit.ly/abc\n\nThe link is shortened, so you can't see where it really goes before you open it.\n\nOnly open it if you trust where it goes.")
+        #expect(SecurityScanner.linkWarning(shortener) == "Goes to: https://bit.ly/abc\n\nThe link is shortened, so you can't see where it really goes before you open it.\n\nWe see some unprofessional or fraudulent technicalities. Only open it if you trust where it goes.")
     }
 
     @Test func dedupesLinksKeepingTheOneWithText() {

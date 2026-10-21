@@ -116,8 +116,8 @@ enum SecurityScanner {
         var reasons: [String] = []
         for check in problems where !reasons.contains(check.kind.reason) { reasons.append(check.kind.reason) }
         let advice = link.verdict == .danger
-            ? String(localized: "Don't open it unless you're sure where it goes, and never enter a password or personal details there.")
-            : String(localized: "Only open it if you trust where it goes.")
+            ? String(localized: "Only open it if you know that their request is valid, and never enter a password or personal details there.")
+            : String(localized: "We see some unprofessional or fraudulent technicalities. Only open it if you trust where it goes.")
         return ([[shown, target].compactMap { $0 }.joined(separator: "\n")] + reasons + [advice]).joined(separator: "\n\n")
     }
 

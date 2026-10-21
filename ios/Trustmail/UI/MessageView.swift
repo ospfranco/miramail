@@ -49,7 +49,7 @@ struct MessageView: View {
         .task { await model.load() }
         .fullScreenCover(item: $browser) { SafariView(url: $0.url).ignoresSafeArea() }
         .alert(
-            pendingLink?.verdict == .danger ? Text("This link looks really unsafe. Only open it if you know that their request is valid.") : Text("Be careful with this link. We see some unprofessional or fraudulent technicalities."),
+            pendingLink?.verdict == .danger ? Text("This link looks really unsafe") : Text("Be careful with this link"),
             isPresented: Binding(get: { pendingLink != nil }, set: { if !$0 { pendingLink = nil } }),
             presenting: pendingLink
         ) { link in

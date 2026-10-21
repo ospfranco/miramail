@@ -78,7 +78,7 @@ final class TrustmailUITests: XCTestCase {
         XCTAssertTrue(app.webViews.staticTexts["Scripts in this email are blocked."].exists)
 
         app.webViews.links["paypal.com/login"].tap()
-        let alert = app.alerts["This link looks really unsafe. Only open it if you know that their request is valid."]
+        let alert = app.alerts["This link looks really unsafe"]
         XCTAssertTrue(alert.waitForExistence(timeout: 5))
         let warning = alert.staticTexts.element(boundBy: 1).label
         XCTAssertTrue(warning.hasPrefix("Shown as: paypal.com/login\nGoes to: http://login.paypa1-secure.example.net/verify\n\n"))

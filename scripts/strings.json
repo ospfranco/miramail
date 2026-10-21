@@ -32,14 +32,14 @@
     { "name": "compose_subject", "en": "Subject", "de": "Betreff" },
     { "name": "send", "en": "Send", "de": "Senden" },
 
-    { "name": "link_unsafe_title", "en": "This link looks really unsafe. Only open it if you know that their request is valid.", "de": "Dieser Link wirkt wirklich unsicher. Öffne ihn nur, wenn du weißt, dass die Anfrage echt ist." },
-    { "name": "link_careful_title", "en": "Be careful with this link. We see some unprofessional or fraudulent technicalities.", "de": "Vorsicht bei diesem Link. Wir sehen technische Details, die unprofessionell oder betrügerisch wirken." },
+    { "name": "link_unsafe_title", "en": "This link looks really unsafe", "de": "Dieser Link wirkt wirklich unsicher" },
+    { "name": "link_careful_title", "en": "Be careful with this link", "de": "Vorsicht bei diesem Link" },
     { "name": "open_anyway", "en": "Open anyway", "de": "Trotzdem öffnen" },
     { "name": "link_unopenable", "en": "Can't open this link", "de": "Dieser Link kann nicht geöffnet werden" },
     { "name": "link_shown_as", "en": "Shown as: {url}", "de": "Angezeigt als: {url}" },
     { "name": "link_goes_to", "en": "Goes to: {url}", "de": "Führt zu: {url}" },
-    { "name": "link_advice_danger", "en": "Don't open it unless you're sure where it goes, and never enter a password or personal details there.", "de": "Öffne ihn nur, wenn du sicher weißt, wohin er führt, und gib dort nie ein Passwort oder persönliche Daten ein." },
-    { "name": "link_advice_warning", "en": "Only open it if you trust where it goes.", "de": "Öffne ihn nur, wenn du dem Ziel vertraust." },
+    { "name": "link_advice_danger", "en": "Only open it if you know that their request is valid, and never enter a password or personal details there.", "de": "Öffne ihn nur, wenn du weißt, dass die Anfrage echt ist, und gib dort nie ein Passwort oder persönliche Daten ein." },
+    { "name": "link_advice_warning", "en": "We see some unprofessional or fraudulent technicalities. Only open it if you trust where it goes.", "de": "Wir sehen technische Details, die unprofessionell oder betrügerisch wirken. Öffne ihn nur, wenn du dem Ziel vertraust." },
 
     { "name": "checking_email", "en": "Checking this email…", "de": "E-Mail wird geprüft …" },
     { "name": "explains_warning", "en": "Explains this warning", "de": "Erklärt diese Warnung", "platforms": ["ios"] },

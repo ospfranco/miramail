@@ -71,12 +71,12 @@
         }
       }
     },
-    "Be careful with this link. We see some unprofessional or fraudulent technicalities." : {
+    "Be careful with this link" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vorsicht bei diesem Link. Wir sehen technische Details, die unprofessionell oder betrügerisch wirken."
+            "value" : "Vorsicht bei diesem Link"
           }
         }
       }
@@ -187,16 +187,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Löschen"
-          }
-        }
-      }
-    },
-    "Don't open it unless you're sure where it goes, and never enter a password or personal details there." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Öffne ihn nur, wenn du sicher weißt, wohin er führt, und gib dort nie ein Passwort oder persönliche Daten ein."
           }
         }
       }
@@ -381,12 +371,12 @@
         }
       }
     },
-    "Only open it if you trust where it goes." : {
+    "Only open it if you know that their request is valid, and never enter a password or personal details there." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Öffne ihn nur, wenn du dem Ziel vertraust."
+            "value" : "Öffne ihn nur, wenn du weißt, dass die Anfrage echt ist, und gib dort nie ein Passwort oder persönliche Daten ein."
           }
         }
       }
@@ -701,12 +691,12 @@
         }
       }
     },
-    "This link looks really unsafe. Only open it if you know that their request is valid." : {
+    "This link looks really unsafe" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dieser Link wirkt wirklich unsicher. Öffne ihn nur, wenn du weißt, dass die Anfrage echt ist."
+            "value" : "Dieser Link wirkt wirklich unsicher"
           }
         }
       }
@@ -777,6 +767,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Wir sind dein Technik-Freund und prüfen deine E-Mails, damit du auf Anfragen per E-Mail mit gutem Gefühl antworten kannst."
+          }
+        }
+      }
+    },
+    "We see some unprofessional or fraudulent technicalities. Only open it if you trust where it goes." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wir sehen technische Details, die unprofessionell oder betrügerisch wirken. Öffne ihn nur, wenn du dem Ziel vertraust."
           }
         }
       }
