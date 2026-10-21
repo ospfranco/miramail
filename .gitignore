@@ -23,6 +23,9 @@ android/keystore.properties
 .idea/
 *.iml
 
+# Obsidian
+.obsidian/
+
 # fastlane
 fastlane/.env
 fastlane/report.xml
