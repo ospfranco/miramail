@@ -43,13 +43,17 @@ final class TrustmailUITests: XCTestCase {
     }
 
     func testPhishingEmailIsFlaggedAndRiskyLinksAskForConfirmation() {
-        // In the inbox: the forged sender's domain is marked, and so is a sender you've never written with.
+        // In the inbox: the forged sender's domain is marked, and the row has a tag for each problem with the sender,
+        // in the header's words.
         func row(_ id: String, mentioning text: String) -> XCUIElement {
             app.buttons.matching(identifier: "message-\(id)").element(matching: NSPredicate(format: "label CONTAINS %@", text))
         }
         XCTAssertTrue(row("demo-2", mentioning: "sender verification failed").waitForExistence(timeout: 10))
         XCTAssertTrue(row("demo-2", mentioning: "First message from this sender").waitForExistence(timeout: 10))
+        XCTAssertTrue(row("demo-2", mentioning: "Sender verification failed").exists)
         XCTAssertFalse(row("demo-1", mentioning: "sender verification failed").exists)
+        XCTAssertFalse(row("demo-1", mentioning: "Sender verification failed").exists)
+        XCTAssertFalse(row("demo-1", mentioning: "Sender not verified").exists)
         XCTAssertFalse(row("demo-1", mentioning: "First message from this sender").exists)
         screenshot("inbox-warnings")
 
@@ -64,7 +68,7 @@ final class TrustmailUITests: XCTestCase {
         ])
         // Each one opens to explain itself in plain words.
         findings.buttons["First message from this sender"].tap()
-        XCTAssertTrue(findings.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "This is the first email you get from this address.")).firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(findings.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "You haven't exchanged email with this address before.")).firstMatch.waitForExistence(timeout: 5))
         // The header marks the sender's domain like an unsafe link.
         XCTAssertTrue(app.descendants(matching: .any)["sender-warning"].exists)
         screenshot("message-scanned")
@@ -74,7 +78,7 @@ final class TrustmailUITests: XCTestCase {
         XCTAssertTrue(app.webViews.staticTexts["Scripts in this email are blocked."].exists)
 
         app.webViews.links["paypal.com/login"].tap()
-        let alert = app.alerts["This link looks unsafe"]
+        let alert = app.alerts["This link looks really unsafe. Only open it if you know that their request is valid."]
         XCTAssertTrue(alert.waitForExistence(timeout: 5))
         let warning = alert.staticTexts.element(boundBy: 1).label
         XCTAssertTrue(warning.hasPrefix("Shown as: paypal.com/login\nGoes to: http://login.paypa1-secure.example.net/verify\n\n"))

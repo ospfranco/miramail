@@ -213,9 +213,9 @@ enum SecurityScanner {
         let checks = senderChecks + (bad > 0 ? [SecurityCheck(.unsafe)] : []) + (suspicious > 0 ? [SecurityCheck(.suspicious)] : [])
         let verdict = Verdict.worst(of: checks.map(\.verdict))
         let summary = switch verdict {
-        case .safe: String(localized: "No problems found")
-        case .warning: String(localized: "Be careful with this email")
-        case .danger: String(localized: "This email looks dangerous")
+        case .safe: String(localized: "Nothing suspicious here")
+        case .warning: String(localized: "This email has some suspicious elements")
+        case .danger: String(localized: "Please pay close attention to this email")
         }
         return SecurityEvaluation(
             verdict: verdict,

@@ -71,7 +71,7 @@ class TrustmailUiTest {
         waitForTag("saved-inbox", 10_000)
         compose.onNodeWithTag("message-demo-1").assertExists()
         // The saved copy keeps its markers.
-        compose.onNode(hasTestTag("first-message") and hasAnyAncestor(hasTestTag("message-demo-2")), useUnmergedTree = true).assertExists()
+        compose.onNode(hasText("First message from this sender") and hasAnyAncestor(hasTestTag("message-demo-2")), useUnmergedTree = true).assertExists()
         screenshot("inbox-saved")
     }
 
@@ -127,12 +127,15 @@ class TrustmailUiTest {
     fun phishingEmailIsFlaggedAndRiskyLinksAskForConfirmation() {
         launch()
         waitForTag("message-demo-2", 10_000)
-        // In the inbox: the forged sender's domain is marked, and so is a sender you've never written with.
+        // In the inbox: the forged sender's domain is marked, and the row has a tag for each problem with the sender,
+        // in the header's words.
         fun inRow(id: String, tag: String) = hasTestTag(tag) and hasAnyAncestor(hasTestTag("message-$id"))
-        compose.waitUntil(10_000) { compose.onAllNodes(inRow("demo-2", "first-message"), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+        fun tagInRow(id: String, text: String) = hasText(text) and hasAnyAncestor(hasTestTag("sender-tags")) and hasAnyAncestor(hasTestTag("message-$id"))
+        compose.waitUntil(10_000) { compose.onAllNodes(tagInRow("demo-2", "First message from this sender"), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNode(tagInRow("demo-2", "Sender verification failed"), useUnmergedTree = true).assertExists()
         compose.onNode(inRow("demo-2", "sender-warning"), useUnmergedTree = true).assertExists()
         compose.onNode(inRow("demo-1", "sender-warning"), useUnmergedTree = true).assertDoesNotExist()
-        compose.onNode(inRow("demo-1", "first-message"), useUnmergedTree = true).assertDoesNotExist()
+        compose.onNode(inRow("demo-1", "sender-tags"), useUnmergedTree = true).assertDoesNotExist()
         screenshot("inbox-warnings")
 
         compose.onNodeWithTag("message-demo-2").performClick()
@@ -145,7 +148,7 @@ class TrustmailUiTest {
         )
         // Each one opens to explain itself in plain words.
         compose.onNodeWithText("First message from this sender").performClick()
-        compose.onNodeWithText("This is the first email you get from this address.", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("You haven't exchanged email with this address before.", substring = true).assertIsDisplayed()
         // The header marks the sender's domain like an unsafe link.
         compose.onNodeWithTag("sender-warning").assertExists()
         screenshot("message-scanned")
@@ -158,7 +161,7 @@ class TrustmailUiTest {
         val link = device.wait(Until.findObject(By.text("paypal.com/login")), 10_000)
         assertNotNull("link not found in the email", link)
         link.click()
-        compose.waitUntil(5_000) { compose.onAllNodesWithTagOrText("This link looks unsafe") }
+        compose.waitUntil(5_000) { compose.onAllNodesWithTagOrText("This link looks really unsafe. Only open it if you know that their request is valid.") }
         compose.onNode(
             hasText("Shown as: paypal.com/login\nGoes to: http://login.paypa1-secure.example.net/verify\n\n", substring = true) and hasAnyAncestor(isDialog()),
         ).assertIsDisplayed()

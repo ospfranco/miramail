@@ -71,22 +71,12 @@
         }
       }
     },
-    "Be careful with this email" : {
+    "Be careful with this link. We see some unprofessional or fraudulent technicalities." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Vorsicht bei dieser E-Mail"
-          }
-        }
-      }
-    },
-    "Be careful with this link" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vorsicht bei diesem Link"
+            "value" : "Vorsicht bei diesem Link. Wir sehen technische Details, die unprofessionell oder betrügerisch wirken."
           }
         }
       }
@@ -177,6 +167,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dein Posteingang konnte nicht aktualisiert werden. Angezeigt wird die auf diesem Gerät gespeicherte Kopie."
+          }
+        }
+      }
+    },
+    "Couldn't search your past email in order to verify if you have exchanged email with this address before." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine bisherigen E-Mails konnten nicht durchsucht werden, um zu prüfen, ob du mit dieser Adresse schon E-Mails ausgetauscht hast."
           }
         }
       }
@@ -351,12 +351,12 @@
         }
       }
     },
-    "No problems found" : {
+    "Nothing suspicious here" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Keine Probleme gefunden"
+            "value" : "Hier ist nichts verdächtig"
           }
         }
       }
@@ -407,6 +407,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Trotzdem öffnen"
+          }
+        }
+      }
+    },
+    "Please pay close attention to this email" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bitte sieh dir diese E-Mail genau an"
           }
         }
       }
@@ -671,12 +681,12 @@
         }
       }
     },
-    "This email looks dangerous" : {
+    "This email has some suspicious elements" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Diese E-Mail wirkt gefährlich"
+            "value" : "Diese E-Mail enthält einige verdächtige Elemente"
           }
         }
       }
@@ -691,22 +701,12 @@
         }
       }
     },
-    "This is the first email you get from this address. If it asks you to do something or to share information, be careful before you continue." : {
+    "This link looks really unsafe. Only open it if you know that their request is valid." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Das ist die erste E-Mail, die du von dieser Adresse bekommst. Wenn du etwas tun oder Informationen teilen sollst, sei vorsichtig, bevor du weitermachst."
-          }
-        }
-      }
-    },
-    "This link looks unsafe" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dieser Link wirkt unsicher"
+            "value" : "Dieser Link wirkt wirklich unsicher. Öffne ihn nur, wenn du weißt, dass die Anfrage echt ist."
           }
         }
       }
@@ -741,32 +741,12 @@
         }
       }
     },
-    "Trustmail checks every email for phishing before you act on it." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trustmail prüft jede E-Mail auf Phishing, bevor du darauf reagierst."
-          }
-        }
-      }
-    },
     "Trustmail checks who really sent it and scans every link in it." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Trustmail prüft, wer sie wirklich gesendet hat, und untersucht jeden Link darin."
-          }
-        }
-      }
-    },
-    "Trustmail couldn't check whether this address has emailed you before, for example because you're offline. Be careful if it asks you to do something or to share information." : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trustmail konnte nicht prüfen, ob dir diese Adresse schon einmal geschrieben hat, zum Beispiel weil du offline bist. Sei vorsichtig, wenn du etwas tun oder Informationen teilen sollst."
           }
         }
       }
@@ -791,12 +771,32 @@
         }
       }
     },
+    "We are your tech-friend, reviewing your emails to ensure you can respond to email inquiries with confidence." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wir sind dein Technik-Freund und prüfen deine E-Mails, damit du auf Anfragen per E-Mail mit gutem Gefühl antworten kannst."
+          }
+        }
+      }
+    },
     "Welcome to Trustmail" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "Willkommen bei Trustmail"
+          }
+        }
+      }
+    },
+    "You haven't exchanged email with this address before. If you did not expect this email, pay very close attention to it." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du hast mit dieser Adresse noch keine E-Mails ausgetauscht. Wenn du diese E-Mail nicht erwartet hast, sieh sie dir sehr genau an."
           }
         }
       }

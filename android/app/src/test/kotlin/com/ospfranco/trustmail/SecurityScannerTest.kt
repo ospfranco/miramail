@@ -255,8 +255,8 @@ class SecurityScannerTest {
                 "Sender not verified: Gmail couldn't confirm that this email really comes from the address it shows. That's often harmless, but someone could be pretending to be this sender. Be careful if it asks you to do something or to share information.",
                 "Sender verification failed: This email pretends to come from an address that didn't send it, so it's probably a fake. Don't open its links or reply with personal details. If it claims to be from someone you know, contact them another way.",
                 "Known sender: You've exchanged emails with this address before.",
-                "First message from this sender: This is the first email you get from this address. If it asks you to do something or to share information, be careful before you continue.",
-                "Sender history unknown: Trustmail couldn't check whether this address has emailed you before, for example because you're offline. Be careful if it asks you to do something or to share information.",
+                "First message from this sender: You haven't exchanged email with this address before. If you did not expect this email, pay very close attention to it.",
+                "Sender history unknown: Couldn't search your past email in order to verify if you have exchanged email with this address before.",
             ),
             SenderCheckLabel.entries.map { "${strings.get(it.title)}: ${strings.get(it.description)}" },
         )

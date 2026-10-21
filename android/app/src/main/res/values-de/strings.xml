@@ -26,8 +26,8 @@
     <string name="compose_to">An</string>
     <string name="compose_subject">Betreff</string>
     <string name="send">Senden</string>
-    <string name="link_unsafe_title">Dieser Link wirkt unsicher</string>
-    <string name="link_careful_title">Vorsicht bei diesem Link</string>
+    <string name="link_unsafe_title">Dieser Link wirkt wirklich unsicher. Öffne ihn nur, wenn du weißt, dass die Anfrage echt ist.</string>
+    <string name="link_careful_title">Vorsicht bei diesem Link. Wir sehen technische Details, die unprofessionell oder betrügerisch wirken.</string>
     <string name="open_anyway">Trotzdem öffnen</string>
     <string name="link_unopenable">Dieser Link kann nicht geöffnet werden</string>
     <string name="link_shown_as">Angezeigt als: %1$s</string>
@@ -38,9 +38,9 @@
     <string name="explain_warning">Warnung erklären</string>
     <string name="hide_explanation">Erklärung ausblenden</string>
     <string name="sender_failed_a11y">%1$s, Absenderprüfung fehlgeschlagen</string>
-    <string name="summary_safe">Keine Probleme gefunden</string>
-    <string name="summary_warning">Vorsicht bei dieser E-Mail</string>
-    <string name="summary_danger">Diese E-Mail wirkt gefährlich</string>
+    <string name="summary_safe">Hier ist nichts verdächtig</string>
+    <string name="summary_warning">Diese E-Mail enthält einige verdächtige Elemente</string>
+    <string name="summary_danger">Bitte sieh dir diese E-Mail genau an</string>
     <string name="links_unsafe">Unsichere Links</string>
     <string name="links_unsafe_description">Einige Links in dieser E-Mail führen vielleicht zu einer gefälschten oder schädlichen Website. Öffne die Links mit einem roten ✕ nicht.</string>
     <string name="links_suspicious">Verdächtige Links</string>
@@ -65,9 +65,9 @@
     <string name="sender_known">Bekannter Absender</string>
     <string name="sender_known_description">Du hast mit dieser Adresse schon E-Mails ausgetauscht.</string>
     <string name="sender_first_message">Erste E-Mail von diesem Absender</string>
-    <string name="sender_first_message_description">Das ist die erste E-Mail, die du von dieser Adresse bekommst. Wenn du etwas tun oder Informationen teilen sollst, sei vorsichtig, bevor du weitermachst.</string>
+    <string name="sender_first_message_description">Du hast mit dieser Adresse noch keine E-Mails ausgetauscht. Wenn du diese E-Mail nicht erwartet hast, sieh sie dir sehr genau an.</string>
     <string name="sender_history_unknown">Absenderverlauf unbekannt</string>
-    <string name="sender_history_unknown_description">Trustmail konnte nicht prüfen, ob dir diese Adresse schon einmal geschrieben hat, zum Beispiel weil du offline bist. Sei vorsichtig, wenn du etwas tun oder Informationen teilen sollst.</string>
+    <string name="sender_history_unknown_description">Deine bisherigen E-Mails konnten nicht durchsucht werden, um zu prüfen, ob du mit dieser Adresse schon E-Mails ausgetauscht hast.</string>
     <string name="settings_allow_javascript">JavaScript in E-Mails erlauben</string>
     <string name="settings_allow_javascript_description">Lässt Skripte in einer E-Mail laufen. Skripte können ändern, was du siehst, nachdem Trustmail die Links geprüft hat. Lass das also aus, außer eine E-Mail braucht es. Gilt ab der nächsten E-Mail, die du öffnest.</string>
     <string name="settings_ignore_footer_links">Links in der Fußzeile ignorieren</string>
@@ -75,7 +75,7 @@
     <string name="settings_account">Konto</string>
     <string name="sign_out">Abmelden</string>
     <string name="intro_welcome">Willkommen bei Trustmail</string>
-    <string name="intro_tagline">Trustmail prüft jede E-Mail auf Phishing, bevor du darauf reagierst.</string>
+    <string name="intro_tagline">Wir sind dein Technik-Freund und prüfen deine E-Mails, damit du auf Anfragen per E-Mail mit gutem Gefühl antworten kannst.</string>
     <string name="intro_preview_description">Vorschau: eine E-Mail mit einer Sicherheitsmarkierung neben jedem Link und einer Warnung oben</string>
     <string name="intro_step_open_title">E-Mail öffnen</string>
     <string name="intro_step_open_text">Trustmail prüft, wer sie wirklich gesendet hat, und untersucht jeden Link darin.</string>

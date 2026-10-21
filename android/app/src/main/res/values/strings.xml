@@ -27,8 +27,8 @@
     <string name="compose_to">To</string>
     <string name="compose_subject">Subject</string>
     <string name="send">Send</string>
-    <string name="link_unsafe_title">This link looks unsafe</string>
-    <string name="link_careful_title">Be careful with this link</string>
+    <string name="link_unsafe_title">This link looks really unsafe. Only open it if you know that their request is valid.</string>
+    <string name="link_careful_title">Be careful with this link. We see some unprofessional or fraudulent technicalities.</string>
     <string name="open_anyway">Open anyway</string>
     <string name="link_unopenable">Can\'t open this link</string>
     <string name="link_shown_as">Shown as: %1$s</string>
@@ -39,9 +39,9 @@
     <string name="explain_warning">Explain this warning</string>
     <string name="hide_explanation">Hide the explanation</string>
     <string name="sender_failed_a11y">%1$s, sender verification failed</string>
-    <string name="summary_safe">No problems found</string>
-    <string name="summary_warning">Be careful with this email</string>
-    <string name="summary_danger">This email looks dangerous</string>
+    <string name="summary_safe">Nothing suspicious here</string>
+    <string name="summary_warning">This email has some suspicious elements</string>
+    <string name="summary_danger">Please pay close attention to this email</string>
     <string name="links_unsafe">Unsafe links</string>
     <string name="links_unsafe_description">Some links in this email may lead to a fake or harmful website. Don\'t open the links marked with a red ✕.</string>
     <string name="links_suspicious">Suspicious links</string>
@@ -66,9 +66,9 @@
     <string name="sender_known">Known sender</string>
     <string name="sender_known_description">You\'ve exchanged emails with this address before.</string>
     <string name="sender_first_message">First message from this sender</string>
-    <string name="sender_first_message_description">This is the first email you get from this address. If it asks you to do something or to share information, be careful before you continue.</string>
+    <string name="sender_first_message_description">You haven\'t exchanged email with this address before. If you did not expect this email, pay very close attention to it.</string>
     <string name="sender_history_unknown">Sender history unknown</string>
-    <string name="sender_history_unknown_description">Trustmail couldn\'t check whether this address has emailed you before, for example because you\'re offline. Be careful if it asks you to do something or to share information.</string>
+    <string name="sender_history_unknown_description">Couldn\'t search your past email in order to verify if you have exchanged email with this address before.</string>
     <string name="settings_allow_javascript">Allow JavaScript in emails</string>
     <string name="settings_allow_javascript_description">Lets scripts inside an email run. Scripts can change what you see after Trustmail has scanned the links, so leave this off unless an email needs it. Applies the next time you open an email.</string>
     <string name="settings_ignore_footer_links">Ignore footer links</string>
@@ -76,7 +76,7 @@
     <string name="settings_account">Account</string>
     <string name="sign_out">Sign out</string>
     <string name="intro_welcome">Welcome to Trustmail</string>
-    <string name="intro_tagline">Trustmail checks every email for phishing before you act on it.</string>
+    <string name="intro_tagline">We are your tech-friend, reviewing your emails to ensure you can respond to email inquiries with confidence.</string>
     <string name="intro_preview_description">Preview: an email with a safety mark next to each link and a warning at the top</string>
     <string name="intro_step_open_title">Open an email</string>
     <string name="intro_step_open_text">Trustmail checks who really sent it and scans every link in it.</string>

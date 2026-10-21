@@ -48,6 +48,7 @@ import com.ospfranco.trustmail.mail.MessageSummary
 import com.ospfranco.trustmail.mail.bareAddress
 import com.ospfranco.trustmail.mail.senderName
 import com.ospfranco.trustmail.security.senderFailed
+import com.ospfranco.trustmail.security.senderTags
 
 /** Material's "cloud off" icon, for the note shown when the inbox is the saved copy. */
 private val CloudOffIcon = icon(
@@ -160,8 +161,8 @@ private fun SignedIn(session: SessionViewModel, onOpenMessage: (String) -> Unit)
 
 /**
  * One email in the inbox, laid out like Gmail: avatar, sender, subject and a two-line preview; unread ones in bold.
- * Under the sender: the domain in red when the sender failed Gmail's checks, and a yellow marker when they are new to you
- * ([isFirstMessage]).
+ * Under the sender: the domain in red when the sender failed Gmail's checks, then a small tag for each problem with the
+ * sender that the email's header would show (failed or unverified, new to you: [isFirstMessage]).
  */
 @Composable
 private fun MessageRow(message: MessageSummary, isFirstMessage: Boolean, onClick: () -> Unit) {
@@ -178,7 +179,8 @@ private fun MessageRow(message: MessageSummary, isFirstMessage: Boolean, onClick
         supportingContent = {
             Column {
                 if (message.senderFailed) FailedSenderLine(bareAddress(message.from))
-                if (isFirstMessage) FirstMessageLine()
+                val tags = message.senderTags(isFirstMessage)
+                if (tags.isNotEmpty()) SenderTags(tags)
                 Text(displaySubject(message.subject), fontWeight = weight, color = Theme.colors.text, maxLines = 1, overflow = TextOverflow.Ellipsis)
                 Text(message.snippet, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }

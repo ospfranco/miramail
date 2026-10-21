@@ -147,15 +147,40 @@ struct FailedSenderLine: View {
     }
 }
 
-/// A yellow marker for an email from someone you've never exchanged email with.
-struct FirstMessageLine: View {
+/// The sender findings as small tags on an inbox row, in the words and colors of the email header's cards.
+/// Side by side when they fit, else one under the other.
+struct SenderTags: View {
+    let labels: [SenderCheckLabel]
+
     var body: some View {
-        HStack(spacing: Spacing.one) {
-            VerdictDot(verdict: .warning, size: 14)
-            Text(SenderCheckLabel.firstMessage.title).textStyle(.small, color: Theme.textSecondary).lineLimit(1)
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: Spacing.one) { tags }
+            VStack(alignment: .leading, spacing: Spacing.half) { tags }
         }
+        .padding(.vertical, Spacing.half)
+        // One element whose label lists the tags, so it is read with the rest of the inbox row.
         .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("first-message")
+        .accessibilityIdentifier("sender-tags")
+    }
+
+    private var tags: some View {
+        ForEach(labels, id: \.self) { SenderTag(label: $0) }
+    }
+}
+
+private struct SenderTag: View {
+    let label: SenderCheckLabel
+
+    var body: some View {
+        HStack(spacing: Spacing.half) {
+            Text(label.verdict.glyph).fontWeight(.heavy).accessibilityHidden(true)
+            Text(label.title).lineLimit(1)
+        }
+        .font(.caption.weight(.semibold))
+        .foregroundStyle(label.verdict.contentColor)
+        .padding(.horizontal, Spacing.two)
+        .padding(.vertical, Spacing.half)
+        .background(label.verdict.color, in: Capsule())
     }
 }
 

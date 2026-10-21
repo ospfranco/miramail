@@ -7,6 +7,7 @@ import com.ospfranco.trustmail.security.SenderCheckLabel
 import com.ospfranco.trustmail.security.SenderChecks
 import com.ospfranco.trustmail.security.Verdict
 import com.ospfranco.trustmail.security.senderFailed
+import com.ospfranco.trustmail.security.senderTags
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -27,6 +28,19 @@ class SenderChecksTest {
         assertTrue(summary(listOf("mx.google.com; dmarc=fail header.from=paypa1.example.net")).senderFailed)
         assertFalse(summary(listOf("mx.google.com; dmarc=pass header.from=paypa1.example.net")).senderFailed)
         assertFalse("unverified is a warning, not a failure", summary(emptyList()).senderFailed)
+    }
+
+    @Test
+    fun inboxTagsShowTheSenderFindingsOfTheHeader() {
+        fun summary(auth: List<String>) =
+            MessageSummary("1", "t", "PayPal <support@paypa1.example.net>", "s", "", false, authenticationResults = auth)
+        val failed = summary(listOf("mx.google.com; dmarc=fail header.from=paypa1.example.net"))
+        val verified = summary(listOf("mx.google.com; dmarc=pass header.from=paypa1.example.net"))
+        assertEquals(listOf(SenderCheckLabel.Failed, SenderCheckLabel.FirstMessage), failed.senderTags(isFirstMessage = true))
+        assertEquals(listOf(SenderCheckLabel.Failed), failed.senderTags(isFirstMessage = false))
+        assertEquals(listOf(SenderCheckLabel.NotVerified, SenderCheckLabel.FirstMessage), summary(emptyList()).senderTags(isFirstMessage = true))
+        assertEquals(listOf(SenderCheckLabel.FirstMessage), verified.senderTags(isFirstMessage = true))
+        assertEquals("a verified, known sender gets no tag", emptyList<SenderCheckLabel>(), verified.senderTags(isFirstMessage = false))
     }
 
     @Test
