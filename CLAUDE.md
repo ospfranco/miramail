@@ -56,7 +56,7 @@ The logic is ported line for line, so a change in one file has a twin in the oth
 | Inbox / message screens | `UI/InboxView.swift`, `UI/MessageView.swift` | `ui/InboxScreen.kt`, `ui/MessageScreen.kt` |
 | Email header (full, and compact once the body is scrolled; `HeaderCollapse` decides) and the scan's findings in it | `UI/MessageHeader.swift` | `ui/MessageHeader.kt` |
 | Email web view (CSP, link scan script, badges) | `UI/EmailBody.swift` | `ui/EmailBody.kt` |
-| Settings (store + screen; the screen also has Sign out, shown only when signed in) | `Settings/AppSettings.swift`, `UI/SettingsView.swift` | `settings/AppSettings.kt`, `ui/SettingsScreen.kt` |
+| Settings (store + screen; the screen also has Sign out, shown only when signed in, and links to the privacy policy `https://miramail.me/privacy` and terms of use `https://miramail.me/terms`, `privacyPolicyURL`/`termsOfUseURL` / `PRIVACY_POLICY_URL`/`TERMS_OF_USE_URL`, shown always) | `Settings/AppSettings.swift`, `UI/SettingsView.swift` | `settings/AppSettings.kt`, `ui/SettingsScreen.kt` |
 | Splash screen (the logo in a 192pt/dp lavender circle on the app background, light/dark) | `LaunchScreen.storyboard`, asset `SplashLogo` | `res/drawable-nodpi/splash_logo.png` (+ `splash_background` color, `Theme.Trustmail.Starting`) |
 | App icon (a face with curly hair and round glasses, source `store/app-icon-source.png`) | `Assets.xcassets/AppIcon.appiconset/icon-1024.png` | `res/drawable-nodpi/ic_launcher_{foreground,monochrome}.png`, `res/mipmap-anydpi-v26/ic_launcher.xml`, color `ic_launcher_background` |
 | Link scan when email JavaScript is off | `UI/LinkInspector.swift` (iOS only, see below) | not needed |

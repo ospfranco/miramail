@@ -33,6 +33,13 @@ struct SettingsView: View {
                     .accessibilityIdentifier("settings-sign-out")
                 }
             }
+
+            Section("About Miramail") {
+                Link("Privacy policy", destination: AppSettings.privacyPolicyURL)
+                    .accessibilityIdentifier("privacy-policy")
+                Link("Terms of use", destination: AppSettings.termsOfUseURL)
+                    .accessibilityIdentifier("terms-of-use")
+            }
         }
         .frame(maxWidth: Theme.maxContentWidth)
         .frame(maxWidth: .infinity)

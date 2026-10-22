@@ -2,6 +2,7 @@ package com.ospfranco.trustmail
 
 import com.ospfranco.trustmail.settings.AppSettings
 import com.ospfranco.trustmail.settings.MemorySettingsStore
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -46,5 +47,12 @@ class AppSettingsTest {
         assertFalse(settings.hasSeenIntro)
         settings.updateHasSeenIntro(true)
         assertTrue(AppSettings(store).hasSeenIntro)
+    }
+
+    /** Pinned on both platforms: the addresses the stores and Google's consent screen list. */
+    @Test
+    fun privacyPolicyAndTermsLinkToTheWebsite() {
+        assertEquals("https://miramail.me/privacy", AppSettings.PRIVACY_POLICY_URL)
+        assertEquals("https://miramail.me/terms", AppSettings.TERMS_OF_USE_URL)
     }
 }

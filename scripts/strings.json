@@ -86,6 +86,9 @@
     { "name": "settings_ignore_footer_links", "en": "Ignore footer links", "de": "Links in der Fußzeile ignorieren" },
     { "name": "settings_ignore_footer_links_description", "en": "Suspicious links in an email's footer (unsubscribe, privacy policy, social media) don't count toward the email's verdict. They still get a badge and a warning when you tap them, and an unsafe footer link still counts. Applies the next time you open an email.", "de": "Verdächtige Links in der Fußzeile einer E-Mail (Abmelden, Datenschutz, soziale Medien) zählen nicht für die Bewertung der E-Mail. Sie werden trotzdem markiert und warnen dich, wenn du sie antippst, und ein unsicherer Link in der Fußzeile zählt weiterhin. Gilt ab der nächsten E-Mail, die du öffnest." },
     { "name": "settings_account", "en": "Account", "de": "Konto" },
+    { "name": "settings_about", "en": "About Miramail", "de": "Über Miramail" },
+    { "name": "settings_privacy_policy", "en": "Privacy policy", "de": "Datenschutzerklärung" },
+    { "name": "settings_terms_of_use", "en": "Terms of use", "de": "Nutzungsbedingungen" },
     { "name": "sign_out", "en": "Sign out", "de": "Abmelden" },
 
     { "name": "intro_welcome", "en": "Welcome to Miramail", "de": "Willkommen bei Miramail" },

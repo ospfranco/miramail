@@ -31,6 +31,16 @@
         }
       }
     },
+    "About Miramail" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Über Miramail"
+          }
+        }
+      }
+    },
     "Account" : {
       "localizations" : {
         "de" : {
@@ -441,6 +451,16 @@
         }
       }
     },
+    "Privacy policy" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datenschutzerklärung"
+          }
+        }
+      }
+    },
     "Reply" : {
       "localizations" : {
         "de" : {
@@ -617,6 +637,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mit gutem Gefühl tippen"
+          }
+        }
+      }
+    },
+    "Terms of use" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nutzungsbedingungen"
           }
         }
       }

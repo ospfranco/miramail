@@ -11,6 +11,12 @@ final class AppSettings {
         static let ignoreFooterLinks = "ignoreFooterLinks"
     }
 
+    /// The privacy policy and terms of use on the website, linked from the settings (both stores require an
+    /// in-app link). The same addresses are entered in App Store Connect, the Play Console and Google's OAuth
+    /// consent screen.
+    static let privacyPolicyURL = URL(string: "https://miramail.me/privacy")!
+    static let termsOfUseURL = URL(string: "https://miramail.me/terms")!
+
     private let defaults: UserDefaults
 
     /// Whether scripts inside an email may run. Off by default: a script can change what the reader

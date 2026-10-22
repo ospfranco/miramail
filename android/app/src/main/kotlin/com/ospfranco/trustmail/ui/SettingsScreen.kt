@@ -1,5 +1,8 @@
 package com.ospfranco.trustmail.ui
 
+import android.content.ActivityNotFoundException
+import android.content.Context
+import androidx.browser.customtabs.CustomTabsIntent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,14 +27,17 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.core.net.toUri
 import com.ospfranco.trustmail.R
 import com.ospfranco.trustmail.settings.AppSettings
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(settings: AppSettings, session: SessionViewModel, onBack: () -> Unit) {
+    val context = LocalContext.current
     Scaffold(
         topBar = {
             TopAppBar(
@@ -73,9 +79,36 @@ fun SettingsScreen(settings: AppSettings, session: SessionViewModel, onBack: () 
                             .testTag("settings-sign-out"),
                     )
                 }
+
+                HorizontalDivider(Modifier.padding(vertical = Spacing.two))
+                SectionHeader(stringResource(R.string.settings_about))
+                LinkItem(stringResource(R.string.settings_privacy_policy), tag = "privacy-policy") {
+                    openWebPage(context, AppSettings.PRIVACY_POLICY_URL)
+                }
+                LinkItem(stringResource(R.string.settings_terms_of_use), tag = "terms-of-use") {
+                    openWebPage(context, AppSettings.TERMS_OF_USE_URL)
+                }
             }
         }
     }
+}
+
+/** Opens one of our web pages in a Custom Tab (the browser, if no browser supports them). Without any browser nothing happens. */
+private fun openWebPage(context: Context, url: String) {
+    try {
+        CustomTabsIntent.Builder().build().launchUrl(context, url.toUri())
+    } catch (e: ActivityNotFoundException) {
+        // No browser installed: nothing we can show.
+    }
+}
+
+/** A row that opens a web page, in the link color. */
+@Composable
+private fun LinkItem(title: String, tag: String, onClick: () -> Unit) {
+    ListItem(
+        headlineContent = { Text(title, color = MaterialTheme.colorScheme.primary) },
+        modifier = Modifier.clickable(onClick = onClick).testTag(tag),
+    )
 }
 
 /** A setting with its explanation underneath and a switch on the right; tapping anywhere on it flips the switch. */
