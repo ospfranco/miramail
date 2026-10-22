@@ -18,7 +18,7 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.miramail"
+        applicationId = "me.miramail"
         minSdk = 26
         targetSdk = 37
         // fastlane passes the next Google Play version code with -PversionCode=N (see fastlane/Fastfile).

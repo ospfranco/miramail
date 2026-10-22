@@ -28,7 +28,7 @@ interface ConsentLauncher {
  * Google authorization for Gmail. Android has no refresh tokens in this flow: once the user has
  * granted the scopes, `authorize()` hands out fresh access tokens without any UI.
  * The Android OAuth client is matched by package name + signing SHA-1, so no client ID appears here: Google Cloud has
- * clients for com.miramail with the debug key (sideload APK) and Google Play's signing key. See RELEASING.md.
+ * clients for me.miramail with the debug key (sideload APK) and Google Play's signing key. See RELEASING.md.
  */
 class GoogleAuth(
     context: Context,

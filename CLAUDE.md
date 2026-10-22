@@ -14,7 +14,7 @@ The user is overwhelmed by the many processes that now happen online and is deep
 | `android/` | Android app | Kotlin 2.4, Jetpack Compose, AGP 9.4, Gradle 9.8, minSdk 26 / target 37, Play Services Auth |
 | `scripts/` | Shared tooling | |
 
-The app is called **Miramail**. Both apps use the bundle / package id `com.miramail` (Android `applicationId`). The code keeps its old internal names: the Xcode project, target and scheme `Trustmail`, the Kotlin package and Gradle `namespace` `com.ospfranco.trustmail`, and type names like `TrustmailApp`. Users never see them.
+The app is called **Miramail**. Both apps use the bundle / package id `me.miramail` (Android `applicationId`). The code keeps its old internal names: the Xcode project, target and scheme `Trustmail`, the Kotlin package and Gradle `namespace` `com.ospfranco.trustmail`, and type names like `TrustmailApp`. Users never see them.
 
 ## The rule: every change goes into both apps, and is tested on both
 
@@ -142,7 +142,7 @@ The apps follow the system language (or the per-app language in the system setti
 - **Android:** enums and results carry `@StringRes` ids (`SenderCheckLabel.title`, `SecurityCheck.label`, `SecurityEvaluation.summary`, `LinkCheckKind.reason`); Compose resolves them with `stringResource`. Logic that builds text (`SecurityScanner.linkWarning`, `MessageAction.notice`) takes a `Strings` (`context.strings()` in the app, `TestStrings.english` / `.german` in JVM tests, which read `strings.xml`). `localeFilters` keeps only en/de, and `generateLocaleConfig` lists them for the per-app language setting.
 - Not translated: `LinkCheck.detail` and `LinkCheckKind.label` (technical, never shown), Gmail/network error messages, the email date (shown as Gmail sends it), and the demo emails.
 - An empty subject is kept empty in the models; the UI shows "(no subject)" through `displaySubject` (`Theme`).
-- Tests: `LocalizationTests` (iOS) / `LocalizationTest` (Android) check that every string has a German translation with the same placeholders and pin some German text. The other tests run in English. To look at German: iOS `xcrun simctl launch <device> com.miramail -demo -AppleLanguages "(de)"`; Android `adb shell cmd locale set-app-locales com.miramail --locales de-DE` (reset with `--locales ""`).
+- Tests: `LocalizationTests` (iOS) / `LocalizationTest` (Android) check that every string has a German translation with the same placeholders and pin some German text. The other tests run in English. To look at German: iOS `xcrun simctl launch <device> me.miramail -demo -AppleLanguages "(de)"`; Android `adb shell cmd locale set-app-locales me.miramail --locales de-DE` (reset with `--locales ""`).
 
 ### Shared data (must stay identical)
 
@@ -199,8 +199,8 @@ Versions live in `android/gradle/libs.versions.toml`.
 
 Debug builds can run against canned mail, which is what the UI tests use:
 
-- iOS: launch with the `-demo` argument (`xcrun simctl launch <device> com.miramail -demo`). Add `-demo-signed-out` to start signed out (to see the intro and the sign-in screen), or `-demo-offline` to start with a saved inbox and Gmail out of reach.
-- Android: `adb shell am start -n com.miramail/com.ospfranco.trustmail.MainActivity --ez demo true`. Add `--ez demo_signed_out true` to start signed out, or `--ez demo_offline true` to start offline with a saved inbox.
+- iOS: launch with the `-demo` argument (`xcrun simctl launch <device> me.miramail -demo`). Add `-demo-signed-out` to start signed out (to see the intro and the sign-in screen), or `-demo-offline` to start with a saved inbox and Gmail out of reach.
+- Android: `adb shell am start -n me.miramail/com.ospfranco.trustmail.MainActivity --ez demo true`. Add `--ez demo_signed_out true` to start signed out, or `--ez demo_offline true` to start offline with a saved inbox.
 
 The demo mailbox pauses 1.5 seconds in every scan (in the sender-history lookup), so the header's "Checking this email…" row stays up long enough for UI tests to see it (accessibility id / test tag `security-scanning`; once the scan is done it becomes `security-findings` or `security-safe`). It also remembers what you do: archived, deleted or moved emails leave the inbox, and sent emails are kept. Notices stay up for 8 seconds in demo runs (2.5 otherwise) so UI tests can find them.
 
@@ -224,5 +224,5 @@ The demo inbox has a plain-text email from a known, verified sender and an HTML 
 How to publish to TestFlight and Google Play (accounts, Google OAuth, store forms, commands) is in **`RELEASING.md`**. Releases run through fastlane (`fastlane/Fastfile`): `bundle exec fastlane beta` tests, builds and uploads both apps, taking the next build numbers from TestFlight and Google Play (Android reads `-PversionCode`). Credentials live in the git-ignored `fastlane/.env` and `~/.trustmail`; never commit them, and never run an upload lane unless the user asks.
 
 - **Android build types.** `release` is the APK to sideload to friends: signed with the standard React Native debug keystore at `android/app/debug.keystore` (SHA-1 `5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25`) on purpose, because that is the SHA-1 registered with the Google OAuth client, so Google sign-in works. That key is public: never put that build on a store. `play` is the Google Play build (`./gradlew :app:bundlePlay`), signed with the private upload key from `android/keystore.properties` (git-ignored; key file in `~/.trustmail`, never committed). Google re-signs Play builds with its own key, so Google sign-in from Play needs *that* key's SHA-1 registered too (see `RELEASING.md`).
-- **iOS** uses automatic signing with the team set in the Xcode project. Google Sign-In uses an iOS OAuth client tied to the bundle ID plus its reversed URL scheme in `ios/Info.plist`. The OAuth clients (iOS, and Android with the debug and Play signing SHA-1s) are registered for `com.miramail` in Google Cloud.
+- **iOS** uses automatic signing with the team set in the Xcode project. Google Sign-In uses an iOS OAuth client tied to the bundle ID plus its reversed URL scheme in `ios/Info.plist`. The OAuth clients (iOS, and Android with the debug and Play signing SHA-1s) are registered for `me.miramail` in Google Cloud.
 - Build numbers must increase with every store upload (`CURRENT_PROJECT_VERSION` on iOS, `versionCode` on Android).

@@ -5,7 +5,7 @@ import kotlinx.coroutines.delay
 /**
  * Debug-only stand-ins so the UI can be exercised without a Google account.
  * Launch the activity with the boolean extra `demo` (the iOS app does the same with a `-demo` argument):
- * `adb shell am start -n com.miramail/com.ospfranco.trustmail.MainActivity --ez demo true`
+ * `adb shell am start -n me.miramail/com.ospfranco.trustmail.MainActivity --ez demo true`
  */
 object Demo {
     const val EXTRA = "demo"
