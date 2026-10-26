@@ -30,10 +30,18 @@ class MemorySettingsStore : SettingsStore {
 
 /** User preferences, persisted on the device. */
 class AppSettings(private val store: SettingsStore) {
-    private companion object {
-        const val ALLOW_EMAIL_JAVASCRIPT = "allowEmailJavaScript"
-        const val HAS_SEEN_INTRO = "hasSeenIntro"
-        const val IGNORE_FOOTER_LINKS = "ignoreFooterLinks"
+    companion object {
+        /**
+         * The privacy policy and terms of use on the website, linked from the settings (both stores require an
+         * in-app link). The same addresses are entered in App Store Connect, the Play Console and Google's OAuth
+         * consent screen.
+         */
+        const val PRIVACY_POLICY_URL = "https://miramail.me/privacy"
+        const val TERMS_OF_USE_URL = "https://miramail.me/terms"
+
+        private const val ALLOW_EMAIL_JAVASCRIPT = "allowEmailJavaScript"
+        private const val HAS_SEEN_INTRO = "hasSeenIntro"
+        private const val IGNORE_FOOTER_LINKS = "ignoreFooterLinks"
     }
 
     /**

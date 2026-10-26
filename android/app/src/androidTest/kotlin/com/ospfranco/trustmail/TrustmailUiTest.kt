@@ -238,6 +238,8 @@ class TrustmailUiTest {
         compose.onNodeWithTag("footer-links-toggle").assertIsOff()
         compose.onNodeWithText("Ignore footer links").assertIsDisplayed()
         compose.onNodeWithTag("settings-sign-out").assertIsDisplayed()
+        compose.onNodeWithTag("privacy-policy").assertIsDisplayed()
+        compose.onNodeWithTag("terms-of-use").assertIsDisplayed()
         screenshot("settings")
     }
 
@@ -273,6 +275,9 @@ class TrustmailUiTest {
         compose.onNodeWithTag("settings-button").performClick()
         waitForTag("javascript-toggle", 5_000)
         assert(compose.onAllNodesWithTag("settings-sign-out").fetchSemanticsNodes().isEmpty())
+        // The privacy policy and terms are reachable before signing in.
+        compose.onNodeWithTag("privacy-policy").assertIsDisplayed()
+        compose.onNodeWithTag("terms-of-use").assertIsDisplayed()
         screenshot("settings-signed-out")
     }
 

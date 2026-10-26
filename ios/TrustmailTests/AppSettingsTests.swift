@@ -45,4 +45,10 @@ struct AppSettingsTests {
         settings.hasSeenIntro = true
         #expect(AppSettings(defaults: defaults).hasSeenIntro)
     }
+
+    /// Pinned on both platforms: the addresses the stores and Google's consent screen list.
+    @Test func privacyPolicyAndTermsLinkToTheWebsite() {
+        #expect(AppSettings.privacyPolicyURL.absoluteString == "https://miramail.me/privacy")
+        #expect(AppSettings.termsOfUseURL.absoluteString == "https://miramail.me/terms")
+    }
 }

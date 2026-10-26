@@ -74,6 +74,9 @@
     <string name="settings_ignore_footer_links">Ignore footer links</string>
     <string name="settings_ignore_footer_links_description">Suspicious links in an email\'s footer (unsubscribe, privacy policy, social media) don\'t count toward the email\'s verdict. They still get a badge and a warning when you tap them, and an unsafe footer link still counts. Applies the next time you open an email.</string>
     <string name="settings_account">Account</string>
+    <string name="settings_about">About Miramail</string>
+    <string name="settings_privacy_policy">Privacy policy</string>
+    <string name="settings_terms_of_use">Terms of use</string>
     <string name="sign_out">Sign out</string>
     <string name="intro_welcome">Welcome to Miramail</string>
     <string name="intro_tagline">We are your tech-friend, reviewing your emails to ensure you can respond to email inquiries with confidence.</string>

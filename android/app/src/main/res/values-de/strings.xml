@@ -73,6 +73,9 @@
     <string name="settings_ignore_footer_links">Links in der Fußzeile ignorieren</string>
     <string name="settings_ignore_footer_links_description">Verdächtige Links in der Fußzeile einer E-Mail (Abmelden, Datenschutz, soziale Medien) zählen nicht für die Bewertung der E-Mail. Sie werden trotzdem markiert und warnen dich, wenn du sie antippst, und ein unsicherer Link in der Fußzeile zählt weiterhin. Gilt ab der nächsten E-Mail, die du öffnest.</string>
     <string name="settings_account">Konto</string>
+    <string name="settings_about">Über Miramail</string>
+    <string name="settings_privacy_policy">Datenschutzerklärung</string>
+    <string name="settings_terms_of_use">Nutzungsbedingungen</string>
     <string name="sign_out">Abmelden</string>
     <string name="intro_welcome">Willkommen bei Miramail</string>
     <string name="intro_tagline">Wir sind dein Technik-Freund und prüfen deine E-Mails, damit du auf Anfragen per E-Mail mit gutem Gefühl antworten kannst.</string>

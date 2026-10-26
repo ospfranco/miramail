@@ -139,6 +139,8 @@ final class TrustmailUITests: XCTestCase {
         XCTAssertEqual(app.switches["footer-links-toggle"].value as? String, "0")
         XCTAssertTrue(app.staticTexts["Ignore footer links"].exists)
         XCTAssertTrue(app.buttons["settings-sign-out"].exists)
+        XCTAssertTrue(app.descendants(matching: .any)["privacy-policy"].exists)
+        XCTAssertTrue(app.descendants(matching: .any)["terms-of-use"].exists)
         screenshot("settings")
     }
 
@@ -170,6 +172,9 @@ final class TrustmailUITests: XCTestCase {
         app.buttons["settings-button"].tap()
         XCTAssertTrue(app.switches["javascript-toggle"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["settings-sign-out"].exists)
+        // The privacy policy and terms are reachable before signing in.
+        XCTAssertTrue(app.descendants(matching: .any)["privacy-policy"].exists)
+        XCTAssertTrue(app.descendants(matching: .any)["terms-of-use"].exists)
         screenshot("settings-signed-out")
     }
 
