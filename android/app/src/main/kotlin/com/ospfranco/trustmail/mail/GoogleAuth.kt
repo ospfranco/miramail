@@ -35,9 +35,9 @@ class GoogleAuth(
     private val consent: ConsentLauncher,
 ) : AuthService {
     companion object {
+        /** Full Gmail access, the scope registered in Google Cloud. */
         val GMAIL_SCOPES = listOf(
-            "https://www.googleapis.com/auth/gmail.modify",
-            "https://www.googleapis.com/auth/gmail.send",
+            "https://mail.google.com/",
         )
         private const val PREFS = "google_auth"
         private const val KEY_EMAIL = "email"

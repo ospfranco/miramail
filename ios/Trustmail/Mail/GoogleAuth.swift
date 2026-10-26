@@ -9,9 +9,9 @@ final class GoogleAuth: AuthService {
     // its reversed form is the URL scheme in ios/Info.plist.
     private static let clientID = "760054649215-log9rqaj7h239g6lr9qsink2adnla6i2.apps.googleusercontent.com"
 
+    /// Full Gmail access, the scope registered in Google Cloud.
     static let gmailScopes = [
-        "https://www.googleapis.com/auth/gmail.modify",
-        "https://www.googleapis.com/auth/gmail.send",
+        "https://mail.google.com/",
     ]
 
     /// The signed-in account, remembered so the app can open (and show the saved inbox) when Google can't be reached.
@@ -26,7 +26,13 @@ final class GoogleAuth: AuthService {
     func restoreSession() async throws -> UserProfile? {
         guard GIDSignIn.sharedInstance.hasPreviousSignIn() else { return nil }
         do {
-            return profile(of: try await GIDSignIn.sharedInstance.restorePreviousSignIn())
+            let user = try await GIDSignIn.sharedInstance.restorePreviousSignIn()
+            // A grant made before the scopes changed: sign in again, like Android (whose silent authorize needs consent).
+            guard Set(Self.gmailScopes).isSubset(of: user.grantedScopes ?? []) else {
+                await signOut()
+                return nil
+            }
+            return profile(of: user)
         } catch where Self.isNetworkError(error) {
             // Offline: stay signed in. The token is restored on the next request that reaches Google.
             guard let email = defaults.string(forKey: Self.emailKey) else { throw error }

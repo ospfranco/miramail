@@ -50,7 +50,8 @@ Sign-in only works when the app's signing key is registered with the Google OAut
   `.aab`.) The sideload APK for friends keeps using the debug key and its existing client.
 - **The consent screen decides who can sign in.** While it is in **Testing**, only the Gmail addresses you list under
   OAuth consent screen → *Test users* (max 100) can sign in, and Google makes them sign in again about every 7 days.
-  Gmail's `gmail.modify` and `gmail.send` scopes are *restricted*. To let anyone sign in you would have to publish the
+  The app asks for full Gmail access (`https://mail.google.com/`, the scope listed under the consent screen's *Data
+  access*), which is *restricted*. To let anyone sign in you would have to publish the
   app and pass Google's OAuth verification, which includes an annual third-party security assessment (CASA). For a
   beta with friends, stay in Testing and add every tester's address (iOS and Android) as a test user.
 
